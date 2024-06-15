@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if edit_mode %} Edit Product {% else %} Add New Product {% endif %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" />
+    <style>
+        input, select { color: #000 !important; opacity: .6; width: 250px; height: 50px; font-size: 28px !important; border-radius: 5px; }
+        label { justify-content: space-between; align-items: center; font-size: 24px; font-weight: bold; }
+        sup { color: #6b0261 !important; font-size: 13px; font-weight: lighter; -webkit-text-fill-color: initial !important; }
+        .alert { background-color: #FFFF00; color: #000000; }
+        .file { font-size: 18px !important; }
+        .img-container { max-width: 100%; }
+        .buttons-container { display: flex; justify-content: space-between; margin-top: 10px; }
+        .hidden { display: none; }
+        .cropper-crop-box { overflow-x: unset; }
+        .cropAndUpload { display: flex; gap: 5rem; }
+        .theCropperjsBG { width: 300px; height: 169px; display: flex; justify-content: space-around; }
+        .image-group { margin-bottom: 1rem; }
+        .cropButton, .deleteButton { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    {% include 'common_block.html' %}
+    {% if messages %}
+    {% for msg in messages %}
+    <p class="alert"><i class="fa-solid fa-triangle-exclamation"></i> {{ msg }}</p>
+    {% endfor %}
+    {% endif %}
+    {% block content %}
+    <div class="projects">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="heading">{% if edit_mode %} Edit Product {% else %} Add New Product {% endif %}</h3>
+                <a href="{% url 'product' %}"><button>Cancel</button></a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <form id="productForm" action="" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <table>
+                            <tr>
+                                <td><label for="">Product Name</label></td>
+                                <td><input type="text" name="productName" value="{% if edit_mode %}{{ product.name }}{% endif %}"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="category">Category</label></td>
+                                <td>
+                                    <select name="category" id="category">
+                                        <option value="" disabled selected>Select</option>
+                                        {% for category in base %}
+                                        <option value="{{ category.id }}" {% if edit_mode and category.id == product.category.id %}selected{% endif %}>{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label for="subcategory">Subcategory</label></td>
+                                <td>
+                                    <select name="subcategory" id="subcategory">
+                                        <option value="" disabled selected>Select</option>
+                                        {% for subcategory in subcategories %}
+                                        <option value="{{ subcategory.id }}" {% if edit_mode and subcategory.id == product.subcategory.id %}selected{% endif %}>{{ subcategory.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label for="">SKU</label></td>
+                                <td><input type="text" name="sku" value="{% if edit_mode %}{{ product.SKU }}{% endif %}"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="">Stock Quantity</label></td>
+                                <td><input type="number" name="stockQuantity" value="{% if edit_mode %}{{ product.qty_in_stock }}{% endif %}"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="">Price</label></td>
+                                <td><input type="number" name="price" value="{% if edit_mode %}{{ product.price }}{% endif %}"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="">Description</label></td>
+                                <td><textarea name="description" rows="5" cols="50">{% if edit_mode %}{{ product.description }}{% endif %}</textarea></td>
+                            </tr>
+                            <tr>
+                                <td><label for="">Product Images</label></td>
+                                <td>
+                                    <div id="imageGroupsContainer">
+                                        {% if edit_mode %}
+                                            {% for image in product_images %}
+                                                <div class="image-group" data-image-id="{{ image.id }}">
+                                                    <img src="{{ image.image.url }}" alt="Product Image" style="max-width: 100px;">
+                                                    <button type="button" class="deleteButton" data-image-id="{{ image.id }}">Delete Image</button>
+                                                    <label>
+                                                        <input type="checkbox" name="delete_image_{{ image.id }}">
+                                                        Delete this image
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                    <button type="button" id="addImageButton">Add Image</button>
+                                </td>
+                            </tr>
+                        </table>
+                        <div class="card-header"><button type="submit" id="submit">Save</button></div>
+                        
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const categorySelect = document.getElementById('category');
+            const subcategorySelect = document.getElementById('subcategory');
+            const imageGroupsContainer = document.getElementById("imageGroupsContainer");
+            const addImageButton = document.getElementById("addImageButton");
+
+            categorySelect.addEventListener('change', function () {
+                const categoryId = categorySelect.value;
+                fetch(`/administration/get_subcategories/${categoryId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        subcategorySelect.innerHTML = '<option value="" disabled selected>Select</option>';
+                        data.forEach(subcategory => {
+                            const option = document.createElement('option');
+                            option.value = subcategory.id;
+                            option.text = subcategory.name;
+                            subcategorySelect.add(option);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching subcategories:', error));
+            });
+
+            const form = document.getElementById("productForm");
+
+            form.addEventListener("submit", (event) => {
+                if (!validateForm()) {
+                    console.log("Form validation failed");
+                    event.preventDefault();
+                }
+            });
+
+            addImageButton.addEventListener("click", addImageInput);
+
+            function addImageInput() {
+                const imageGroupIndex = imageGroupsContainer.children.length;
+                const imageGroup = document.createElement('div');
+                imageGroup.className = "image-group";
+                imageGroup.innerHTML = `
+                    <input type="file" class="file" id="imageInput${imageGroupIndex}" name="productImage" style="margin-bottom: 1rem;" multiple />
+                    <div class="cropAndUpload">
+                        <div class="grouping crop button and save with the image">
+                            <div class="theCropperjsBG">
+                                <img id="image${imageGroupIndex}" name="image${imageGroupIndex}" style="max-width: 50%" />
+                            </div>
+                        </div>
+                        <div>
+                            <canvas id="canvas${imageGroupIndex}" name="canvas${imageGroupIndex}" style="display: none; height: 169px"></canvas>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 10px; margin-bottom: 10px;">
+                        <button type="button" class="cropButton">Save the cropped Image</button>
+                        <button type="button" class="deleteButton">Delete Image</button>
+                    </div>
+                `;
+                imageGroupsContainer.appendChild(imageGroup);
+
+                const imageInput = imageGroup.querySelector(`#imageInput${imageGroupIndex}`);
+                const image = imageGroup.querySelector(`#image${imageGroupIndex}`);
+                const canvas = imageGroup.querySelector(`#canvas${imageGroupIndex}`);
+                const cropButton = imageGroup.querySelector(".cropButton");
+                const deleteButton = imageGroup.querySelector(".deleteButton");
+
+                imageInput.addEventListener("change", (event) => {
+                    const file = event.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        image.src = e.target.result;
+                        let cropper = new Cropper(image, {
+                            aspectRatio: 1,
+                            viewMode: 2,
+                        });
+
+                        cropButton.addEventListener("click", () => {
+                            if (cropper) {
+                                const croppedCanvas = cropper.getCroppedCanvas();
+                                canvas.width = croppedCanvas.width;
+                                canvas.height = croppedCanvas.height;
+                                canvas.style.display = "block";
+                                canvas.getContext("2d").drawImage(croppedCanvas, 0, 0);
+
+                                croppedCanvas.toBlob((blob) => {
+                                    const fileInput = new File([blob], `cropped${imageGroupIndex}.jpg`, {
+                                        type: "image/jpeg",
+                                    });
+                                    const dataTransfer = new DataTransfer();
+                                    dataTransfer.items.add(fileInput);
+                                    imageInput.files = dataTransfer.files;
+                                });
+                            }
+                        });
+
+                        deleteButton.addEventListener("click", () => {
+                            if (cropper) {
+                                cropper.destroy();
+                                cropper = null;
+                            }
+                            imageGroup.remove();
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            function validateForm() {
+                const productImages = document.querySelectorAll('input[type="file"]');
+                // if (productImages.length < 3) {
+                //     alert("You must upload at least 3 images.");
+                //     return false;
+                // }
+                return true;
+            }
+
+            imageGroupsContainer.addEventListener('click', (event) => {
+                if (event.target.classList.contains('deleteButton')) {
+                    const imageId = event.target.getAttribute('data-image-id');
+                    fetch(`/administration/delete_product_image/${imageId}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        },
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            event.target.closest('.image-group').remove();
+                        } else {
+                            console.error('Error deleting image');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

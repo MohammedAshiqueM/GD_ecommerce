@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        input {
+            color: #000 !important;
+            opacity: .6;
+            width: 250px;
+            height: 50px;
+            font-size: 28px !important;
+            border-radius: 5px;
+        }
+
+        label {
+            justify-content: space-between;
+            align-items: center;
+            color: #3b026b;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        sup{
+            color: #6b0261 !important;
+            font-size: 13px;
+            font-weight: lighter;
+            -webkit-text-fill-color: initial !important;
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'common_block.html' %}
+    <div class="main-content">
+        <div class="projects">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="heading">Add new Category and subcategories</h3>
+                    <a href="{% url 'category' %}"><button>Cancel</button></a>
+
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <form action="" method="post">
+                            {% csrf_token %}
+                            <table>
+                                <tr>
+                                    <td>
+                                        <label for="">Category</label>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="categoryName">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="">Parent Category <sup>fill this field if category have a parent category</sup></label>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="parentCategoryName">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <button type="submit">Save</button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

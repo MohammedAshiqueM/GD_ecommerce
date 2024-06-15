@@ -1,0 +1,22 @@
+.block_btn{
+    padding: 10px 20px;
+    border: 1px solid var(--icon-color);
+    color: white;
+    border-radius:10px ;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    background: #9e0f29;
+    transition: background-color 0.3s, color 0.3s;
+}
+.unblock_btn{
+    padding: 10px 20px;
+    border: 1px solid var(--icon-color);
+    color: white;
+    border-radius:10px ;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    background:#0d6d35;
+    transition: background-color 0.3s, color 0.3s;
+}

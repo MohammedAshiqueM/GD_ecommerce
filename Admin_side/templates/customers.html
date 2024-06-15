@@ -1,0 +1,59 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'admin_css/dashboard_style.css' %}">
+</head>
+
+<body>
+    {% include 'common_block.html' %}
+
+        <div class="projects">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="heading">Customer Details</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table width="100%">
+                            <thead>
+                                <tr>
+                                    <td>User name</td>
+                                    <td>Email Id</td>
+                                    <td>Joined date</td>
+                                    <td>Last login</td>
+                                    <td>Status</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for i in data %}
+                                <tr>
+                                    <td>{{i.username}}</td>
+                                    <td>{{i.email}}</td>
+                                    <td>{{i.date_joined}}</td>
+                                    <td>{{i.last_login}}</td>
+                                    <td>
+                                    {% if i.is_active %}
+                                    <button class="block_btn" onclick="blockUser(`{{ i.id }}`)">Block</button>
+                                    {% else %}
+                                    <button class="unblock_btn" onclick="unblockUser(`{{ i.id }}`)">Unblock</button>
+                                    {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <script src="{% static 'admin_js/customer_script.js' %}"></script>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> -->
+
+</body>
+
+</html>

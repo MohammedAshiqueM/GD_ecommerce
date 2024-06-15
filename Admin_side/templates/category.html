@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    {% include 'common_block.html' %}
+    <div class="projects">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="heading">Base Category Details</h3>
+                <a href="{% url 'addCategory' %}"><button>Add Category</button></a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table width="100%">
+                        <thead>
+                            <tr>
+                                <td>Category</td>
+                                <td>Edit</td>
+                                <td>Block/Unblock</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for i in parent %}
+                            <tr>
+                                <td>{{i.name}}</td>
+                                <td><a href="{% url 'editCategory' i.id %}"><button class="block_btn" style="background-color: #573972;">Edit</button></a></td>
+                                <td>
+                                {% if i.is_active %}
+                                <button class="block_btn" onclick="blockCategory(`{{ i.id }}`)">Block</button>
+                                {% else %}
+                                <button class="unblock_btn" onclick="unblockCategory(`{{ i.id }}`)">Unblock</button>
+                                {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div><br>
+
+    <div class="projects">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="heading">Sub Category Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table width="100%">
+                        <thead>
+                            <tr>
+                                <td>Sub Category</td>
+                                <td>Base Category</td>
+                                <td>Edit</td>
+                                <td>Block/Unblock</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for i in sub %}
+                            <tr>
+                                <td>{{i.name}}</td>
+                                <td>{{i.category.name}}</td>
+                                <td><a href="{% url 'editSubcategory' i.id %}"><button class="block_btn" style="background-color: #573972;">Edit</button></a></td>
+                                <td>
+                                {% if i.is_active %}
+                                <button class="block_btn" onclick="blockSubcategory(`{{ i.id }}`)">Block</button>
+                                {% else %}
+                                <button class="unblock_btn" onclick="unblockSubcategory(`{{ i.id }}`)">Unblock</button>
+                                {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'admin_js/category_script.js' %}"></script>
+</body>
+</html>
