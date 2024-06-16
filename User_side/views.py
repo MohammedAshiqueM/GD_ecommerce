@@ -6,6 +6,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.core.exceptions import ValidationError
+
+
 # from django.core.validators import validate_email,EmailValidator
 import re
 from .utils import generate_otp, send_otp
@@ -176,6 +178,7 @@ def resend_otp(request):
         
         # Redirect back to OTP page
         return redirect('otp')
+    
 ########################## function for home page ############################
 # @login_required(login_url='userLogin')
 # @never_cache

@@ -1,4 +1,6 @@
 {% load static %}
+{% load socialaccount %}
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,20 +12,68 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        .login-with-google-btn {
+            transition: background-color .3s, box-shadow .3s;
 
+            padding: 12px 16px 12px 42px;
+            border: none;
+            border-radius: 3px;
+            box-shadow: 0 -1px 0 rgba(0, 0, 0, .04), 0 1px 1px rgba(0, 0, 0, .25);
+
+            color: #757575;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+
+            background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48cGF0aCBkPSJNMTcuNiA5LjJsLS4xLTEuOEg5djMuNGg0LjhDMTMuNiAxMiAxMyAxMyAxMiAxMy42djIuMmgzYTguOCA4LjggMCAwIDAgMi42LTYuNnoiIGZpbGw9IiM0Mjg1RjQiIGZpbGwtcnVsZT0ibm9uemVybyIvPjxwYXRoIGQ9Ik05IDE4YzIuNCAwIDQuNS0uOCA2LTIuMmwtMy0yLjJhNS40IDUuNCAwIDAgMS04LTIuOUgxVjEzYTkgOSAwIDAgMCA4IDV6IiBmaWxsPSIjMzRBODUzIiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNNCAxMC43YTUuNCA1LjQgMCAwIDEgMC0zLjRWNUgxYTkgOSAwIDAgMCAwIDhsMy0yLjN6IiBmaWxsPSIjRkJCQzA1IiBmaWxsLXJ1bGU9Im5vbnplcm8iLz48cGF0aCBkPSJNOSAzLjZjMS4zIDAgMi41LjQgMy40IDEuM0wxNSAyLjNBOSA5IDAgMCAwIDEgNWwzIDIuNGE1LjQgNS40IDAgMCAxIDUtMy43eiIgZmlsbD0iI0VBNDMzNSIgZmlsbC1ydWxlPSJub256ZXJvIi8+PHBhdGggZD0iTTAgMGgxOHYxOEgweiIvPjwvZz48L3N2Zz4=);
+            background-color: white;
+            background-repeat: no-repeat;
+            background-position: 12px 11px;
+
+            &:hover {
+                box-shadow: 0 -1px 0 rgba(0, 0, 0, .04), 0 2px 4px rgba(0, 0, 0, .25);
+            }
+
+            &:active {
+                background-color: #eeeeee;
+            }
+
+            &:focus {
+                outline: none;
+                box-shadow:
+                    0 -1px 0 rgba(0, 0, 0, .04),
+                    0 2px 4px rgba(0, 0, 0, .25),
+                    0 0 0 3px #c8dafc;
+            }
+
+            &:disabled {
+                filter: grayscale(100%);
+                background-color: #ebebeb;
+                box-shadow: 0 -1px 0 rgba(0, 0, 0, .04), 0 1px 1px rgba(0, 0, 0, .25);
+                cursor: not-allowed;
+            }
+        }
+
+        body {
+            text-align: center;
+            padding-top: 2rem;
+        }
+    </style>
 </head>
 
 <body>
     <div id="login-page" class="container {% if active_form == 'login' %}open{% else %}close{% endif %}">
 
         <!-- user login form -->
-        <form action="{% url 'userLogin' %}" method="post" >
+        <form action="{% url 'userLogin' %}" method="post">
             {% csrf_token %}
             <h1>LOGIN</h1>
             <div class="form-set">
                 <div class="form-group">
                     <label class="form-label">Email Id</label>
-                    <input type="email" class="form-control" name="loginUsername" value="{{ request.POST.loginUsername|default:'' }}" />
+                    <input type="email" class="form-control" name="loginUsername"
+                        value="{{ request.POST.loginUsername|default:'' }}" />
                 </div>
                 <div class="form-group">
                     <lable class="form-label">Password</lable>
@@ -34,12 +84,12 @@
                 {% for msg in messages %}
                 <div>
                     <p class="alert-msg"><i class="fa-solid fa-triangle-exclamation"></i> {{msg}}</p>
-                    </div>
+                </div>
                 {% endfor %}
                 {% endif %}
                 <button class="btn" type="submit" name="submit" value="login_form">Log in</button>
         </form>
-        
+
     </div>
     <div class="login-with">
         <div class="title">Login with</div>
@@ -62,6 +112,10 @@
             </ul>
         </div>
     </div>
+    <button type="button" class="login-with-google-btn">
+        <a href="{% provider_login_url 'google' %}">Login with Google</a>
+    </button>
+
     <div class="other-links">
         <div>
             <div class="link" data-close="login-page" data-open="new-account-page">Don’t have an Account?</div>
@@ -91,7 +145,7 @@
             <button class="btn">Log in</button>
         </div>
     </div>
-    
+
     <div id="new-account-page" class="container {% if active_form == 'signup' %}open{% else %}close{% endif %}">
         <div class='close-button'>
             <div class="link" data-close="new-account-page" data-open="login-page">
@@ -100,11 +154,12 @@
         </div>
         <h1>New Account</h1>
         <div class="form-set">
-            <form action="{% url 'userLogin' %}" method="post" >
+            <form action="{% url 'userLogin' %}" method="post">
                 {% csrf_token %}
                 <div class="form-group">
                     <lable class="form-label">User Name</lable>
-                    <input type="text" class="form-control"  name="signupUsername" value="{{ request.POST.signupUsername|default:'' }}" />
+                    <input type="text" class="form-control" name="signupUsername"
+                        value="{{ request.POST.signupUsername|default:'' }}" />
                 </div>
                 <div class="form-group">
                     <lable class="form-label">Password</lable>
@@ -113,12 +168,14 @@
                 </div>
                 <div class="form-group">
                     <lable class="form-label">Password again</lable>
-                    <input type="password" class="form-control" id="confirm-password-input" name="signupConfirmationPassword" />
+                    <input type="password" class="form-control" id="confirm-password-input"
+                        name="signupConfirmationPassword" />
                     <input type="checkbox" id="confirm-show-password-checkbox" />
                 </div>
                 <div class="form-group">
                     <lable class="form-label">E-mail</lable>
-                    <input type="text" class="form-control" name="signupEmail" value="{{ request.POST.signupEmail|default:'' }}"     />
+                    <input type="text" class="form-control" name="signupEmail"
+                        value="{{ request.POST.signupEmail|default:'' }}" />
                 </div>
                 {% if messages %}
                 {% for msg in messages %}
