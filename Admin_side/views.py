@@ -132,15 +132,16 @@ def addCategory(request):
         if request.POST.get("submit") == "main":
             print("inside")
             category = request.POST.get("categoryName")
+            category_image = request.FILES.get('categoryImage')
             print(category)
-            if not category:
-                messages.error(request, "Enter a Category name")
+            if not category or not category_image:
+                messages.error(request, "Please fill in all required fields.")
                 return redirect("addCategory")
             elif len(category) < 3:
                 messages.error(request, "Category name must have atleast 3 letters")
                 return redirect("addCategory")
             else:
-                newCategory = Category.objects.create(name=category)
+                newCategory = Category.objects.create(name=category,category_image=category_image)
                 newCategory.save()
                 messages.success(request, f"New cagetory {newCategory} is created")
             return redirect("category")
@@ -174,6 +175,7 @@ def editCategory(request, pk):
     context = {"value": data, "edit_mode": True}
     if request.method == "POST":
         category = request.POST.get("categoryName")
+        category_image = request.FILES.get('categoryImage')
         print(category)
         if not category:
             messages.error(request, "Enter a Category name")
@@ -183,6 +185,7 @@ def editCategory(request, pk):
             return redirect("addCategory")
         else:
             data.name = category
+            data.category_image = category_image
             data.save()
             messages.success(request, f"Category {category} has been updated")
         return redirect("category")

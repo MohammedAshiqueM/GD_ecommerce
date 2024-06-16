@@ -186,6 +186,9 @@ def userHome(request):
     # if request.user.is_authenticated:
         return render(request,"home.html")
 
+
+def productDetails(request):
+    return render(request,"productDetails.html")
 ########################## function for logout ############################
 def logout(request):
     auth_logout(request)

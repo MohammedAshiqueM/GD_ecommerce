@@ -19,6 +19,7 @@
                     <table width="100%">
                         <thead>
                             <tr>
+                                <td>Category Image</td>
                                 <td>Category</td>
                                 <td>Edit</td>
                                 <td>Block/Unblock</td>
@@ -27,6 +28,11 @@
                         <tbody>
                         {% for i in parent %}
                             <tr>
+                                <td>
+                                    {% if i.category_image %}
+                                    <img src="{{ i.category_image.url }}" alt="{{i.name}}" width="100">
+                                    {% endif %}
+                                </td>
                                 <td>{{i.name}}</td>
                                 <td><a href="{% url 'editCategory' i.id %}"><button class="block_btn" style="background-color: #573972;">Edit</button></a></td>
                                 <td>

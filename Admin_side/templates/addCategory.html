@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,13 +35,12 @@
         }
     </style>
 </head>
-
 <body>
     {% include 'common_block.html' %}
-    {% if messages%}
-    {% for msg in messages%}
-    <p class="alert"><i class="fa-solid fa-triangle-exclamation"></i> {{msg}}</p>
-    {% endfor %}
+    {% if messages %}
+        {% for msg in messages %}
+            <p class="alert"><i class="fa-solid fa-triangle-exclamation"></i> {{ msg }}</p>
+        {% endfor %}
     {% endif %}
     {% block content %}
     <div class="">
@@ -50,15 +48,15 @@
             <div class="card">
                 <div class="card-header">
                     {% if edit_mode %}
-                    <h3 class="heading">Edit Base Category</h3>
+                        <h3 class="heading">Edit Base Category</h3>
                     {% else %}
-                    <h3 class="heading">Add new Category</h3>
+                        <h3 class="heading">Add new Category</h3>
                     {% endif %}
                     <a href="{% url 'category' %}"><button>Cancel</button></a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <form action="" method="post">
+                        <form action="" method="post" enctype="multipart/form-data">
                             {% csrf_token %}
                             <table>
                                 <tr>
@@ -66,11 +64,26 @@
                                         <label for="">Category</label>
                                     </td>
                                     <td>
-                                        <input type="text" name="categoryName" {% if edit_mode %} value="{{value.name}}" {% endif %}>
+                                        <input type="text" name="categoryName" {% if edit_mode %} value="{{ value.name }}" {% endif %}>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label for="">Image</label>
+                                    </td>
+                                    <td>
+                                        <input type="file" name="categoryImage">
+                                        {% if edit_mode and value.category_image %}
+                                            <img src="{{ value.category_image.url }}" alt="{{ value.name }}" width="100">
+                                        {% else %}
+                                            NO IMAGE
+                                        {% endif %}
                                     </td>
                                 </tr>
                             </table>
-                            <div class="card-header"><button type="submit" value="main" name="submit">save</button></div>
+                            <div class="card-header">
+                                <button type="submit" value="main" name="submit">Save</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -86,15 +99,15 @@
             <div class="card">
                 <div class="card-header">
                     {% if edit_mode %}
-                    <h3 class="heading">Edit Sub Category</h3>
+                        <h3 class="heading">Edit Sub Category</h3>
                     {% else %}
-                    <h3 class="heading">Add Sub Category</h3>
+                        <h3 class="heading">Add Sub Category</h3>
                     {% endif %}
                     <a href="{% url 'category' %}"><button>Cancel</button></a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <form action="" method="post">
+                        <form action="" method="post" enctype="multipart/form-data">
                             {% csrf_token %}
                             <table>
                                 <tr>
@@ -102,7 +115,7 @@
                                         <label for="">Sub Category </label>
                                     </td>
                                     <td>
-                                        <input type="text" name="subCategory" {% if edit_mode %} value="{{value}}" {% endif %}>
+                                        <input type="text" name="subCategory" {% if edit_mode %} value="{{ value }}" {% endif %}>
                                     </td>
                                 </tr>
                                 <tr>
@@ -110,7 +123,6 @@
                                         <label for="">Parent Category </label>
                                     </td>
                                     <td>
-                                        
                                         <select name="parentCategory">
                                             {% if edit_mode %}
                                                 <option value="{{ value.category.id }}" selected>{{ value.category.name }}</option>
@@ -118,7 +130,7 @@
                                                 <option value="" disabled selected>Select</option>
                                             {% endif %}
                                             {% for category in data %}
-                                                <option value="{{ category.id }}" {% if edit_mode and category.id == value.category.id %}selected{% endif %}>
+                                                <option value="{{ category.id }}" {% if edit_mode and category.id == value.category.id %} selected {% endif %}>
                                                     {{ category.name }}
                                                 </option>
                                             {% endfor %}
@@ -137,5 +149,4 @@
     </div>
     {% endblock %}
 </body>
-
 </html>
