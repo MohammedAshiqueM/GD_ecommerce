@@ -5920,7 +5920,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 15%;
+    width: 0%;
     color: #fff;
     text-align: center;
     opacity: 0.5;
@@ -9158,11 +9158,17 @@
   }
   
   .text-truncate {
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    /* white-space: nowrap;  */
   }
   
+  .product-name {
+    width: 100%;
+    max-width: 100%;
+}
+
   .text-left {
     text-align: left !important;
   }

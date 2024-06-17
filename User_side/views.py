@@ -6,6 +6,28 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.core.exceptions import ValidationError
+from Admin_side.models import (
+    User,
+    Address,
+    PaymentType,
+    PaymentMethod,
+    Category,
+    SubCategory,
+    Variation,
+    VariationOption,
+    Product,
+    ProductConfiguration,
+    Cart,
+    CartItem,
+    ShippingMethod,
+    OrderStatus,
+    Order,
+    OrderLine,
+    Review,
+    Promotion,
+    PromotionCategory,
+    ProductImage
+)
 
 
 # from django.core.validators import validate_email,EmailValidator
@@ -187,8 +209,26 @@ def userHome(request):
         return render(request,"home.html")
 
 
-def productDetails(request):
-    return render(request,"productDetails.html")
+def productDetails(request,pk):
+    product = Product.objects.get(pk=pk)
+    if product.is_active is False:
+        return redirect('userHome')
+    context = {"product":product}
+    return render(request,"productDetails.html",context)
+
+def shop(request):
+    product = Product.objects.filter(is_active=True)
+    context = {"product":product}
+    return render(request,"shop.html",context)
+
+def checkOut(request):
+    return render(request,"checkOut.html")
+
+def cart(request):
+    return render(request,"cart.html")
+
+def contact(request):
+    return render(request,"contact.html")
 ########################## function for logout ############################
 def logout(request):
     auth_logout(request)

@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -23,7 +24,49 @@
     <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
 
     <!-- Customized Bootstrap Stylesheet -->
-    <link href="css/style.css" rel="stylesheet">
+    <link href="{% static 'user_css/home_style.css' %}" rel="stylesheet">
+    <style>
+        .magnify {
+  position: absolute;
+transform: translate(-50%,-50%);
+top: 50%;
+left: 50%;
+  display: inline-block;
+}
+.magnify .magnified {
+  display: block;
+  z-index: 10;
+  margin: auto;
+  width: 565px;
+  height: 552px;
+  border: 5px solid #fff;
+}
+.magnify .magnifier {
+  height: 260px;
+  width: 280px;
+  position: absolute;
+  z-index: 20;
+  border: 4px solid white;
+  background-size: 500%;
+  background-repeat: no-repeat;
+  margin-left: -100px !important;
+  margin-top: -100px !important;
+  pointer-events: none;
+}
+.magnifier {
+    position: absolute;
+    z-index: 9999; /* Adjust as necessary */
+    width: 200px; /* Adjust width of magnifier */
+    height: 200px; /* Adjust height of magnifier */
+    background-repeat: no-repeat;
+    background-size: 500% 500%; /* Adjust background-size for zoom effect */
+    pointer-events: none; /* Ensure magnifier does not interfere with mouse events */
+    display: none; /* Hide initially */
+}
+
+
+
+    </style>
 </head>
 
 <body>
@@ -195,20 +238,23 @@
         <div class="row px-xl-5">
             <div class="col-lg-5 mb-30">
                 <div id="product-carousel" class="carousel slide" data-ride="carousel">
-                    <div class="carousel-inner bg-light">
-                        <div class="carousel-item active">
-                            <img class="w-100 h-100" src="img/product-1.jpg" alt="Image">
+                    <div class="carousel-inner bg-light ">
+                        {% if product.images.all %}
+                        {% for i in product.images.all  %}
+                        <div class="carousel-item  {% if forloop.first %} active {% endif %}"  >
+                            <div class="magnify">
+                                <div class="magnifier" style="background-image:url({{ i.image.url }});"></div>
+                                <div class="magnified">
+                                   <img class="w-100 h-100" src="{{ i.image.url }}" >
+                                </div>
+                              </div>
+                            <img class="w-100 h-100" src="{{ i.image.url }}" alt="Image">
                         </div>
-                        <div class="carousel-item">
-                            <img class="w-100 h-100" src="img/product-2.jpg" alt="Image">
-                        </div>
-                        <div class="carousel-item">
-                            <img class="w-100 h-100" src="img/product-3.jpg" alt="Image">
-                        </div>
-                        <div class="carousel-item">
-                            <img class="w-100 h-100" src="img/product-4.jpg" alt="Image">
-                        </div>
+                        {% endfor %}
+                        {% endif %}
                     </div>
+                      
+                      <p class="output"></p>
                     <a class="carousel-control-prev" href="#product-carousel" data-slide="prev">
                         <i class="fa fa-2x fa-angle-left text-dark"></i>
                     </a>
@@ -218,9 +264,10 @@
                 </div>
             </div>
 
+            {% if product %}
             <div class="col-lg-7 h-auto mb-30">
                 <div class="h-100 bg-light p-30">
-                    <h3>Product Name Goes Here</h3>
+                    <h3>{{product.name}}</h3>
                     <div class="d-flex mb-3">
                         <div class="text-primary mr-2">
                             <small class="fas fa-star"></small>
@@ -231,10 +278,8 @@
                         </div>
                         <small class="pt-1">(99 Reviews)</small>
                     </div>
-                    <h3 class="font-weight-semi-bold mb-4">$150.00</h3>
-                    <p class="mb-4">Volup erat ipsum diam elitr rebum et dolor. Est nonumy elitr erat diam stet sit
-                        clita ea. Sanc ipsum et, labore clita lorem magna duo dolor no sea
-                        Nonumy</p>
+                    <h3 class="font-weight-semi-bold mb-4">${{product.price}}</h3>
+                    <p class="mb-4">{{product.description}}</p>
                     <div class="d-flex mb-3">
                         <strong class="text-dark mr-3">Sizes:</strong>
                         <form>
@@ -321,6 +366,8 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
+
         </div>
         <div class="row px-xl-5">
             <div class="col">
@@ -661,6 +708,37 @@
 
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+    <script>
+   $(".magnified").hover(function(e) {
+    var magnifierWidth = $(".magnifier").outerWidth(),
+        magnifierHeight = $(".magnifier").outerHeight(),
+        posX = e.pageX - magnifierWidth / 2 + 100, // Increase 100px from left
+        posY = e.pageY - magnifierHeight / 2 - 100; // Decrease 100px from top
+
+    $(".magnifier").css({
+        top: posY + "px",
+        left: posX + "px"
+    }).show();
+
+    $(this).mousemove(function(e) {
+        var parentOffset = $(this).offset(),
+            relativeX = (e.pageX - parentOffset.left) / $(this).outerWidth(),
+            relativeY = (e.pageY - parentOffset.top) / $(this).outerHeight();
+
+        $(".magnifier").css({
+            top: e.pageY - magnifierHeight / 2 - 100 + "px", // Adjusted position from top
+            left: e.pageX - magnifierWidth / 2 + 100 + "px", // Adjusted position from left
+            backgroundPosition: (relativeX * 100) + "% " + (relativeY * 100) + "%"
+        });
+    });
+}, function() {
+    $(".magnifier").hide();
+});
+
+
+      </script>
 </body>
 
 </html>
