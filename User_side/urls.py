@@ -8,9 +8,9 @@ urlpatterns = [
     path('resend-otp/', views.resend_otp, name='resend_otp'),
     path('productDetails/<pk>', views.productDetails, name='productDetails'),
     path('shop/', views.shop, name='shop'),
-    path('checkout/', views.checkOut, name='checkOut'),
+    path('checkout/', views.checkOut, name='checkout'),
     path('cart/', views.cart, name='cart'),
-    path('contact/', views.contact, name='contacty'),
+    path('contact/', views.contact, name='contact'),
     
     
     
