@@ -76,6 +76,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Mouse leave event handler for kleenpulse
     document.getElementById('kleenpulse').addEventListener('mouseleave', function() {
-        this.innerHTML = 'LiquidTime';
+        this.innerHTML = 'Admin';
     });
 });

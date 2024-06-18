@@ -42,8 +42,8 @@ from datetime import datetime, timedelta
 def userLogin(request):
     # print("Submit value:", request.POST.get('submit'))
 
-    # if request.user.is_authenticated:
-    #     return redirect('userHome')
+    if request.user.is_authenticated:
+        return redirect('userHome')
 
     active_form = "login"  # Default active form
     print("Initial active_form:", active_form)
@@ -90,6 +90,8 @@ def userLogin(request):
                 user = authenticate(username=username, password=password)
                 if user is None:
                     messages.error(request, "Invalid Email Id or Password")
+                elif user.is_active is False:
+                    messages.error(request, f"{username} was temporarily blocked to access this site")
                 else:
                     auth_login(request, user)
                     return redirect("userHome")
@@ -226,8 +228,8 @@ def resend_otp(request):
 
 
 ########################## function for home page ############################
-# @login_required(login_url='userLogin')
-# @never_cache
+@login_required(login_url='userLogin')
+@never_cache
 def userHome(request):
     # if request.user.is_authenticated:
     return render(request, "home.html")

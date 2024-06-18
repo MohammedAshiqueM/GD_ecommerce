@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout as auth_logout, authenticate
 from django.http import HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
@@ -62,12 +62,24 @@ def adminLogin(request):
     return render(request, "adminLogin.html")
 
 
-# @login_required(login_url='adminLogin')
-# @never_cache
+@login_required(login_url='adminLogin')
+@never_cache
 def dashboard(request):
-    # if not request.user.is_superuser:
-    #     return HttpResponseForbidden("You do not have access to this page.")
-    return render(request, "dashboard.html")
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
+    if "value" in request.GET:
+        credential = request.GET["value"]
+        data = Product.objects.filter(Q(name__icontains=credential))
+        user = User.objects.filter(
+            Q(username__icontains=credential) | Q(email__icontains=credential)
+        )
+        context = {"data": data,"user":user}
+    else:
+        data = Product.objects.all()
+        user = User.objects.all()
+        context = {"data": data,"user":user}
+    
+    return render(request, "dashboard.html",context)
 
 
 def customers(request):
@@ -79,10 +91,7 @@ def customers(request):
         context = {"data": data}
     else:
         data = User.objects.all()
-        print(f"SQL Query: {str(data.query)}")
-        print(list(data))
         context = {"data": data}
-        print(data)
     return render(request, "customers.html", context)
 
 
@@ -258,8 +267,15 @@ def unblockSubcategory(request, pk):
         return JsonResponse({"success": False, "error": str(e)})
     
 def product(request):
+    if "value" in request.GET:
+        credential = request.GET["value"]
+        data = Product.objects.filter(Q(name__icontains=credential))
+        context = {"data": data}
+    else:
+        data = Product.objects.all()
+        context = {"data": data}
     data = Product.objects.all()
-    return render(request,"product.html",{"data":data})
+    return render(request,"product.html",context)
 
 
 
@@ -428,3 +444,7 @@ def editProduct(request, pk):
         "product_images": product_images,
     }
     return render(request, "addProduct.html", context)
+
+def adminLogout(request):
+    auth_logout(request)
+    return redirect("adminLogin")

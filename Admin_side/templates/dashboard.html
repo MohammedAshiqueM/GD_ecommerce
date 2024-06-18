@@ -1,20 +1,22 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="{% static 'admin_css/dashboard_style.css' %}">
 </head>
+
 <body>
-   
+
     {% include 'common_block.html' %}
     <div class="cards">
         <div class="card-single">
             <div>
                 <h1 id="customer"></h1>
-                <span>Happy Clients</span>
+                <span>Users</span>
             </div>
             <div>
                 <span class="las la-users"></span>
@@ -23,7 +25,7 @@
         <div class="card-single">
             <div>
                 <h1 id="project"></h1>
-                <span>Projects Done!</span>
+                <span>Products</span>
             </div>
             <div>
                 <span class="las la-clipboard"></span>
@@ -50,240 +52,250 @@
             </div>
         </div>
     </div>
-            <div class="recent-grid">
-                <div class="projects">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="heading">Recent Projects</h3>
-                            <button>See all <span class="las la-arrow-right"></span></button>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table width="100%">
-                                    <thead>
-                                        <tr>
-                                            <td>Project Title</td>
-                                            <td>Department</td>
-                                            <td>Status</td>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>UI/UX Design</td>
-                                            <td>UI Team</td>
-                                            <td>
-                                                <span class="status purple"></span>review
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Web Dev</td>
-                                            <td>Frontend</td>
-                                            <td>
-                                                <span class="status pink"></span>pending
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Ushop App</td>
-                                            <td>Mobile Team</td>
-                                            <td>
-                                                <span class="status orange"></span>active
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>UI/UX Design</td>
-                                            <td>UI Team</td>
-                                            <td>
-                                                <span class="status purple"></span>review
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Web Dev</td>
-                                            <td>Frontend</td>
-                                            <td>
-                                                <span class="status pink"></span>pending
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Ushop App</td>
-                                            <td>Mobile Team</td>
-                                            <td>
-                                                <span class="status orange"></span>active
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>UI/UX Design</td>
-                                            <td>UI Team</td>
-                                            <td>
-                                                <span class="status purple"></span>review
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Web Dev</td>
-                                            <td>Frontend</td>
-                                            <td>
-                                                <span class="status pink"></span>pending
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Ushop App</td>
-                                            <td>Mobile Team</td>
-                                            <td>
-                                                <span class="status orange"></span>active
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>UI/UX Design</td>
-                                            <td>UI Team</td>
-                                            <td>
-                                                <span class="status purple"></span>review
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Web Dev</td>
-                                            <td>Frontend</td>
-                                            <td>
-                                                <span class="status pink"></span>pending
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Ushop App</td>
-                                            <td>Mobile Team</td>
-                                            <td>
-                                                <span class="status orange"></span>active
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+    <div class="recent-grid">
+        <div class="projects">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="heading">New Products</h3>
+                    <button>See all <span class="las la-arrow-right"></span></button>
                 </div>
-                <div class="customers">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="heading">New customer</h3>
-                            <button>Sell all<span class="las la-arrow-right"></span></button>
-                        </div>
-    
-                        <div class="card-body">
-                            <div class="customer">
-                                <div class="info">
-                                    <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40" alt="">
-                                    <div>
-                                        <h4>
-                                            lion Emusky</h4>
-                                        <small>CEO @ TLS</small>
-                                    </div>
-                                </div>
-                                <div class="contact">
-                                    <span class="las la-user-circle"></span>
-                                    <span class="las la-comment"></span>
-                                    <span class="las la-phone"></span>
-                                </div>
-                            </div>
-    
-                            <div class="customer">
-                                <div class="info">
-                                    <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40" alt="">
-                                    <div>
-                                        <h4>Ion Emusky</h4>
-                                        <small>C0O @ AFK</small>
-                                    </div>
-                                </div>
-                                <div class="contact">
-                                    <span class="las la-user-circle"></span>
-                                    <span class="las la-comment"></span>
-                                    <span class="las la-phone"></span>
-                                </div>
-                            </div>
-    
-                            <div class="customer">
-                                <div class="info">
-                                    <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40" alt="">
-                                    <div>
-                                        <h4>El-lion musky</h4>
-                                        <small>CEO @ FOMO</small>
-                                    </div>
-                                </div>
-                                <div class="contact">
-                                    <span class="las la-user-circle"></span>
-                                    <span class="las la-comment"></span>
-                                    <span class="las la-phone"></span>
-                                </div>
-                            </div>
-    
-                            <div class="customer">
-                                <div class="info">
-                                    <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40" alt="">
-                                    <div>
-                                        <h4>John Bezos</h4>
-                                        <small>CEO @ Mazon</small>
-                                    </div>
-                                </div>
-                                <div class="contact">
-                                    <span class="las la-user-circle"></span>
-                                    <span class="las la-comment"></span>
-                                    <span class="las la-phone"></span>
-                                </div>
-                            </div>
-    
-                            <div class="customer">
-                                <div class="info">
-                                    <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40" alt="">
-                                    <div>
-                                        <h4>Beelz Gai8</h4>
-                                        <small>CEO @ Mycroft</small>
-                                    </div>
-                                </div>
-                                <div class="contact">
-                                    <span class="las la-user-circle"></span>
-                                    <span class="las la-comment"></span>
-                                    <span class="las la-phone"></span>
-                                </div>
-                            </div>
-    
-                            <div class="customer">
-                                <div class="info">
-                                    <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40" alt="">
-                                    <div>
-                                        <h4>Jeam Krook</h4>
-                                        <small>CEO @ Penapple</small>
-                                    </div>
-                                </div>
-                                <div class="contact">
-                                    <span class="las la-user-circle"></span>
-                                    <span class="las la-comment"></span>
-                                    <span class="las la-phone"></span>
-                                </div>
-                            </div>
-    
-                            <div class="customer">
-                                <div class="info">
-                                    <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40" alt="">
-                                    <div>
-                                        <h4>Cris Coya</h4>
-                                        <small>CEO @ PenCode</small>
-                                    </div>
-                                </div>
-                                <div class="contact">
-                                    <span class="las la-user-circle"></span>
-                                    <span class="las la-comment"></span>
-                                    <span class="las la-phone"></span>
-                                </div>
-                            </div>
-    
-                        </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table width="100%">
+                            <thead>
+                                <td>Product Name</td>
+                                <td>Category</td>
+                                <td>Subcategory</td>
+                                <td>Price</td>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    {% for i in data %}
+                            <tr>
+                               
+                                <td>{{i.name}}</td>
+                                <td>{{i.category}}</td>
+                                <td>{{i.subcategory}}</td>
+                                <td>{{i.price}}</td>
+                            {% endfor %}
+                                </tr>
+                                <!-- <tr>
+                                            <td>Web Dev</td>
+                                            <td>Frontend</td>
+                                            <td>
+                                                <span class="status pink"></span>pending
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Ushop App</td>
+                                            <td>Mobile Team</td>
+                                            <td>
+                                                <span class="status orange"></span>active
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>UI/UX Design</td>
+                                            <td>UI Team</td>
+                                            <td>
+                                                <span class="status purple"></span>review
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Web Dev</td>
+                                            <td>Frontend</td>
+                                            <td>
+                                                <span class="status pink"></span>pending
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Ushop App</td>
+                                            <td>Mobile Team</td>
+                                            <td>
+                                                <span class="status orange"></span>active
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>UI/UX Design</td>
+                                            <td>UI Team</td>
+                                            <td>
+                                                <span class="status purple"></span>review
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Web Dev</td>
+                                            <td>Frontend</td>
+                                            <td>
+                                                <span class="status pink"></span>pending
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Ushop App</td>
+                                            <td>Mobile Team</td>
+                                            <td>
+                                                <span class="status orange"></span>active
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>UI/UX Design</td>
+                                            <td>UI Team</td>
+                                            <td>
+                                                <span class="status purple"></span>review
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Web Dev</td>
+                                            <td>Frontend</td>
+                                            <td>
+                                                <span class="status pink"></span>pending
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Ushop App</td>
+                                            <td>Mobile Team</td>
+                                            <td>
+                                                <span class="status orange"></span>active
+                                            </td>
+                                        </tr> -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-    
-        </main>
-        <footer id="footer">
-            <p><span id="heart"><img id="Layer_1" src="https://pkms.co.uk/wp-content/uploads/2019/07/heart.png">
-                </span></p>
-        </footer>
+        </div>
+        <div class="customers">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="heading">New customer</h3>
+                    <button>Sell all<span class="las la-arrow-right"></span></button>
+                </div>
+
+                <div class="card-body">
+                    <div class="customer">
+                        <div class="info">
+                            <div>
+                                {% for i in user %}
+                                <h4>
+                                    {{i.username}}</h4>
+                                <small>{{i.email}}</small>
+                            {% endfor %}
+                            </div>
+                        </div>
+                        <div class="contact">
+                            <span class="las la-user-circle"></span>
+                            <span class="las la-comment"></span>
+                            <span class="las la-phone"></span>
+                        </div>
+                    </div>
+
+                    <!-- <div class="customer">
+                        <div class="info">
+                            <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40"
+                                alt="">
+                            <div>
+                                <h4>Ion Emusky</h4>
+                                <small>C0O @ AFK</small>
+                            </div>
+                        </div>
+                        <div class="contact">
+                            <span class="las la-user-circle"></span>
+                            <span class="las la-comment"></span>
+                            <span class="las la-phone"></span>
+                        </div>
+                    </div> -->
+
+                    <!-- <div class="customer">
+                        <div class="info">
+                            <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40"
+                                alt="">
+                            <div>
+                                <h4>El-lion musky</h4>
+                                <small>CEO @ FOMO</small>
+                            </div>
+                        </div>
+                        <div class="contact">
+                            <span class="las la-user-circle"></span>
+                            <span class="las la-comment"></span>
+                            <span class="las la-phone"></span>
+                        </div>
+                    </div>
+
+                    <div class="customer">
+                        <div class="info">
+                            <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40"
+                                alt="">
+                            <div>
+                                <h4>John Bezos</h4>
+                                <small>CEO @ Mazon</small>
+                            </div>
+                        </div>
+                        <div class="contact">
+                            <span class="las la-user-circle"></span>
+                            <span class="las la-comment"></span>
+                            <span class="las la-phone"></span>
+                        </div>
+                    </div>
+
+                    <div class="customer">
+                        <div class="info">
+                            <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40"
+                                alt="">
+                            <div>
+                                <h4>Beelz Gai8</h4>
+                                <small>CEO @ Mycroft</small>
+                            </div>
+                        </div>
+                        <div class="contact">
+                            <span class="las la-user-circle"></span>
+                            <span class="las la-comment"></span>
+                            <span class="las la-phone"></span>
+                        </div>
+                    </div>
+
+                    <div class="customer">
+                        <div class="info">
+                            <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40"
+                                alt="">
+                            <div>
+                                <h4>Jeam Krook</h4>
+                                <small>CEO @ Penapple</small>
+                            </div>
+                        </div>
+                        <div class="contact">
+                            <span class="las la-user-circle"></span>
+                            <span class="las la-comment"></span>
+                            <span class="las la-phone"></span>
+                        </div>
+                    </div>
+
+                    <div class="customer">
+                        <div class="info">
+                            <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40"
+                                alt="">
+                            <div>
+                                <h4>Cris Coya</h4>
+                                <small>CEO @ PenCode</small>
+                            </div>
+                        </div>
+                        <div class="contact">
+                            <span class="las la-user-circle"></span>
+                            <span class="las la-comment"></span>
+                            <span class="las la-phone"></span>
+                        </div>
+                    </div> -->
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </main>
+    <footer id="footer">
+        <p><span id="heart"><img id="Layer_1" src="https://pkms.co.uk/wp-content/uploads/2019/07/heart.png">
+            </span></p>
+    </footer>
     </div>
     <script src="{% static 'admin_js/dashboard_script.js' %}"></script>
 
 </body>
+
 </html>
