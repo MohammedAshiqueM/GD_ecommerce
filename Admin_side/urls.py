@@ -17,6 +17,7 @@ urlpatterns = [
     path('unblockSubcategory/<int:pk>/', views.unblockSubcategory, name='unblockSubcategory'),
     path('product/', views.product, name='product'),
     path('addProduct/', views.addProduct, name='addProduct'),
+    path('variant/', views.variant, name='variant'),
     path('blockProduct/<int:pk>/', views.blockProduct, name='blockProduct'),
     path('unblockProduct/<int:pk>/', views.unblockProduct, name='unblockProduct'),
     path('get_subcategories/<int:category_id>/', views.get_subcategories, name='get_subcategories'),

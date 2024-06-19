@@ -40,14 +40,6 @@ class SubCategory(models.Model):
     def __str__(self):
         return f"{self.name}"
 
-class Variation(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-
-class VariationOption(models.Model):
-    variation = models.ForeignKey(Variation, on_delete=models.CASCADE)
-    value = models.CharField(max_length=255)
-
 class Product(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -56,17 +48,29 @@ class Product(models.Model):
     SKU = models.CharField(max_length=255, unique=True)
     qty_in_stock = models.IntegerField()
     price = models.FloatField()
-    product_image = models.ImageField(upload_to='products/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     
+
+class Variation(models.Model):
+    category = models.ForeignKey(Product, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+
+class VariationOption(models.Model):
+    variation = models.ForeignKey(Variation, on_delete=models.CASCADE)
+    value = models.CharField(max_length=255)
+    
 class ProductImage(models.Model):
-    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='products/')
+    product = models.ForeignKey(Variation, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='variation/')
 
 
 class ProductConfiguration(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    variation_option = models.ForeignKey(VariationOption, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='configurations')
+    variation_option = models.ForeignKey(VariationOption, on_delete=models.CASCADE, related_name='configurations')
+    qty_in_stock = models.IntegerField(default=0)  # Stock for this configuration
+
+    def __str__(self):
+        return f"{self.product.name} - {self.variation_option.value}"
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -331,8 +331,10 @@ def addProduct(request):
             messages.error(request, "Selected category or subcategory does not exist.")
             return redirect('addProduct')
         
+        # Save user data to sessiony
         # Create Product instance
-        product = Product.objects.create(
+        # Create an instance of the Product model without saving it to the database
+        product = Product(
             name=name,
             description=description,
             category=category,
@@ -342,16 +344,76 @@ def addProduct(request):
             price=price,
             is_active=True
         )
-    
-        # Save product images
-        for image in productImages:
-            cropped_image = crop_image(image)
-            ProductImage.objects.create(product=product, image=cropped_image)
 
-        messages.success(request, "Product added successfully.")
-        return redirect('product')
-    
+        # Convert the product instance to a dictionary (or use a custom method if needed)
+        product_dict = {
+            "name": product.name,
+            "description": product.description,
+            "category": product.category,
+            "subcategory": product.subcategory,
+            "SKU": product.SKU,
+            "qty_in_stock": product.qty_in_stock,
+            "price": product.price,
+            "is_active": product.is_active,
+        }
+
+        # Store the product dictionary in the session
+        request.session["product"] = product_dict
+
+        # Redirect to the "variant" page
+        return redirect("variant")
+
+       
     return render(request, "addProduct.html", context)
+
+def variant(request):
+    if request.method == 'POST':
+        variation_name = request.POST.get("variation")
+        variation_options = request.POST.getlist("variationOption")
+        
+        if not variation_name or not variation_options:
+            messages.error(request, "Please fill in all required fields.")
+            return redirect('variant')
+        
+        if len(variation_name) < 3:
+            messages.error(request, "Variation name must have at least 3 letters.")
+            return redirect('variant')
+        
+        # Create a Variation instance
+        product_dict = request.session.get("product")
+        if product_dict:
+            product = Product.objects.create(
+                name=product_dict["name"],
+                description=product_dict["description"],
+                category=product_dict["category"],
+                subcategory=product_dict["subcategory"],
+                SKU=product_dict["SKU"],
+                qty_in_stock=product_dict["qty_in_stock"],
+                price=product_dict["price"],
+                is_active=product_dict["is_active"]
+            )
+            
+            product.save()
+            
+            variation = Variation.objects.create(product=product, name=variation_name)
+            
+            # Save each variation option
+            for option in variation_options:
+                VariationOption.objects.create(variation=variation, value=option)
+            
+            # Clear session data after processing
+            del request.session["product"]
+            
+            # Save product images
+            for image in productImages:
+                cropped_image = crop_image(image)
+                ProductImage.objects.create(product=product, image=cropped_image)
+    
+            messages.success(request, "Product variation added successfully.")
+            return redirect('product')  # Redirect to product list or another view
+        
+    # If GET request or form validation fails, render the variant.html template
+    return render(request, "variant.html")
 
 def crop_image(image_file):
     image = Image.open(image_file)

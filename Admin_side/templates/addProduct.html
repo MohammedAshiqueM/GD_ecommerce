@@ -102,6 +102,22 @@
                                     <button type="button" id="addImageButton">Add Image</button>
                                 </td>
                             </tr>
+                            <tr>
+                                <td>
+                                    <label for="">Variations</label>
+                                </td>
+                                <td>
+                                    <input type="text" name="variation" {% if edit_mode %} value="{{ value.name }}" {% endif %}>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <label for="">Variations option</label>
+                                </td>
+                                <td>
+                                    <input type="text" name="variationOption" {% if edit_mode %} value="{{ value.name }}" {% endif %}>
+                                </td>
+                            </tr>
                         </table>
                         <div class="card-header"><button type="submit" id="submit">Save</button></div>
                         

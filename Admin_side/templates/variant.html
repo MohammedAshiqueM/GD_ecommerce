@@ -1,0 +1,138 @@
+{% include 'common_block.html' %}
+<style>
+    input,
+    select {
+        color: #000 !important;
+        opacity: .6;
+        width: 250px;
+        height: 50px;
+        font-size: 28px !important;
+        border-radius: 5px;
+    }
+
+    label {
+        justify-content: space-between;
+        align-items: center;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    sup {
+        color: #6b0261 !important;
+        font-size: 13px;
+        font-weight: lighter;
+        -webkit-text-fill-color: initial !important;
+    }
+
+    .alert {
+        background-color: #FFFF00;
+        color: #000000;
+    }
+
+    .file {
+        font-size: 18px !important;
+    }
+
+    .img-container {
+        max-width: 100%;
+    }
+
+    .buttons-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .cropper-crop-box {
+        overflow-x: unset;
+    }
+
+    .cropAndUpload {
+        display: flex;
+        gap: 5rem;
+    }
+
+    .theCropperjsBG {
+        width: 300px;
+        height: 169px;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .image-group {
+        margin-bottom: 1rem;
+    }
+
+    .cropButton,
+    .deleteButton {
+        margin-top: 10px;
+    }
+</style>
+<div class="recent-grid">
+    <div class="projects">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="heading">New Products</h3>
+                <button>See all <span class="las la-arrow-right"></span></button>
+            </div>
+            <table>
+                <form method="post">
+                    {% csrf_token %}
+        </div>
+        <table>
+            <tr>
+                <td>
+                    <label for="">Variation</label>
+                </td>
+                <td>
+                    <input type="text" name="variation">
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <label for="">Variation Options</label>
+                </td>
+                <td>
+                    <input type="text" name="variationOption">
+                </td>
+                <td>
+                    <button type="button" id="addOption">Add Option</button>
+                </td>
+            </tr>
+            <!-- This will dynamically add more fields for variation options -->
+            <tbody id="variationOptions">
+            </tbody>
+        </table>
+        <button type="submit">Save</button>
+        </form>
+    </div>
+
+
+    </table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('addOption').addEventListener('click', function () {
+            var tableBody = document.getElementById('variationOptions');
+            var newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                                        <tr>
+                                            <td>
+                                                
+                                            </td>
+                                            <td>
+                                            <input type="text" name="variationOption">
+                                        </tr></td>
+                                    `;
+            tableBody.appendChild(newRow);
+        });
+    });
+</script>
