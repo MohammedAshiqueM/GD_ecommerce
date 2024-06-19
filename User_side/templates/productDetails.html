@@ -139,8 +139,8 @@ left: 50%;
         <div class="row px-xl-5">
             <div class="col-12">
                 <nav class="breadcrumb bg-light mb-30">
-                    <a class="breadcrumb-item text-dark" href="#">Home</a>
-                    <a class="breadcrumb-item text-dark" href="#">Shop</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'userHome' %}">Home</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'shop' %}">Shop</a>
                     <span class="breadcrumb-item active">Shop Detail</span>
                 </nav>
             </div>
@@ -161,7 +161,7 @@ left: 50%;
                             <div class="magnify">
                                 <div class="magnifier" style="background-image:url({{ i.image.url }});"></div>
                                 <div class="magnified">
-                                   <img class="w-100 h-100" src="{{ i.image.url }}" >
+                                   <!-- <img class="w-100 h-100" src="{{ i.image.url }}" > -->
                                 </div>
                               </div>
                             <img class="w-100 h-100" src="{{ i.image.url }}" alt="Image">
@@ -183,7 +183,7 @@ left: 50%;
             {% if product %}
             <div class="col-lg-7 h-auto mb-30">
                 <div class="h-100 bg-light p-30">
-                    <h3>{{product.name}}</h3>
+                    <h3>{{product.name}} <span><h6>({{product.qty_in_stock}} stock remains) </h6></span></h3>
                     <div class="d-flex mb-3">
                         <div class="text-primary mr-2">
                             <small class="fas fa-star"></small>
@@ -195,6 +195,7 @@ left: 50%;
                         <small class="pt-1">(99 Reviews)</small>
                     </div>
                     <h3 class="font-weight-semi-bold mb-4">${{product.price}}</h3>
+                    
                     <p class="mb-4">{{product.description}}</p>
                     <div class="d-flex mb-3">
                         <strong class="text-dark mr-3">Sizes:</strong>

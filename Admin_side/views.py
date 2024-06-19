@@ -142,12 +142,24 @@ def addCategory(request):
             print("inside")
             category = request.POST.get("categoryName")
             category_image = request.FILES.get('categoryImage')
+            variation = request.POST.get("variation")
+            variationOption = request.POST.get("variationOption")
+            
             print(category)
-            if not category or not category_image:
+            if not category or not category_image or not variation:
                 messages.error(request, "Please fill in all required fields.")
+                return redirect("addCategory")
+            elif not variationOption:
+                messages.error(request, "variation have atleast one variation option")
                 return redirect("addCategory")
             elif len(category) < 3:
                 messages.error(request, "Category name must have atleast 3 letters")
+                return redirect("addCategory")
+            elif len(variation) < 3:
+                messages.error(request, "variation name must have atleast 3 letters")
+                return redirect("addCategory")
+            elif Category.objects.filter(name = category).exists():
+                messages.error(request, "Category already exists")
                 return redirect("addCategory")
             else:
                 newCategory = Category.objects.create(name=category,category_image=category_image)
@@ -172,6 +184,12 @@ def addCategory(request):
                 return redirect("addCategory")
             else:
                 parent = Category.objects.get(id=selected)
+                if SubCategory.objects.filter(name=sub_category, category=parent).exists():
+                    messages.error(
+                        request,
+                        f"Sub category {sub_category} already exist in {parent.name}",
+                    )
+                    return redirect("addCategory")
                 newSub = SubCategory.objects.create(name=sub_category, category=parent)
                 newSub.save()
                 messages.success(request, f"New Sub Cagetory {newSub} is created")
