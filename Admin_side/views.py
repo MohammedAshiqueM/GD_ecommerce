@@ -350,27 +350,29 @@ def addProduct(request):
     return render(request, "addProduct.html", context)
 
 
+def adminLogout(request):
+    auth_logout(request)
+    return redirect("adminLogin")
+
 def variant(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
     if request.method == "POST":
-        print("Form submitted")
-
         variation_data = {}
+
+        # Process variation names and options
         for key, value in request.POST.items():
+            print(key,":",value)
             if key.startswith('variation_name_'):
                 index = key.split('_')[-1]
                 variation_data[index] = {'name': value, 'options': []}
             elif key.startswith('variationOption_'):
-                index = key.split('_')[1]
+                index = key.split('_')[1].split('[')[0]
                 if index in variation_data:
                     variation_data[index]['options'].append(value)
-                else:
-                    variation_data[index] = {'name': '', 'options': [value]}
 
-        print(f"Variation Data: {variation_data}")
-
-        for data in variation_data.values():
+        # Validate and save variations and options
+        for index, data in variation_data.items():
             variation_name = data['name']
             variation_options = data['options']
 
@@ -383,24 +385,18 @@ def variant(request, pk):
                 return redirect('variant', pk=product.pk)
 
             if Variation.objects.filter(product=product, name=variation_name).exists():
-                messages.error(request, f"Variation {variation_name} already exists for {product}")
+                messages.error(request, f"Variation {variation_name} already exists for {product}.")
                 return redirect('variant', pk=product.pk)
 
             variation = Variation.objects.create(product=product, name=variation_name)
-            print(variation)
 
-            for option in variation_options:
-                if VariationOption.objects.filter(variation=variation, value=option).exists():
-                    messages.error(request, f"Variation option {option} already exists for {variation}")
-                    return redirect('variant', pk=product.pk)
-                VariationOption.objects.create(variation=variation, value=option)
+            for option_value in variation_options:
+                VariationOption.objects.create(variation=variation, value=option_value)
 
         messages.success(request, "Product variations added successfully.")
-        return redirect('productConfiguration', pk=product.pk)  # Redirect to productConfiguration with product pk
+        return redirect('productConfiguration', pk=product.pk)
 
     return render(request, "variant.html", {'product': product})
-
-
 def generate_combinations(variations):
     variation_options = [variation.variationoption_set.all() for variation in variations]
     return list(iter_product(*variation_options))
