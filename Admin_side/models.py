@@ -46,13 +46,13 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='products',null=True, blank=True) 
     SKU = models.CharField(max_length=255, unique=True)
-    qty_in_stock = models.IntegerField()
-    price = models.FloatField()
     is_active = models.BooleanField(default=True)
     
+    def has_combination_with_variation(self, variation_id):
+        return self.configurations.filter(variation_options__variation_id=variation_id).exists()
 
 class Variation(models.Model):
-    category = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
 
 class VariationOption(models.Model):
@@ -60,17 +60,20 @@ class VariationOption(models.Model):
     value = models.CharField(max_length=255)
     
 class ProductImage(models.Model):
-    product = models.ForeignKey(Variation, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='variation/')
+    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='product/')
 
 
 class ProductConfiguration(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='configurations')
-    variation_option = models.ForeignKey(VariationOption, on_delete=models.CASCADE, related_name='configurations')
-    qty_in_stock = models.IntegerField(default=0)  # Stock for this configuration
+    variation_options = models.ManyToManyField(VariationOption, related_name='configurations')
+    price = models.FloatField(default=0.0)
+    qty_in_stock = models.IntegerField(default=0)
 
     def __str__(self):
-        return f"{self.product.name} - {self.variation_option.value}"
+        options_str = ', '.join(option.value for option in self.variation_options.all())
+        return f"{self.product.name} - {options_str}"
+
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

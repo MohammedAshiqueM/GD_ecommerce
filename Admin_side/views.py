@@ -13,6 +13,7 @@ from django.http import JsonResponse, HttpResponse
 from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile
+from itertools import product as iter_product
 from .models import (
     User,
     Address,
@@ -142,21 +143,13 @@ def addCategory(request):
             print("inside")
             category = request.POST.get("categoryName")
             category_image = request.FILES.get('categoryImage')
-            variation = request.POST.get("variation")
-            variationOption = request.POST.get("variationOption")
             
             print(category)
-            if not category or not category_image or not variation:
+            if not category or not category_image:
                 messages.error(request, "Please fill in all required fields.")
-                return redirect("addCategory")
-            elif not variationOption:
-                messages.error(request, "variation have atleast one variation option")
                 return redirect("addCategory")
             elif len(category) < 3:
                 messages.error(request, "Category name must have atleast 3 letters")
-                return redirect("addCategory")
-            elif len(variation) < 3:
-                messages.error(request, "variation name must have atleast 3 letters")
                 return redirect("addCategory")
             elif Category.objects.filter(name = category).exists():
                 messages.error(request, "Category already exists")
@@ -295,7 +288,10 @@ def product(request):
     data = Product.objects.all()
     return render(request,"product.html",context)
 
-
+def productAbout(request,pk):
+    data = Product.objects.get(pk=pk)
+    context = {"product": data}
+    return render(request,"productAbout.html",context)
 
 def addProduct(request):
     basecategory = Category.objects.all()
@@ -306,12 +302,10 @@ def addProduct(request):
         category_id = request.POST.get("category")
         subcategory_id = request.POST.get("subcategory")
         sku = request.POST.get("sku")
-        stockQuantity = request.POST.get("stockQuantity")
-        price = request.POST.get("price")
         description = request.POST.get("description")
         productImages = request.FILES.getlist("productImage")
         
-        if not name or not description or not category_id or not sku or not stockQuantity or not price or not subcategory_id:
+        if not name or not description or not category_id or not sku or not subcategory_id:
             messages.error(request, "Please fill in all required fields.")
             return redirect('addProduct')
         
@@ -334,86 +328,162 @@ def addProduct(request):
         # Save user data to sessiony
         # Create Product instance
         # Create an instance of the Product model without saving it to the database
-        product = Product(
+        product = Product.objects.create(
             name=name,
             description=description,
             category=category,
             subcategory=subcategory,
             SKU=sku,
-            qty_in_stock=stockQuantity,
-            price=price,
             is_active=True
         )
 
-        # Convert the product instance to a dictionary (or use a custom method if needed)
-        product_dict = {
-            "name": product.name,
-            "description": product.description,
-            "category": product.category,
-            "subcategory": product.subcategory,
-            "SKU": product.SKU,
-            "qty_in_stock": product.qty_in_stock,
-            "price": product.price,
-            "is_active": product.is_active,
-        }
 
-        # Store the product dictionary in the session
-        request.session["product"] = product_dict
+        # Save product images
+        for image in productImages:
+            cropped_image = crop_image(image)
+            ProductImage.objects.create(product=product, image=cropped_image)
 
-        # Redirect to the "variant" page
-        return redirect("variant")
+        # messages.success(request, "Product variation added successfully.")
+        return redirect('variant',pk=product.pk)  # Redirect to product list or another view
 
        
     return render(request, "addProduct.html", context)
 
-def variant(request):
-    if request.method == 'POST':
-        variation_name = request.POST.get("variation")
-        variation_options = request.POST.getlist("variationOption")
-        
-        if not variation_name or not variation_options:
-            messages.error(request, "Please fill in all required fields.")
-            return redirect('variant')
-        
-        if len(variation_name) < 3:
-            messages.error(request, "Variation name must have at least 3 letters.")
-            return redirect('variant')
-        
-        # Create a Variation instance
-        product_dict = request.session.get("product")
-        if product_dict:
-            product = Product.objects.create(
-                name=product_dict["name"],
-                description=product_dict["description"],
-                category=product_dict["category"],
-                subcategory=product_dict["subcategory"],
-                SKU=product_dict["SKU"],
-                qty_in_stock=product_dict["qty_in_stock"],
-                price=product_dict["price"],
-                is_active=product_dict["is_active"]
-            )
-            
-            product.save()
-            
+
+def variant(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+
+    if request.method == "POST":
+        print("Form submitted")
+
+        variation_data = {}
+        for key, value in request.POST.items():
+            if key.startswith('variation_name_'):
+                index = key.split('_')[-1]
+                variation_data[index] = {'name': value, 'options': []}
+            elif key.startswith('variationOption_'):
+                index = key.split('_')[1]
+                if index in variation_data:
+                    variation_data[index]['options'].append(value)
+                else:
+                    variation_data[index] = {'name': '', 'options': [value]}
+
+        print(f"Variation Data: {variation_data}")
+
+        for data in variation_data.values():
+            variation_name = data['name']
+            variation_options = data['options']
+
+            if not variation_name or not variation_options:
+                messages.error(request, "Please fill in all required fields.")
+                return redirect('variant', pk=product.pk)
+
+            if len(variation_name) < 3:
+                messages.error(request, "Variation name must have at least 3 letters.")
+                return redirect('variant', pk=product.pk)
+
+            if Variation.objects.filter(product=product, name=variation_name).exists():
+                messages.error(request, f"Variation {variation_name} already exists for {product}")
+                return redirect('variant', pk=product.pk)
+
             variation = Variation.objects.create(product=product, name=variation_name)
-            
-            # Save each variation option
+            print(variation)
+
             for option in variation_options:
+                if VariationOption.objects.filter(variation=variation, value=option).exists():
+                    messages.error(request, f"Variation option {option} already exists for {variation}")
+                    return redirect('variant', pk=product.pk)
                 VariationOption.objects.create(variation=variation, value=option)
-            
-            # Clear session data after processing
-            del request.session["product"]
-            
-            # Save product images
-            for image in productImages:
-                cropped_image = crop_image(image)
-                ProductImage.objects.create(product=product, image=cropped_image)
-    
-            messages.success(request, "Product variation added successfully.")
-            return redirect('product')  # Redirect to product list or another view
-        
-    # If GET request or form validation fails, render the variant.html template
-    return render(request, "variant.html")
+
+        messages.success(request, "Product variations added successfully.")
+        return redirect('productConfiguration', pk=product.pk)  # Redirect to productConfiguration with product pk
+
+    return render(request, "variant.html", {'product': product})
+
+
+def generate_combinations(variations):
+    variation_options = [variation.variationoption_set.all() for variation in variations]
+    return list(iter_product(*variation_options))
+
+
+
+def productConfiguration(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    variations = product.variation_set.all()
+
+    if request.method == 'POST':
+        # Retrieve selected combinations from checkboxes
+        selected_combinations = request.POST.getlist('selected_combinations')
+
+        if not selected_combinations:
+            messages.error(request, "Please select at least one combination.")
+            return redirect('productConfiguration', pk=product.pk)
+
+        for index in selected_combinations:
+            combination = generate_combinations(variations)[int(index)]
+
+            # Create a list of VariationOption objects for the current combination
+            variation_options = []
+            for option in combination:
+                variation_options.append(option)
+
+            # Retrieve price and stock for this combination
+            price = request.POST.get(f'price_{index}')
+            qty_in_stock = request.POST.get(f'stock_{index}')
+
+            if not price or not qty_in_stock:
+                messages.error(request, "Please fill in all required fields.")
+                return redirect('productConfiguration', pk=product.pk)
+
+            try:
+                price = float(price)
+                qty_in_stock = int(qty_in_stock)
+            except ValueError:
+                messages.error(request, "Invalid price or stock value.")
+                return redirect('productConfiguration', pk=product.pk)
+
+            # Create the ProductConfiguration instance
+            configuration = ProductConfiguration.objects.create(
+                product=product,
+                price=price,
+                qty_in_stock=qty_in_stock
+            )
+
+            # Add variation_options to the ProductConfiguration
+            configuration.variation_options.set(variation_options)
+
+        messages.success(request, "Product configurations added successfully.")
+        return redirect('product')
+
+    combinations = generate_combinations(variations)
+    context = {
+        'product': product,
+        'combinations': enumerate(combinations)  # Use enumerate to get index for checkbox values
+    }
+    return render(request, 'productConfiguration.html', context)
+
+
+def edit_configuration(request, configuration_id):
+    configuration = get_object_or_404(ProductConfiguration, pk=configuration_id)
+
+    if request.method == 'POST':
+        price = request.POST.get('price')
+        qty_in_stock = request.POST.get('qty_in_stock')
+
+        if not price or not qty_in_stock:
+            # Handle error - Missing fields
+            return render(request, 'edit_configuration.html', {'configuration': configuration})
+
+        configuration.price = price
+        configuration.qty_in_stock = qty_in_stock
+        configuration.save()
+
+        return redirect('variation_combination', product_id=configuration.product.id)
+
+    context = {
+        'configuration': configuration,
+    }
+    return render(request, 'edit_configuration.html', context)
 
 def crop_image(image_file):
     image = Image.open(image_file)
@@ -464,12 +534,10 @@ def editProduct(request, pk):
         category_id = request.POST.get("category")
         subcategory_id = request.POST.get("subcategory")
         product.SKU = request.POST.get("sku")
-        product.qty_in_stock = request.POST.get("stockQuantity")
-        product.price = request.POST.get("price")
         product.description = request.POST.get("description")
         productImage = request.FILES.getlist("productImage")
         
-        if not all([product.name, product.description, category_id, product.SKU, product.qty_in_stock, product.price, subcategory_id]):
+        if not all([product.name, product.description, category_id, product.SKU, subcategory_id]):
             messages.error(request, "Please fill in all required fields.")
             return redirect('editProduct', pk=pk)
         
@@ -510,7 +578,7 @@ def editProduct(request, pk):
             ProductImage.objects.create(product=product, image=image)
 
         messages.success(request, "Product updated successfully.")
-        return redirect('product')
+        return redirect('productAbout',pk=product.pk)
 
     # Add a checkbox to each image in the context for deletion
     for image in product_images:
@@ -524,6 +592,83 @@ def editProduct(request, pk):
         "product_images": product_images,
     }
     return render(request, "addProduct.html", context)
+
+
+def editvariant(request, pk):
+    product = get_object_or_404(Product, id=pk)
+    variations = product.variation_set.all()
+    variation_options = []
+
+    for variation in variations:
+        options = variation.variationoption_set.all()
+        in_use = product.has_combination_with_variation(variation.id)
+        variation_options.append((variation, options, in_use))
+
+    if request.method == 'POST':
+        variation_ids = request.POST.getlist("variation_id")
+        variation_names = request.POST.getlist("variation_name")
+        variation_options_lists = [request.POST.getlist(f"variationOption_{i}") for i in range(len(variation_names))]
+
+        # Validate input
+        if not all(variation_names) or not all(variation_options_lists):
+            messages.error(request, "Please fill in all required fields.")
+            return redirect('editvariant', pk=product.pk)
+
+        existing_variation_ids = [str(variation.id) for variation in variations]
+
+        # Process existing variations and options
+        for i, variation_id in enumerate(variation_ids):
+            if variation_id:  # Existing variation
+                variation = get_object_or_404(Variation, id=variation_id, product=product)
+                variation.name = variation_names[i]
+                variation.save()
+
+                # Handle options
+                existing_options = variation.variationoption_set.all()
+                existing_option_values = [option.value for option in existing_options]
+                new_option_values = variation_options_lists[i]
+
+                # Delete removed options
+                for option in existing_options:
+                    if option.value not in new_option_values:
+                        # Delete any product combinations that include this option
+                        ProductConfiguration.objects.filter(variation_options=option).delete()
+                        option.delete()
+
+                # Update or create options
+                for option_value in new_option_values:
+                    if option_value not in existing_option_values:
+                        VariationOption.objects.create(variation=variation, value=option_value)
+                    else:
+                        option = variation.variationoption_set.filter(value=option_value).first()
+                        if option:
+                            option.value = option_value
+                            option.save()
+            else:  # New variation
+                variation = Variation.objects.create(product=product, name=variation_names[i])
+                for option_value in variation_options_lists[i]:
+                    VariationOption.objects.create(variation=variation, value=option_value)
+
+        # Delete removed variations
+        for variation_id in existing_variation_ids:
+            if variation_id not in variation_ids:
+                variation = Variation.objects.get(id=variation_id)
+                if product.has_combination_with_variation(variation_id):
+                    # Delete any product combinations that include this variation
+                    ProductConfiguration.objects.filter(variation_options__variation=variation).delete()
+                variation.delete()
+
+        messages.success(request, "Product variations updated successfully.")
+        return redirect('productConfiguration', pk=product.pk)
+
+    context = {
+        "edit_mode": True,
+        "product": product,
+        "variation_options": variation_options,
+    }
+    return render(request, "editvariant.html", context)
+
+
 
 def adminLogout(request):
     auth_logout(request)

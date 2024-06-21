@@ -25,11 +25,9 @@
                                 <td>Product Name</td>
                                 <td>Category</td>
                                 <td>Subcategory</td>
-                                <td>Price</td>
                                 <td>SKU</td>
-                                <td>Stock Qty</td>
                                 <td>Description</td>
-                                <td>Edit</td>
+                                <td>View</td>
                                 <td>Block/Unblock</td>
                             </tr>
                         </thead>
@@ -46,12 +44,10 @@
                                 <td>{{i.name}}</td>
                                 <td>{{i.category}}</td>
                                 <td>{{i.subcategory}}</td>
-                                <td>{{i.price}}</td>
                                 <td>{{i.SKU}}</td>
-                                <td>{{i.qty_in_stock}}</td>
                                 <td>{{i.description}}</td>
-                                <td><a href="{% url 'editProduct' i.id %}"><button class="block_btn"
-                                            style="background-color: #573972;">Edit</button></a></td>
+                                <td><a href="{% url 'productAbout' i.id %}"><button class="block_btn"
+                                            style="background-color: #573972;">View</button></a></td>
                                 <td>
                                     {% if i.is_active %}
                                     <button class="block_btn" onclick="blockproduct(`{{ i.id }}`)">Block</button>

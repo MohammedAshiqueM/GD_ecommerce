@@ -71,14 +71,6 @@
                                 <td><input type="text" name="sku" value="{% if edit_mode %}{{ product.SKU }}{% endif %}"></td>
                             </tr>
                             <tr>
-                                <td><label for="">Stock Quantity</label></td>
-                                <td><input type="number" name="stockQuantity" value="{% if edit_mode %}{{ product.qty_in_stock }}{% endif %}"></td>
-                            </tr>
-                            <tr>
-                                <td><label for="">Price</label></td>
-                                <td><input type="number" name="price" value="{% if edit_mode %}{{ product.price }}{% endif %}"></td>
-                            </tr>
-                            <tr>
                                 <td><label for="">Description</label></td>
                                 <td><textarea name="description" rows="5" cols="50">{% if edit_mode %}{{ product.description }}{% endif %}</textarea></td>
                             </tr>
@@ -100,22 +92,6 @@
                                         {% endif %}
                                     </div>
                                     <button type="button" id="addImageButton">Add Image</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <label for="">Variations</label>
-                                </td>
-                                <td>
-                                    <input type="text" name="variation" {% if edit_mode %} value="{{ value.name }}" {% endif %}>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <label for="">Variations option</label>
-                                </td>
-                                <td>
-                                    <input type="text" name="variationOption" {% if edit_mode %} value="{{ value.name }}" {% endif %}>
                                 </td>
                             </tr>
                         </table>

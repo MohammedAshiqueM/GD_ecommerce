@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Variation Combination</title>
+</head>
+<body>
+    <h1>Select Variation Options for {{ product.name }}</h1>
+
+    <form method="post" id="productConfigurationForm">
+        {% csrf_token %}
+        <table>
+            <thead>
+                <tr>
+                    {% for variation in product.variation_set.all %}
+                    <th>{{ variation.name }}</th>
+                    {% endfor %}
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Select</th> <!-- Add new header for selection -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for index, combination in combinations %}
+                <tr>
+                    {% for option in combination %}
+                    <td>{{ option.value }}</td>
+                    {% endfor %}
+                    <td>
+                        <input type="number" name="price_{{ index }}" step="0.01">
+                    </td>
+                    <td>
+                        <input type="number" name="stock_{{ index }}">
+                    </td>
+                    <td>
+                        <input type="checkbox" name="selected_combinations" value="{{ index }}">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">Save Selected Combinations</button>
+    </form>
+
+    <script>
+        document.getElementById('productConfigurationForm').onsubmit = function() {
+            var checkboxes = document.getElementsByName('selected_combinations');
+            var checked = Array.prototype.slice.call(checkboxes).some(function(el) {
+                return el.checked;
+            });
+            if (!checked) {
+                alert('Please select at least one combination.');
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>

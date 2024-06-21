@@ -26,38 +26,38 @@
         .variation-group, .option-group {
             margin-bottom: 1rem;
         }
-        .removeButton[disabled] {
-            background-color: #cccccc;
-            color: #777777;
-            cursor: not-allowed;
-        }
     </style>
 </head>
 <body>
     {% include 'common_block.html' %}
     {% if messages %}
-    {% for msg in messages %}
-    <p class="alert">{{ msg }}</p>
-    {% endfor %}
+        {% for msg in messages %}
+            <p class="alert">{{ msg }}</p>
+        {% endfor %}
     {% endif %}
     <h3>Edit Variations for {{ product.name }}</h3>
-    <form id="variationForm" action="{% url 'variant' product.id %}" method="post">
+    <form id="variationForm" action="{% url 'editvariant' product.id %}" method="post">
         {% csrf_token %}
         <div id="variationsContainer">
-            <div class="variation-group">
+            {% for variation, options, in_use in variation_options %}
+            <div class="variation-group" data-variation-id="{{ variation.id }}">
                 <label>Variation Name:</label>
-                <input type="text" name="variation" required>
+                <input type="text" name="variation_name" value="{{ variation.name }}" required>
+                <input type="hidden" name="variation_id" value="{{ variation.id }}">
                 <div class="options-container">
-                    <div class="option-group">
-                        <input type="text" name="variationOption" required>
+                    {% for option in options %}
+                    <div class="option-group" data-option-id="{{ option.id }}">
+                        <input type="text" name="variationOption_{{ forloop.parentloop.counter0 }}" value="{{ option.value }}" required>
                         <button type="button" class="removeButton">Remove Option</button>
                     </div>
+                    {% endfor %}
                 </div>
                 <button type="button" class="addOptionButton">Add Option</button>
                 <button type="button" class="removeVariationButton">Remove Variation</button>
             </div>
+            {% endfor %}
         </div>
-        <button type="button" id="addVariation">Add Variation</button>
+        <a href="{% url 'variant' product.id %}"><button type="button" id="addVariation">Add Variation</button></a>
         <button type="submit">Save Variations</button>
     </form>
 
@@ -70,10 +70,10 @@
                 var index = variationsContainer.children.length;
                 newVariationGroup.innerHTML = `
                     <label>Variation Name:</label>
-                    <input type="text" name="variation_name_${index}" required>
+                    <input type="text" name="variation_name" required>
                     <div class="options-container">
                         <div class="option-group">
-                            <input type="text" name="variationOption_${index}[]" required>
+                            <input type="text" name="variationOption_${index}" required>
                             <button type="button" class="removeButton">Remove Option</button>
                         </div>
                     </div>
@@ -88,10 +88,11 @@
                 var addOptionButton = variationGroup.querySelector('.addOptionButton');
                 var optionsContainer = variationGroup.querySelector('.options-container');
                 addOptionButton.addEventListener('click', function () {
+                    var optionIndex = optionsContainer.children.length;
                     var newOptionGroup = document.createElement('div');
                     newOptionGroup.classList.add('option-group');
                     newOptionGroup.innerHTML = `
-                        <input type="text" name="variationOption_${index}[]" required>
+                        <input type="text" name="variationOption_${index}" required>
                         <button type="button" class="removeButton">Remove Option</button>
                     `;
                     optionsContainer.appendChild(newOptionGroup);
@@ -104,6 +105,14 @@
                     if (confirm("Are you sure you want to delete this variation?")) {
                         variationGroup.remove();
                     }
+                });
+
+                variationGroup.querySelectorAll('.removeButton').forEach(button => {
+                    button.addEventListener('click', function () {
+                        if (confirm("Are you sure you want to delete this option?")) {
+                            button.closest('.option-group').remove();
+                        }
+                    });
                 });
             }
 

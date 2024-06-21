@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    {% include 'common_block.html' %}
+    <div class="projects">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="heading">Product Details</h3>
+                <a href="{% url 'product' %}"><button>Back</button></a>
+            </div>
+            <div class="card-body">
+                product : <h1>{{product.name}}</h1>
+                SKU : <h3>{{product.SKU}}</h3>
+                <div>
+                    {% if product.images.all %}
+                    {% for i in product.images.all %}
+                    <img src="{{ i.image.url }}" alt="Product Image" style="height: 100px;width: 100px;">
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                <div>
+                    Destription : <h3>{{product.description}}</h3>
+                </div>
+                category : <h3>{{product.category}}</h3>
+                subcategory : <h3>{{product.subcategory}}</h3>
+                {% if product.configurations.all %}
+                    Variations:
+                    <table>
+                        {% for configuration in product.configurations.all %}
+                        <thead>
+                            <th>variation</th>
+                            <th>price</th>
+                            <th>stock</th>
+                        </thead>
+                        <tr>
+                            <td><h3>{{ configuration }}</h3></td>
+                            <td><h3>{{ configuration.price }}</h3></td>
+                            <td><h3>{{ configuration.qty_in_stock }}</h3></td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                    {% endif %}
+                    <table>
+                        <tr><a href="{% url 'editProduct' product.id %}"><button class="block_btn"
+                            style="background-color: #573972;">Edit</button></a></tr>
+                        <tr><a href="{% url 'editvariant' product.id %}"><button class="block_btn"
+                            style="background-color: #573972;">Edit Variation</button></a></tr>
+                    </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
