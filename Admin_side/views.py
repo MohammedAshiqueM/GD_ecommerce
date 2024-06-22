@@ -360,16 +360,22 @@ def variant(request, pk):
     if request.method == "POST":
         variation_data = {}
 
+        # Print the entire POST data for debugging
+        print("POST data received:", request.POST)
+
         # Process variation names and options
-        for key, value in request.POST.items():
-            print(key,":",value)
+        for key in request.POST:
+            values = request.POST.getlist(key)
             if key.startswith('variation_name_'):
                 index = key.split('_')[-1]
-                variation_data[index] = {'name': value, 'options': []}
+                variation_data[index] = {'name': values[0], 'options': []}
             elif key.startswith('variationOption_'):
                 index = key.split('_')[1].split('[')[0]
                 if index in variation_data:
-                    variation_data[index]['options'].append(value)
+                    variation_data[index]['options'].extend(values)
+
+        # Print parsed variation data for debugging
+        print("Parsed variation data:", variation_data)
 
         # Validate and save variations and options
         for index, data in variation_data.items():
@@ -397,6 +403,7 @@ def variant(request, pk):
         return redirect('productConfiguration', pk=product.pk)
 
     return render(request, "variant.html", {'product': product})
+
 def generate_combinations(variations):
     variation_options = [variation.variationoption_set.all() for variation in variations]
     return list(iter_product(*variation_options))
