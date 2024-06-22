@@ -232,7 +232,9 @@ def resend_otp(request):
 @never_cache
 def userHome(request):
     # if request.user.is_authenticated:
-    return render(request, "home.html")
+    categories = Category.objects.all()
+    context = {"categories":categories}
+    return render(request, "home.html",context)
 
 
 def productDetails(request, pk):
@@ -249,6 +251,15 @@ def shop(request):
     context = {"product": product}
     return render(request, "shop.html", context)
 
+def categoryProduct(request,pk):
+    products = Product.objects.filter(category_id=pk)
+    context = {"product":products}
+    return render(request,"categoryProduct.html",context)
+
+def subcategoryProduct(request,pk):
+    products = Product.objects.filter(subcategory_id=pk)
+    context = {"product":products}
+    return render(request,"subcategoryProduct.html",context)
 
 def checkOut(request):
     return render(request, "checkOut.html")
