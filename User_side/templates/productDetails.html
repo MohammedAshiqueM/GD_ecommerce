@@ -181,48 +181,39 @@ left: 50%;
             </div>
 
             {% if product %}
-            <div class="col-lg-7 h-auto mb-30">
-                <div class="h-100 bg-light p-30">
-                    <h3>{{product.name}} <span><h6>({{product.qty_in_stock}} stock remains) </h6></span></h3>
-                    <div class="d-flex mb-3">
-                        <div class="text-primary mr-2">
-                            <small class="fas fa-star"></small>
-                            <small class="fas fa-star"></small>
-                            <small class="fas fa-star"></small>
-                            <small class="fas fa-star-half-alt"></small>
-                            <small class="far fa-star"></small>
-                        </div>
-                        <small class="pt-1">(99 Reviews)</small>
-                    </div>
-                    <h3 class="font-weight-semi-bold mb-4">${{product.price}}</h3>
-                    
-                    <p class="mb-4">{{product.description}}</p>
-                    <div class="d-flex mb-3">
-                        <strong class="text-dark mr-3">Sizes:</strong>
-                        <form>
-                            <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" class="custom-control-input" id="size-1" name="size">
-                                <label class="custom-control-label" for="size-1">XS</label>
-                            </div>
-                            <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" class="custom-control-input" id="size-2" name="size">
-                                <label class="custom-control-label" for="size-2">S</label>
-                            </div>
-                            <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" class="custom-control-input" id="size-3" name="size">
-                                <label class="custom-control-label" for="size-3">M</label>
-                            </div>
-                            <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" class="custom-control-input" id="size-4" name="size">
-                                <label class="custom-control-label" for="size-4">L</label>
-                            </div>
-                            <div class="custom-control custom-radio custom-control-inline">
-                                <input type="radio" class="custom-control-input" id="size-5" name="size">
-                                <label class="custom-control-label" for="size-5">XL</label>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="d-flex mb-4">
+<div class="col-lg-7 h-auto mb-30">
+    <div class="h-100 bg-light p-30">
+        <h3>{{ product.name }} <span><h6 id="stock-info"></h6></span></h3>
+        <div class="d-flex mb-3">
+            <div class="text-primary mr-2">
+                <small class="fas fa-star"></small>
+                <small class="fas fa-star"></small>
+                <small class="fas fa-star"></small>
+                <small class="fas fa-star-half-alt"></small>
+                <small class="far fa-star"></small>
+            </div>
+            <small class="pt-1">(99 Reviews)</small>
+        </div>
+        <h3 class="font-weight-semi-bold mb-4" id="product-price"></h3>
+        <p class="mb-4">{{ product.description }}</p>
+        
+        {% for variation in product.variation_set.all %}
+        <div class="d-flex mb-3">
+            <strong class="text-dark mr-3">{{ variation.name }}</strong>
+            <form>
+                {% for option in variation.variationoption_set.all %}
+                <div class="custom-control custom-radio custom-control-inline">
+                    <input type="radio" class="custom-control-input variation-option" id="{{ variation.name }}-{{ option.id }}" name="{{ variation.name }}" data-variation-id="{{ variation.id }}" value="{{ option.id }}" {% if forloop.first %}checked{% endif %}>
+                    <label class="custom-control-label" for="{{ variation.name }}-{{ option.id }}">{{ option.value }}</label>
+                </div>
+                {% endfor %}
+            </form>
+        </div>
+        {% endfor %}
+
+
+
+                    <!-- <div class="d-flex mb-4">
                         <strong class="text-dark mr-3">Colors:</strong>
                         <form>
                             <div class="custom-control custom-radio custom-control-inline">
@@ -246,7 +237,7 @@ left: 50%;
                                 <label class="custom-control-label" for="color-5">Green</label>
                             </div>
                         </form>
-                    </div>
+                    </div> -->
                     <div class="d-flex align-items-center mb-4 pt-2">
                         <div class="input-group quantity mr-3" style="width: 130px;">
                             <div class="input-group-btn">
@@ -563,6 +554,42 @@ left: 50%;
 });
 
 
+document.addEventListener('DOMContentLoaded', function() {
+    const configurations = {{ configurations|safe }};
+    
+    function getSelectedOptions() {
+        let selectedOptions = [];
+        document.querySelectorAll('input.variation-option:checked').forEach(input => {
+            selectedOptions.push(parseInt(input.value));
+        });
+        return selectedOptions;
+    }
+
+    function findMatchingConfiguration(selectedOptions) {
+        return configurations.find(config => {
+            return selectedOptions.every(optionId => config.options.includes(optionId));
+        });
+    }
+
+    function updatePriceAndStock() {
+        const selectedOptions = getSelectedOptions();
+        const matchingConfig = findMatchingConfiguration(selectedOptions);
+
+        if (matchingConfig) {
+            document.getElementById('product-price').textContent = '$' + matchingConfig.price;
+            document.getElementById('stock-info').textContent = matchingConfig.qty_in_stock + ' stock remains';
+        } else {
+            document.getElementById('product-price').textContent = 'N/A';
+            document.getElementById('stock-info').textContent = 'Out of stock';
+        }
+    }
+
+    document.querySelectorAll('input.variation-option').forEach(input => {
+        input.addEventListener('change', updatePriceAndStock);
+    });
+
+    updatePriceAndStock(); // Initial call to set the price and stock based on the default selections
+});
       </script>
 </body>
 

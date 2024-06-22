@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
 from .form import UserRegistrationForm
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
@@ -238,11 +238,30 @@ def userHome(request):
 
 
 def productDetails(request, pk):
-    product = Product.objects.get(pk=pk)
-    related = Product.objects.filter(Q(category=product.category) | Q(subcategory=product.subcategory),is_active=True).exclude(id=product.id)
-    if product.is_active is False:
+    product = get_object_or_404(Product, pk=pk)
+    related = Product.objects.filter(
+        Q(category=product.category) | Q(subcategory=product.subcategory), 
+        is_active=True
+    ).exclude(id=product.id)
+    
+    configurations = []
+    for config in product.configurations.all():
+        option_ids = list(config.variation_options.values_list('id', flat=True))
+        configurations.append({
+            'id': config.id,
+            'price': config.price,
+            'qty_in_stock': config.qty_in_stock,
+            'options': option_ids
+        })
+    
+    if not product.is_active:
         return redirect("userHome")
-    context = {"product": product, "related": related}
+    
+    context = {
+        "product": product,
+        "related": related,
+        'configurations': configurations
+    }
     return render(request, "productDetails.html", context)
 
 
@@ -272,6 +291,33 @@ def cart(request):
 def contact(request):
     return render(request, "contact.html")
 
+import json
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
+
+@require_POST
+def get_product_combination(request, product_id):
+    data = json.loads(request.body)
+    product = Product.objects.get(id=product_id)
+    selected_options = [VariationOption.objects.get(id=option_id) for option_id in data.values()]
+
+    try:
+        configuration = ProductConfiguration.objects.filter(
+            product=product, 
+            variation_options__in=selected_options
+        ).distinct().get()
+        response = {
+            'price': configuration.price,
+            'qty_in_stock': configuration.qty_in_stock,
+        }
+    except ProductConfiguration.DoesNotExist:
+        response = {
+            'price': product.price,
+            'qty_in_stock': product.qty_in_stock,
+        }
+
+    return JsonResponse(response)
 
 ########################## function for logout ############################
 def logout(request):
