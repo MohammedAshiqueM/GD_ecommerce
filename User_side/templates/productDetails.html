@@ -203,13 +203,14 @@ left: 50%;
             <form>
                 {% for option in variation.variationoption_set.all %}
                 <div class="custom-control custom-radio custom-control-inline">
-                    <input type="radio" class="custom-control-input variation-option" id="{{ variation.name }}-{{ option.id }}" name="{{ variation.name }}" data-variation-id="{{ variation.id }}" value="{{ option.id }}" {% if forloop.first %}checked{% endif %}>
+                    <input type="radio" class="custom-control-input variation-option" id="{{ variation.name }}-{{ option.id }}" name="{{ variation.name }}" data-variation-id="{{ variation.id }}" data-variation-name="{{ variation.name }}" data-option-value="{{ option.value }}" value="{{ option.id }}" {% if forloop.first %}checked{% endif %}>
                     <label class="custom-control-label" for="{{ variation.name }}-{{ option.id }}">{{ option.value }}</label>
                 </div>
                 {% endfor %}
             </form>
         </div>
         {% endfor %}
+        <h6 id="stock-info"></h6>
 
 
 
@@ -571,16 +572,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function getSelectedVariationDetails() {
+        let variationDetails = [];
+        document.querySelectorAll('input.variation-option:checked').forEach(input => {
+            let variationName = input.getAttribute('data-variation-name');
+            let optionValue = input.getAttribute('data-option-value');
+            variationDetails.push(`${variationName}: ${optionValue}`);
+        });
+        return variationDetails.join(', ');
+    }
+
     function updatePriceAndStock() {
         const selectedOptions = getSelectedOptions();
         const matchingConfig = findMatchingConfiguration(selectedOptions);
+        const variationDetails = getSelectedVariationDetails();
 
         if (matchingConfig) {
             document.getElementById('product-price').textContent = '$' + matchingConfig.price;
-            document.getElementById('stock-info').textContent = matchingConfig.qty_in_stock + ' stock remains';
+            document.getElementById('stock-info').textContent = `${variationDetails} (${matchingConfig.qty_in_stock} stock remains)`;
         } else {
             document.getElementById('product-price').textContent = 'N/A';
-            document.getElementById('stock-info').textContent = 'Out of stock';
+            document.getElementById('stock-info').textContent = `${variationDetails} (Out of stock)`;
         }
     }
 
