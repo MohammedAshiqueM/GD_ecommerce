@@ -256,8 +256,8 @@ body.light ::placeholder {
 
 body {
 	background: var(--off-white);
-	background: url(https://image.freepik.com/free-vector/abstract-gradient-shapes-background_79603-156.jpg);
-	backdrop-filter: blur(10px);
+	background: url(../admin_img/dark_dash.jpeg);
+	backdrop-filter: blur(0px);
 	background-size: cover;
 	background-repeat: no-repeat;
 }
@@ -378,7 +378,7 @@ body.light .card-single:hover div:first-child span {
 	color: var(--dark-text);
 }
 body.light .card-single div:last-child span {
-	color: var(--dark-text);
+	color: #840584;
 }
 body.light header {
 	background: var(--dark-BG);
@@ -684,7 +684,7 @@ body.light .heading {
 
 .card-single div:first-child span {
 	/* 	color:var(--text-grey); */
-	color: #fff;
+	color: #840584;
 }
 
 .card-single:hover {
@@ -835,7 +835,7 @@ thead td {
 td {
 	padding: 0.5rem 1rem;
 	font-size: 1rem;
-	color: #fff;
+	/* color: #840584; */
 }
 td .status {
 	display: inline-block;
@@ -875,7 +875,7 @@ td .status {
 .info h4 {
 	font-size: 1rem;
 	font-weight: 700;
-	color: #fff;
+	color: #840584;
 	letter-spacing: 1px;
 }
 .info small {
