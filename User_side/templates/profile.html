@@ -7,6 +7,76 @@
     <title>Document</title>
     <link rel="stylesheet" href="{% static 'user_css/profile_style.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        .breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    list-style: none;
+    background-color: #e9ecef;
+  }
+  
+  .breadcrumb-item {
+    display: flex;
+    text-decoration: none;
+  }
+  
+  .breadcrumb-item + .breadcrumb-item {
+    padding-left: 0.5rem;
+  }
+  
+  .breadcrumb-item + .breadcrumb-item::before {
+    display: inline-block;
+    padding-right: 0.5rem;
+    color: #6c757d;
+    content: "/";
+  }
+  
+  .breadcrumb-item + .breadcrumb-item:hover::before {
+    text-decoration: underline;
+  }
+  
+  .breadcrumb-item + .breadcrumb-item:hover::before {
+    text-decoration: none;
+  }
+  
+  .breadcrumb-item.active {
+    color: #6c757d;
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+    padding-top: 60px;
+}
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+    </style>
 </head>
 <body>
     <header>
@@ -14,13 +84,25 @@
             <div class="logo">Profile</div>
             <nav>
                 <ul>
-                    <li><a href="#">Home</a></li>
+                    <li><a href="{% url 'userHome' %}">Home</a></li>
                     <li><a href="#">Order History</a></li>
                     <li><a href="#">Wishlist</a></li>
                 </ul>
             </nav>
         </div>
     </header>
+        <!-- Breadcrumb Start -->
+        <div class="container-fluid">
+            <div class="row px-xl-5">
+                <div class="col-12">
+                    <nav class="breadcrumb bg-light mb-30">
+                        <a class="breadcrumb-item text-dark" href="{% url 'userHome' %}">Home</a>
+                        <a class="breadcrumb-item text-dark" href="">Profile</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        <!-- Breadcrumb End -->
     <main>
         {% if user %}
 <section class="profile">
@@ -36,6 +118,11 @@
 
     <div class="address-management">
         <h3>My Addresses</h3>
+        {% if messages %}
+        {% for message in messages %}
+            <div class="alert {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
         {% if user.address_set.exists %}
             <div class="address-list">
                 {% for address in user.address_set.all %}
@@ -51,8 +138,8 @@
                         <p>country : {{ address.country }}</p>
                         
                         <div class="address-actions">
-                            <button class="edit-btn"><i class="fas fa-pen"></i></button>
-                            <button class="delete-btn"><i class="fas fa-trash"></i></button>
+                            <a href="{% url 'editAddress' address.id %}"><button class="edit-btn"><i class="fas fa-pen"></i></button></a>
+                            <button class="delete-btn" data-address-id="{{ address.id }}" data-address-number="{{ forloop.counter }}"><i class="fas fa-trash"></i></button>
                             <button class="default-btn" ><i class="fas fa-star" data-address-id="{{ address.id }}" {% if address.is_default %}style="color: yellow;"{% endif %}></i></button>
                         </div>
                     </div>
@@ -65,8 +152,20 @@
     </div>
 </section>
 {% endif %}
-
     </main>
+    <!-- modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p id="deleteModalMessage"></p>
+            <form id="deleteForm" method="post" action="">
+                {% csrf_token %}
+                <button type="submit">Yes</button>
+                <button type="button" class="close">No</button>
+            </form>
+        </div>
+    </div>
+
     <footer>
         <div class="footer-container">
             <div class="footer-section">
@@ -133,6 +232,38 @@
                     });
                 });
             });
+        });
+
+ 
+        var modal = document.getElementById("deleteModal");
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close");
+
+        // When the user clicks on <span> (x) or No button, close the modal
+        Array.from(span).forEach(function(element) {
+            element.onclick = function() {
+                modal.style.display = "none";
+            }
+        });
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Get all delete buttons and set up click event
+        var deleteButtons = document.getElementsByClassName('delete-btn');
+        Array.from(deleteButtons).forEach(function(button) {
+            button.onclick = function() {
+                var addressId = this.getAttribute('data-address-id');
+                var addressNumber = this.getAttribute('data-address-number');
+                document.getElementById('deleteModalMessage').innerText = "Do you want to delete address " + addressNumber + "?";
+                document.getElementById('deleteForm').action = "/deleteAddress/" + addressId ;
+                modal.style.display = "block";
+            }
         });
     </script>
     

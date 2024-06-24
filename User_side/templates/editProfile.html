@@ -163,6 +163,48 @@
             padding: 5px 10px;
             cursor: pointer;
         }
+        
+        input[readonly] {
+        background-color: #f0f0f0; /* Light gray background */
+        cursor: not-allowed; /* Change cursor to indicate it's not editable */
+        }
+
+        .breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        list-style: none;
+        background-color: #e9ecef;
+        }
+        
+        .breadcrumb-item {
+            display: flex;
+            text-decoration: none;
+        }
+        
+        .breadcrumb-item + .breadcrumb-item {
+            padding-left: 0.5rem;
+        }
+        
+        .breadcrumb-item + .breadcrumb-item::before {
+            display: inline-block;
+            padding-right: 0.5rem;
+            color: #6c757d;
+            content: "/";
+        }
+        
+        .breadcrumb-item + .breadcrumb-item:hover::before {
+            text-decoration: underline;
+        }
+        
+        .breadcrumb-item + .breadcrumb-item:hover::before {
+            text-decoration: none;
+        }
+        
+        .breadcrumb-item.active {
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -171,34 +213,49 @@
             <div class="logo">Profile details</div>
             <nav>
                 <ul>
-                    <li><a href="#">Home</a></li>
+                    <li><a href="{% url 'userHome' %}">Home</a></li>
                     <li><a href="#">Order History</a></li>
                     <li><a href="#">Wishlist</a></li>
                 </ul>
             </nav>
         </div>
     </header>
+        <!-- Breadcrumb Start -->
+    <div class="container-fluid">
+        <div class="row px-xl-5">
+            <div class="col-12">
+                <nav class="breadcrumb bg-light mb-30">
+                    <a class="breadcrumb-item text-dark" href="{% url 'userHome' %}">Home</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'profile' user.id %}">Profile</a>
+                    <a class="breadcrumb-item text-dark" href="">Edit Profile</a>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- Breadcrumb End -->
     <main>
         <div class="form-container">
             <h2>Edit profile</h2>
+            {% if user %}
             <form method="post">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="unit_number">First Name</label>
-                    <input type="text"  name="first_name">
+                    <input type="text"  name="first_name" placeholder="first name" value={{user.firstname}}>
                 </div>
                 <div class="form-group">
                     <label for="unit_number">Last Name</label>
-                    <input type="text"  name="last_name">
+                    <input type="text"  name="last_name" placeholder="last name" value={{user.lastname}}>
                 </div>
                 <div class="form-group">
                     <label for="street_number">Mail Id</label>
-                    <input type="text">
+                    <input type="text" value="{{user.email}}" readonly>
                 </div>
                 <div class="form-actions">
                     <button type="submit">Save </button>
                 </div>
             </form>
+            {% endif %}
         </div>
     </main>
     <footer>

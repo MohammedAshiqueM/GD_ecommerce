@@ -282,13 +282,16 @@ def subcategoryProduct(request,pk):
     context = {"product":products}
     return render(request,"subcategoryProduct.html",context)
 
-def profile(request,pk):
-    user = User.objects.get(pk=pk)
-    context = {"user":user}
-    return render(request,"profile.html",context)
+def profile(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    addresses = Address.objects.filter(user=user)
+    context = {"user": user, "addresses": addresses}
+    return render(request, "profile.html", context)
 
 def editProfile(request,pk):
-    return render(request,"editProfile.html")
+    user = get_object_or_404(User, pk=pk)
+    context = {"user":user}
+    return render(request,"editProfile.html",context)
 
 def addAddress(request,pk):
     user = get_object_or_404(User, pk=pk)
@@ -346,6 +349,40 @@ def set_default_address(request):
         except Address.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Address does not exist'})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def editAddress(request, pk):
+    try:
+        address = get_object_or_404(Address, pk=pk, user=request.user)
+        addresses = list(Address.objects.filter(user=request.user))
+        address_number = addresses.index(address) + 1
+        context = {"address": address, "edit": True,"address_number":address_number}
+    except Address.DoesNotExist:
+        messages.error(request, "The address you are trying to edit does not exist.")
+        return redirect("profile", pk=request.user.pk) 
+    if request.method == "POST":
+        address.unit_number = request.POST.get('unit_number')
+        address.street_number = request.POST.get('street_number')
+        address.address_line1 = request.POST.get('address_line1')
+        address.address_line2 = request.POST.get('address_line2')
+        address.city = request.POST.get('city')
+        address.region = request.POST.get('region')
+        address.postal_code = request.POST.get('postal_code')
+        address.country = request.POST.get('country')
+        address.is_default = 'is_default' in request.POST
+        address.save()
+        messages.success(request, "Address updated successfully.")
+        return redirect('profile', pk=request.user.pk)
+    return render(request, "editAddress.html", context)
+
+def deleteAddress(request, pk):
+    address = get_object_or_404(Address, pk=pk, user=request.user)
+    if address.is_default:
+        messages.error(request, "Default address cannot be deleted.")
+        return redirect('profile', pk=request.user.id)
+    if request.method == "POST":
+        address.delete()
+        messages.success(request, "Address deleted successfully.")
+    return redirect('profile', pk=request.user.id)
 
 def checkOut(request):
     return render(request, "checkOut.html")
