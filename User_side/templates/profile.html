@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'user_css/profile_style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="logo">Profile</div>
+            <nav>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">Order History</a></li>
+                    <li><a href="#">Wishlist</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main>
+        {% if user %}
+<section class="profile">
+    <div class="account-info">
+        {% if user.first_name %}
+            <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+        {% else %}
+            <span class="alert">First name & Last name were not added yet</span>
+        {% endif %}
+        <p>Email: {{ user.email }}</p>
+        <a href="{% url 'editProfile' user.id %}"><button class="edit-profile-btn">Edit Profile</button></a>
+    </div>
+
+    <div class="address-management">
+        <h3>My Addresses</h3>
+        {% if user.address_set.exists %}
+            <div class="address-list">
+                {% for address in user.address_set.all %}
+                    <div class="address">
+                        <h4>Address {{ forloop.counter }}</h4>
+                        <p>Unit Number : {{ address.unit_number }}</p>
+                        <p>street Number : {{ address.street_number }}</p>
+                        <p>address line1 : {{ address.address_line1 }}</p>
+                        <p>address line2 : {{ address.address_line2 }}</p>
+                        <p>city : {{ address.city }}</p>
+                        <p>region : {{ address.region }}</p>
+                        <p>postal code : {{ address.postal_code }}</p>
+                        <p>country : {{ address.country }}</p>
+                        
+                        <div class="address-actions">
+                            <button class="edit-btn"><i class="fas fa-pen"></i></button>
+                            <button class="delete-btn"><i class="fas fa-trash"></i></button>
+                            <button class="default-btn" ><i class="fas fa-star" data-address-id="{{ address.id }}" {% if address.is_default %}style="color: yellow;"{% endif %}></i></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <span class="alert">No addresses added yet</span>
+        {% endif %}
+        <a href="{% url 'addAddress' user.id %}"><button class="add-address-btn"><i class="fas fa-plus"></i> Add New Address</button></a>
+    </div>
+</section>
+{% endif %}
+
+    </main>
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>Store</h4>
+                <ul>
+                    <li><a href="#">About us</a></li>
+                    <li><a href="#">Find store</a></li>
+                    <li><a href="#">Categories</a></li>
+                    <li><a href="#">Blogs</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Information</h4>
+                <ul>
+                    <li><a href="#">Help center</a></li>
+                    <li><a href="#">Money refund</a></li>
+                    <li><a href="#">Shipping info</a></li>
+                    <li><a href="#">Refunds</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Help center</a></li>
+                    <li><a href="#">Documents</a></li>
+                    <li><a href="#">Account restore</a></li>
+                    <li><a href="#">My orders</a></li>
+                </ul>
+            </div>
+            <div class="footer-section newsletter">
+                <h4>Newsletter</h4>
+                <p>Stay in touch with the latest updates about our products and offers</p>
+                <input type="email" placeholder="Email">
+                <button>Join</button>
+            </div>
+        </div>
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.default-btn i');
+    
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const addressId = this.dataset.addressId;
+                    const userId = "{{ user.id }}"; // Get user ID from the template context
+    
+                    fetch("{% url 'set_default_address' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}' // Ensure CSRF token is included
+                        },
+                        body: JSON.stringify({ address_id: addressId, user_id: userId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update the UI to reflect the new default address
+                            stars.forEach(s => s.style.color = '');
+                            this.style.color = 'yellow';
+                        } else {
+                            alert('Failed to set default address');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+    
+</body>
+</html>

@@ -82,7 +82,6 @@ def dashboard(request):
     
     return render(request, "dashboard.html",context)
 
-
 def customers(request):
     if "value" in request.GET:
         credential = request.GET["value"]
@@ -95,7 +94,6 @@ def customers(request):
         context = {"data": data}
     return render(request, "customers.html", context)
 
-
 def block(request, pk):
     try:
         user = User.objects.get(pk=pk)
@@ -107,7 +105,6 @@ def block(request, pk):
     except Exception as e:
         return JsonResponse({"success": False, "error": "Internal server error"})
 
-
 def unblock(request, pk):
     try:
         user = User.objects.get(pk=pk)
@@ -118,7 +115,6 @@ def unblock(request, pk):
         return JsonResponse({"success": False, "error": "User not found"})
     except Exception as e:
         return JsonResponse({"success": False, "error": "Internal server error"})
-
 
 def category(request):
     if "value" in request.GET:
@@ -133,7 +129,6 @@ def category(request):
         sub = SubCategory.objects.all()
         context = {"parent": parent, "sub": sub}
     return render(request, "category.html", context)
-
 
 def addCategory(request):
     data = Category.objects.all()
@@ -189,7 +184,6 @@ def addCategory(request):
             return redirect("category")
     return render(request, "addCategory.html", {"data": data})
 
-
 def editCategory(request, pk):
     data = Category.objects.get(pk=pk)
     context = {"value": data, "edit_mode": True}
@@ -210,7 +204,6 @@ def editCategory(request, pk):
             messages.success(request, f"Category {category} has been updated")
         return redirect("category")
     return render(request, "editCategory.html", context)
-
 
 def editSubcategory(request, pk):
     subcategory = SubCategory.objects.get(pk=pk)
@@ -241,6 +234,7 @@ def editSubcategory(request, pk):
         return redirect("category")
     context = {"value": subcategory, "data": categories, "edit_mode": True}
     return render(request, "editSubcategory.html", context)
+
 def blockCategory(request, pk):
     try:
         category = get_object_or_404(Category, pk=pk)

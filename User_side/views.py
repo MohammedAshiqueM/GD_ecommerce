@@ -1,3 +1,6 @@
+import json
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect,get_object_or_404
 from .form import UserRegistrationForm
 from django.contrib.auth.models import User
@@ -264,7 +267,6 @@ def productDetails(request, pk):
     }
     return render(request, "productDetails.html", context)
 
-
 def shop(request):
     product = Product.objects.filter(is_active=True)
     context = {"product": product}
@@ -280,6 +282,71 @@ def subcategoryProduct(request,pk):
     context = {"product":products}
     return render(request,"subcategoryProduct.html",context)
 
+def profile(request,pk):
+    user = User.objects.get(pk=pk)
+    context = {"user":user}
+    return render(request,"profile.html",context)
+
+def editProfile(request,pk):
+    return render(request,"editProfile.html")
+
+def addAddress(request,pk):
+    user = get_object_or_404(User, pk=pk)
+
+    if request.method == 'POST':
+        unit_number = request.POST.get('unit_number')
+        street_number = request.POST.get('street_number')
+        address_line1 = request.POST.get('address_line1')
+        address_line2 = request.POST.get('address_line2')
+        city = request.POST.get('city')
+        region = request.POST.get('region')
+        postal_code = request.POST.get('postal_code')
+        country = request.POST.get('country')
+        is_default = request.POST.get('is_default') == 'on'
+
+        # Validate required fields
+        if not street_number or not address_line1 or not city or not region or not postal_code or not country:
+            messages.error(request, "Please fill in all required fields.")
+            return redirect('addAddress', pk=user.pk)
+        else:
+            if is_default:
+                # Unset the default flag for all other addresses of the user
+                Address.objects.filter(user=user, is_default=True).update(is_default=False)
+        # Create the address
+        Address.objects.create(
+            user=user,
+            unit_number=unit_number,
+            street_number=street_number,
+            address_line1=address_line1,
+            address_line2=address_line2,
+            city=city,
+            region=region,
+            postal_code=postal_code,
+            country=country,
+            is_default=is_default
+        )
+        messages.success(request, "Address added successfully.")
+        return redirect('profile', pk=user.pk)  # Change to the appropriate success URL
+
+    return render(request, 'addAddress.html', {'user': user})
+
+def set_default_address(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        address_id = data.get('address_id')
+        user_id = data.get('user_id')
+
+        try:
+            user = User.objects.get(pk=user_id)
+            Address.objects.filter(user=user, is_default=True).update(is_default=False)
+            Address.objects.filter(pk=address_id).update(is_default=True)
+            return JsonResponse({'success': True})
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'User does not exist'})
+        except Address.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Address does not exist'})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
 def checkOut(request):
     return render(request, "checkOut.html")
 
@@ -291,9 +358,6 @@ def cart(request):
 def contact(request):
     return render(request, "contact.html")
 
-import json
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
 
 
 @require_POST

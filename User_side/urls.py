@@ -10,6 +10,11 @@ urlpatterns = [
     path('shop/', views.shop, name='shop'),
     path('categoryProduct/<pk>', views.categoryProduct, name='categoryProduct'),
     path('subcategoryProduct/<pk>', views.subcategoryProduct, name='subcategoryProduct'),
+    path('profile/<pk>', views.profile, name='profile'),
+    path('editProfile/<pk>', views.editProfile, name='editProfile'),
+    path('addAddress/<pk>', views.addAddress, name='addAddress'),
+    path('set_default_address/', views.set_default_address, name='set_default_address'),
+    
     path('checkout/', views.checkOut, name='checkout'),
     path('cart/', views.cart, name='cart'),
     path('contact/', views.contact, name='contact'),

@@ -1,0 +1,182 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+header {
+    background-color: #3f51b5;
+    color: white;
+    padding: 10px 0;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    margin: 0 auto;
+}
+
+.logo {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+nav ul li {
+    margin: 0 10px;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+/* Main Section */
+main {
+    width: 90%;
+    margin: 20px auto;
+}
+
+.profile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.account-info {
+    margin-bottom: 20px;
+}
+
+.account-info h2 {
+    margin: 0;
+}
+
+.account-info p {
+    margin: 5px 0;
+}
+
+.edit-profile-btn {
+    background-color: #3f51b5;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.address-management {
+    width: 100%;
+}
+
+.address-management h3 {
+    margin: 0;
+    margin-bottom: 20px;
+}
+
+.address-list {
+    margin-bottom: 20px;
+}
+
+.address {
+    border: 1px solid #e0e0e0;
+    padding: 20px;
+    margin-bottom: 10px;
+    position: relative;
+    background-color: #e0e0e0;
+}
+
+.address p {
+    margin: 5px 0;
+}
+
+.address-actions {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+}
+
+.address-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.add-address-btn {
+    background-color: #3f51b5;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+/* Footer Section */
+footer {
+    background-color: #3f51b5;
+    color: white;
+    padding: 20px 0;
+}
+
+.footer-container {
+    width: 90%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+}
+
+.footer-section {
+    width: 22%;
+}
+
+.footer-section h4 {
+    margin-top: 0;
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-section ul li {
+    margin: 10px 0;
+}
+
+.footer-section ul li a {
+    text-decoration: none;
+    color: white;
+}
+
+.footer-section ul li a:hover {
+    text-decoration: underline;
+}
+
+.newsletter input {
+    width: calc(100% - 80px);
+    padding: 5px;
+    margin-right: 10px;
+}
+
+.newsletter button {
+    background-color: #303f9f;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.alert {
+    color: red
+}
