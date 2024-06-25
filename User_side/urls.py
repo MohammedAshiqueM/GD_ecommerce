@@ -17,8 +17,15 @@ urlpatterns = [
     path('editAddress/<pk>', views.editAddress, name='editAddress'),
     path('deleteAddress/<pk>', views.deleteAddress, name='deleteAddress'),
     
+    path('cart/', views.cart_view, name='cart'),
+    path('add_to_cart/', views.add_to_cart, name='add_to_cart'), 
+    path('get_configuration_id/', views.get_configuration_id, name='get_configuration_id'),
+    # path('increment-quantity/<int:item_id>/', views.increment_quantity, name='increment_quantity'),
+    # path('decrement-quantity/<int:item_id>/', views.decrement_quantity, name='decrement_quantity'),
+    # path('remove-cart-item/<int:item_id>/', views.remove_cart_item, name='remove_cart_item'),
     path('checkout/', views.checkOut, name='checkout'),
-    path('cart/', views.cart, name='cart'),
+    
+    # path('cart/', views.cart, name='cart'),
     path('contact/', views.contact, name='contact'),
     path('logout/', views.logout, name='logout'),
     path('get-product-combination/<int:product_id>/', views.get_product_combination, name='get_product_combination'),

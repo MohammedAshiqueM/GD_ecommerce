@@ -388,8 +388,98 @@ def checkOut(request):
     return render(request, "checkOut.html")
 
 
-def cart(request):
-    return render(request, "cart.html")
+def cart_view(request):
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = CartItem.objects.filter(cart=cart)
+    context = {
+        'cart_items': cart_items
+    }
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        cart_items_data = []
+        for item in cart_items:
+            item_data = {
+                'id': item.id,
+                'product_name': item.product_configuration.product.name,
+                'product_image': item.product_configuration.product.images.first().image.url,
+                'price': item.product_configuration.price,
+                'quantity': item.quantity
+            }
+            cart_items_data.append(item_data)
+        
+        return JsonResponse({'cart_items': cart_items_data})
+    
+    return render(request, 'cart.html', context)
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+import json
+
+@require_POST
+def get_configuration_id(request):
+    try:
+        data = json.loads(request.body)
+        product_id = data.get('product_id')
+        selected_options = data.get('selected_options', [])
+
+        if not product_id or not selected_options:
+            raise ValueError('Product ID and selected options are required')
+
+        product = get_object_or_404(Product, id=product_id)
+        configuration = ProductConfiguration.objects.filter(
+            product=product,
+            variation_options__id__in=selected_options
+        ).distinct().first()
+
+        if not configuration:
+            raise ValueError('Product configuration not found')
+
+        return JsonResponse({'success': True, 'configuration_id': configuration.id}, status=200)
+    
+    except ValueError as ve:
+        return JsonResponse({'success': False, 'error': str(ve)}, status=400)
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+@require_POST
+@login_required
+def add_to_cart(request):
+    try:
+        data = json.loads(request.body)
+        product_id = data.get('product_id')
+        configuration_id = data.get('configuration_id')
+        quantity = data.get('quantity', 1)
+
+        if not product_id or not configuration_id:
+            raise ValueError('Product ID and configuration ID are required')
+
+        product = get_object_or_404(Product, id=product_id)
+        configuration = get_object_or_404(ProductConfiguration, id=configuration_id,product=product)
+
+        cart, created = Cart.objects.get_or_create(user=request.user)
+
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product_configuration=configuration
+        )
+
+        if created:
+            cart_item.qty = int(quantity)
+        else:
+            cart_item.qty += int(quantity)
+        
+        cart_item.save()
+
+        return JsonResponse({'success': True}, status=200)
+    
+    except ValueError as ve:
+        return JsonResponse({'success': False, 'error': str(ve)}, status=400)
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
 def contact(request):

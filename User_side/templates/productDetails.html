@@ -196,7 +196,7 @@ left: 50%;
         </div>
         <h3 class="font-weight-semi-bold mb-4" id="product-price"></h3>
         <p class="mb-4">{{ product.description }}</p>
-        
+
         {% for variation in product.variation_set.all %}
         <div class="d-flex mb-3">
             <strong class="text-dark mr-3">{{ variation.name }}</strong>
@@ -212,9 +212,7 @@ left: 50%;
         {% endfor %}
         <h6 id="stock-info"></h6>
 
-
-
-                    <!-- <div class="d-flex mb-4">
+        <!-- <div class="d-flex mb-4">
                         <strong class="text-dark mr-3">Colors:</strong>
                         <form>
                             <div class="custom-control custom-radio custom-control-inline">
@@ -239,43 +237,44 @@ left: 50%;
                             </div>
                         </form>
                     </div> -->
-                    <div class="d-flex align-items-center mb-4 pt-2">
-                        <div class="input-group quantity mr-3" style="width: 130px;">
-                            <div class="input-group-btn">
-                                <button class="btn btn-primary btn-minus">
-                                    <i class="fa fa-minus"></i>
-                                </button>
-                            </div>
-                            <input type="text" class="form-control bg-secondary border-0 text-center" value="1">
-                            <div class="input-group-btn">
-                                <button class="btn btn-primary btn-plus">
-                                    <i class="fa fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary px-3"><i class="fa fa-shopping-cart mr-1"></i> Add To
-                            Cart</button>
-                    </div>
-                    <div class="d-flex pt-2">
-                        <strong class="text-dark mr-2">Share on:</strong>
-                        <div class="d-inline-flex">
-                            <a class="text-dark px-2" href="">
-                                <i class="fab fa-facebook-f"></i>
-                            </a>
-                            <a class="text-dark px-2" href="">
-                                <i class="fab fa-twitter"></i>
-                            </a>
-                            <a class="text-dark px-2" href="">
-                                <i class="fab fa-linkedin-in"></i>
-                            </a>
-                            <a class="text-dark px-2" href="">
-                                <i class="fab fa-pinterest"></i>
-                            </a>
-                        </div>
-                    </div>
+
+        <div class="d-flex align-items-center mb-4 pt-2">
+            <div class="input-group quantity mr-3" style="width: 130px;">
+                <div class="input-group-btn">
+                    <button class="btn btn-primary btn-minus">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                </div>
+                <input type="text" class="form-control bg-secondary border-0 text-center" value="1">
+                <div class="input-group-btn">
+                    <button class="btn btn-primary btn-plus">
+                        <i class="fa fa-plus"></i>
+                    </button>
                 </div>
             </div>
-            {% endif %}
+            <button class="btn btn-primary px-3 add-to-cart-btn" data-product-id="{{ product.id }}" data-configuration-id=""><i class="fa fa-shopping-cart mr-1"></i> Add To
+                Cart</button>
+        </div>
+        <div class="d-flex pt-2">
+            <strong class="text-dark mr-2">Share on:</strong>
+            <div class="d-inline-flex">
+                <a class="text-dark px-2" href="">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a class="text-dark px-2" href="">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a class="text-dark px-2" href="">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+                <a class="text-dark px-2" href="">
+                    <i class="fab fa-pinterest"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
         </div>
         <div class="row px-xl-5">
@@ -602,7 +601,116 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updatePriceAndStock(); // Initial call to set the price and stock based on the default selections
 });
+
       </script>
+<!-- JavaScript for adding to cart -->
+<!-- JavaScript for adding to cart -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const productId = this.getAttribute('data-product-id');
+            console.log('Product ID:', productId);
+
+            if (productId) {
+                const parentElement = this.closest('.d-flex.align-items-center.mb-4.pt-2');
+                if (parentElement) {
+                    const quantityInput = parentElement.querySelector('.form-control');
+                    if (quantityInput) {
+                        const quantity = quantityInput.value;
+                        console.log('Quantity:', quantity);
+
+                        // Collect selected options
+                        const selectedOptions = [];
+                        document.querySelectorAll('.variation-option:checked').forEach(option => {
+                            selectedOptions.push(option.value);
+                        });
+                        console.log('Selected Options:', selectedOptions);
+
+                        // Fetch the configuration ID based on selected options
+                        fetch("/get_configuration_id/", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'  // Ensure CSRF token is included
+                            },
+                            body: JSON.stringify({
+                                product_id: productId,
+                                selected_options: selectedOptions
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                const configurationId = data.configuration_id;
+                                console.log('Configuration ID:', configurationId);
+
+                                // Now make the add to cart request
+                                fetch("/add_to_cart/", {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRFToken': '{{ csrf_token }}'  // Ensure CSRF token is included
+                                    },
+                                    body: JSON.stringify({
+                                        product_id: productId,
+                                        configuration_id: configurationId,
+                                        quantity: quantity
+                                    })
+                                })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Network response was not ok');
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    if (data.success) {
+                                        alert('Product added to cart successfully!');
+                                    } else {
+                                        alert('Failed to add product to cart. Please try again.');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error adding product to cart:', error);
+                                    alert('Failed to add product to cart. Please try again.');
+                                });
+                            } else {
+                                alert('Failed to fetch product configuration. Please try again.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching configuration ID:', error);
+                            alert('Failed to fetch product configuration. Please try again.');
+                        });
+                    } else {
+                        console.error('Form control input not found');
+                        alert('Quantity input not found. Please try again.');
+                    }
+                } else {
+                    console.error('Parent element not found');
+                    alert('Parent element not found. Please try again.');
+                }
+            } else {
+                console.error('Product ID not found');
+                alert('Product ID not found. Please try again.');
+            }
+        });
+    });
+});
+
+</script>
+
+
+
+
 </body>
 
 </html>
