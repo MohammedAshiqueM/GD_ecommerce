@@ -19,7 +19,7 @@
 <div class="container-fluid">
     <div class="row px-xl-5">
         <div class="col-lg-8 table-responsive mb-5">
-            <table class="table table-light table-borderless table-hover text-center mb-0">
+            <table class="table table-light table-borderless table-hover text-center mb-0" id="cart-table">
                 <thead class="thead-dark">
                     <tr>
                         <th>Products</th>
@@ -32,16 +32,17 @@
                 </thead>
                 <tbody class="align-middle">
                     {% for item in cart_items %}
-                    <tr>
+                    <tr data-id="{{ item.id }}">
                         <td class="align-middle">
-                            <img src="{{ item.product_configuration.product.images.first.image.url }}" alt="" style="width: 50px;"> {{ item.product_configuration.product.name }}
+                            <img src="{{ item.product_configuration.product.images.first.image.url }}" alt=""
+                                 style="width: 50px;"> {{ item.product_configuration.product.name }}
                         </td>
                         <td class="align-middle">
                             {% for option in item.product_configuration.variation_options.all %}
-                                {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
+                            {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </td>
-                        <td class="align-middle">${{ item.product_configuration.price }}</td>
+                        <td class="align-middle item-price">${{ item.product_configuration.price }}</td>
                         <td class="align-middle">
                             <div class="input-group quantity mx-auto" style="width: 100px;">
                                 <div class="input-group-btn">
@@ -57,17 +58,17 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="align-middle">${{ item.qty|mul:item.product_configuration.price }}</td>
+                        <td class="align-middle item-total">${{ item.qty|mul:item.product_configuration.price }}</td>
                         <td class="align-middle">
-                            <form action="" method="post">
-                                {% csrf_token %}
-                                <button class="btn btn-sm btn-danger" type="submit"><i class="fa fa-times"></i></button>
-                            </form>
+                            <button class="btn btn-sm btn-danger btn-remove" data-id="{{ item.id }}">
+                                <i class="fa fa-times"></i>
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            
         </div>
         <div class="col-lg-4">
             <form class="mb-30" action="">
@@ -78,12 +79,14 @@
                     </div>
                 </div>
             </form>
-            <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Cart Summary</span></h5>
+            <h5 class="section-title position-relative text-uppercase mb-3">
+                <span class="bg-secondary pr-3">Cart Summary</span>
+            </h5>
             <div class="bg-light p-30 mb-5">
                 <div class="border-bottom pb-2">
                     <div class="d-flex justify-content-between mb-3">
                         <h6>Subtotal</h6>
-                        <h6>${{ cart_items|calc_subtotal }}</h6>
+                        <h6 class="cart-subtotal">${{ cart_items|calc_subtotal }}</h6>
                     </div>
                     <div class="d-flex justify-content-between">
                         <h6 class="font-weight-medium">Shipping</h6>
@@ -93,7 +96,7 @@
                 <div class="pt-2">
                     <div class="d-flex justify-content-between mt-2">
                         <h5>Total</h5>
-                        <h5>${{ cart_items|calc_total }}</h5>
+                        <h5 class="cart-total">${{ cart_items|calc_total }}</h5>
                     </div>
                     <button class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</button>
                 </div>
@@ -108,7 +111,8 @@
     <div class="row px-xl-5 pt-5">
         <div class="col-lg-4 col-md-12 mb-5 pr-3 pr-xl-5">
             <h5 class="text-secondary text-uppercase mb-4">Get In Touch</h5>
-            <p class="mb-4">No dolore ipsum accusam no lorem. Invidunt sed clita kasd clita et et dolor sed dolor. Rebum tempor no vero est magna amet no</p>
+            <p class="mb-4">No dolore ipsum accusam no lorem. Invidunt sed clita kasd clita et et dolor sed dolor. Rebum
+                tempor no vero est magna amet no</p>
             <p class="mb-2"><i class="fa fa-map-marker-alt text-primary mr-3"></i>123 Street, New York, USA</p>
             <p class="mb-2"><i class="fa fa-envelope text-primary mr-3"></i>info@example.com</p>
             <p class="mb-0"><i class="fa fa-phone-alt text-primary mr-3"></i>+012 345 67890</p>
@@ -146,141 +150,104 @@
                             <div class="input-group-append">
                                 <button class="btn btn-primary">Sign Up</button>
                             </div>
-                        </form>
-                        <h6 class="text-secondary text-uppercase mt-4 mb-3">Follow Us</h6>
-                        <div class="d-flex">
-                            <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
-                            <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
-                            <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
-                            <a class="btn btn-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
-                        </div>
+                    </form>
+                    <h6 class="text-secondary text-uppercase mt-4 mb-3">Follow Us</h6>
+                    <div class="d-flex">
+                        <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-twitter"></i></a>
+                        <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a class="btn btn-primary btn-square mr-2" href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="btn btn-primary btn-square" href="#"><i class="fab fa-instagram"></i></a>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="row border-top mx-xl-5 py-4" style="border-color: rgba(256, 256, 256, .1) !important;">
-            <div class="col-md-6 px-xl-0">
-                <p class="mb-md-0 text-center text-md-left text-secondary">
-                    &copy; <a class="text-primary" href="#">Domain</a>. All Rights Reserved. Designed
-                    by
-                    <a class="text-primary" href="https://htmlcodex.com">HTML Codex</a>
-                    <br>Distributed By: <a href="https://themewagon.com" target="_blank">ThemeWagon</a>
-                </p>
-            </div>
-            <div class="col-md-6 px-xl-0 text-center text-md-right">
-                <img class="img-fluid" src="img/payments.png" alt="">
-            </div>
+    </div>
+    <div class="row border-top mx-xl-5 py-4" style="border-color: rgba(256, 256, 256, .1) !important;">
+        <div class="col-md-6 px-xl-0">
+            <p class="mb-md-0 text-center text-md-left text-secondary">
+                &copy; <a class="text-primary" href="#">Domain</a>. All Rights Reserved. Designed
+                by
+                <a class="text-primary" href="https://htmlcodex.com">HTML Codex</a>
+                <br>Distributed By: <a href="https://themewagon.com" target="_blank">ThemeWagon</a>
+            </p>
+        </div>
+        <div class="col-md-6 px-xl-0 text-center text-md-right">
+            <img class="img-fluid" src="img/payments.png" alt="">
         </div>
     </div>
-    <!-- Footer End -->
-    <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Function to fetch cart data and update the DOM
-    function updateCart() {
-        fetch("{% url 'cart' %}", {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+</div>
+<!-- Footer End -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const csrfToken = getCookie('csrftoken');
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const cartTable = document.getElementById('cart-table');
-            cartTable.innerHTML = ''; // Clear existing rows
-            data.cart_items.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="align-middle">
-                        <img src="${item.product_image}" alt="" style="width: 50px;"> ${item.product_name}
-                    </td>
-                    <td class="align-middle">$${item.price}</td>
-                    <td class="align-middle">
-                        <div class="input-group quantity mx-auto" style="width: 100px;">
-                            <div class="input-group-btn">
-                                <button class="btn btn-sm btn-primary btn-minus" data-id="${item.id}">
-                                    <i class="fa fa-minus"></i>
-                                </button>
-                            </div>
-                            <input type="text" class="form-control form-control-sm bg-secondary border-0 text-center" value="${item.qty}">
-                            <div class="input-group-btn">
-                                <button class="btn btn-sm btn-primary btn-plus" data-id="${item.id}">
-                                    <i class="fa fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="align-middle">$${item.qty * item.price}</td>
-                    <td class="align-middle">
-                        <button class="btn btn-sm btn-danger btn-remove" data-id="${item.id}">
-                            <i class="fa fa-times"></i>
-                        </button>
-                    </td>
-                `;
-                cartTable.appendChild(row);
+            return cookieValue;
+        }
+
+        function updateCartRow(itemId, data) {
+            const row = document.querySelector(`tr[data-id="${itemId}"]`);
+            if (row) {
+                row.querySelector('.quantity input').value = data.quantity;
+                row.querySelector('.item-price').textContent = `$${data.price}`;
+                row.querySelector('.item-total').textContent = `$${data.total}`;
+            }
+        }
+
+        function updateCartSummary(data) {
+            document.querySelector('.cart-subtotal').textContent = `$${data.subtotal}`;
+            document.querySelector('.cart-total').textContent = `$${data.total_cart}`;
+        }
+
+        function sendUpdateRequest(url, itemId) {
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        updateCartRow(itemId, data);
+                        updateCartSummary(data);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        document.querySelectorAll('.btn-plus').forEach(button => {
+            button.addEventListener('click', function () {
+                const itemId = this.dataset.id;
+                sendUpdateRequest(`/increment-quantity/${itemId}/`, itemId);
             });
-        })
-        .catch(error => console.error('Error:', error));
-    }
+        });
 
-    // Initial cart update when the page loads
-    updateCart();
+        document.querySelectorAll('.btn-minus').forEach(button => {
+            button.addEventListener('click', function () {
+                const itemId = this.dataset.id;
+                sendUpdateRequest(`/decrement-quantity/${itemId}/`, itemId);
+            });
+        });
 
-    // Event listeners for plus and minus buttons
-    document.querySelectorAll('.btn-plus').forEach(button => {
-        button.addEventListener('click', function () {
-            const itemId = this.dataset.id;
-            fetch(`/increment-quantity/${itemId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    updateCart();
-                }
-            })
-            .catch(error => console.error('Error:', error));
+        document.querySelectorAll('.btn-remove').forEach(button => {
+            button.addEventListener('click', function () {
+                const itemId = this.dataset.id;
+                sendUpdateRequest(`/remove-cart-item/${itemId}/`, itemId);
+            });
         });
     });
-
-    document.querySelectorAll('.btn-minus').forEach(button => {
-        button.addEventListener('click', function () {
-            const itemId = this.dataset.id;
-            fetch(`/decrement-quantity/${itemId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    updateCart();
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        });
-    });
-
-    // Event listener for remove button
-    document.querySelectorAll('.btn-remove').forEach(button => {
-        button.addEventListener('click', function () {
-            const itemId = this.dataset.id;
-            fetch(`/remove-cart-item/${itemId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    updateCart();
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        });
-    });
-});
 </script>

@@ -390,6 +390,7 @@ def checkOut(request):
 
 def cart_view(request):
     cart, created = Cart.objects.get_or_create(user=request.user)
+    print('cart',cart)
     cart_items = CartItem.objects.filter(cart=cart)
     context = {
         'cart_items': cart_items
@@ -403,7 +404,7 @@ def cart_view(request):
                 'product_name': item.product_configuration.product.name,
                 'product_image': item.product_configuration.product.images.first().image.url,
                 'price': item.product_configuration.price,
-                'quantity': item.quantity
+                'quantity': item.qty
             }
             cart_items_data.append(item_data)
         
@@ -509,6 +510,73 @@ def get_product_combination(request, product_id):
         }
 
     return JsonResponse(response)
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+def calculate_subtotal_and_total(cart):
+    cart_items = CartItem.objects.filter(cart=cart)
+    subtotal = sum(item.qty * item.product_configuration.price for item in cart_items)
+    shipping = 10  # Assuming a fixed shipping cost
+    total = subtotal + shipping
+    return subtotal, total
+
+@csrf_exempt
+@require_POST
+def increment_quantity(request, item_id):
+    try:
+        cart_item = CartItem.objects.get(id=item_id)
+        cart_item.qty += 1
+        cart_item.save()
+        
+        cart = cart_item.cart
+        subtotal, total = calculate_subtotal_and_total(cart)
+
+        item_data = {
+            'quantity': cart_item.qty,
+            'price': cart_item.product_configuration.price,
+            'total': cart_item.qty * cart_item.product_configuration.price,
+            'subtotal': subtotal,
+            'total_cart': total
+        }
+        return JsonResponse({'status': 'success', **item_data})
+    except CartItem.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
+
+@csrf_exempt
+@require_POST
+def decrement_quantity(request, item_id):
+    try:
+        cart_item = CartItem.objects.get(id=item_id)
+        if cart_item.qty > 1:
+            cart_item.qty -= 1
+            cart_item.save()
+        
+        cart = cart_item.cart
+        subtotal, total = calculate_subtotal_and_total(cart)
+
+        item_data = {
+            'quantity': cart_item.qty,
+            'price': cart_item.product_configuration.price,
+            'total': cart_item.qty * cart_item.product_configuration.price,
+            'subtotal': subtotal,
+            'total_cart': total
+        }
+        return JsonResponse({'status': 'success', **item_data})
+    except CartItem.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
+
+@csrf_exempt
+@require_POST
+def remove_cart_item(request, item_id):
+    try:
+        cart_item = CartItem.objects.get(id=item_id)
+        cart_item.delete()
+        return JsonResponse({'status': 'success'})
+    except CartItem.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
+
 
 ########################## function for logout ############################
 def logout(request):
