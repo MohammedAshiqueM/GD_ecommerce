@@ -572,10 +572,15 @@ def decrement_quantity(request, item_id):
 def remove_cart_item(request, item_id):
     try:
         cart_item = CartItem.objects.get(id=item_id)
+        cart = cart_item.cart
         cart_item.delete()
-        return JsonResponse({'status': 'success'})
+        
+        subtotal, total = calculate_subtotal_and_total(cart)
+        
+        return JsonResponse({'status': 'success', 'subtotal': subtotal, 'total_cart': total})
     except CartItem.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
+
 
 
 ########################## function for logout ############################

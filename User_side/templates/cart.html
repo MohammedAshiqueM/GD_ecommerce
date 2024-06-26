@@ -210,7 +210,7 @@
             document.querySelector('.cart-total').textContent = `$${data.total_cart}`;
         }
 
-        function sendUpdateRequest(url, itemId) {
+        function sendUpdateRequest(url, itemId, callback) {
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -222,31 +222,38 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        updateCartRow(itemId, data);
+                        if (callback) callback(itemId, data);
                         updateCartSummary(data);
                     }
                 })
                 .catch(error => console.error('Error:', error));
         }
 
+        function removeCartRow(itemId, data) {
+            const row = document.querySelector(`tr[data-id="${itemId}"]`);
+            if (row) {
+                row.remove();
+            }
+        }
+
         document.querySelectorAll('.btn-plus').forEach(button => {
             button.addEventListener('click', function () {
                 const itemId = this.dataset.id;
-                sendUpdateRequest(`/increment-quantity/${itemId}/`, itemId);
+                sendUpdateRequest(`/increment-quantity/${itemId}/`, itemId, updateCartRow);
             });
         });
 
         document.querySelectorAll('.btn-minus').forEach(button => {
             button.addEventListener('click', function () {
                 const itemId = this.dataset.id;
-                sendUpdateRequest(`/decrement-quantity/${itemId}/`, itemId);
+                sendUpdateRequest(`/decrement-quantity/${itemId}/`, itemId, updateCartRow);
             });
         });
 
         document.querySelectorAll('.btn-remove').forEach(button => {
             button.addEventListener('click', function () {
                 const itemId = this.dataset.id;
-                sendUpdateRequest(`/remove-cart-item/${itemId}/`, itemId);
+                sendUpdateRequest(`/remove-cart-item/${itemId}/`, itemId, removeCartRow);
             });
         });
     });
