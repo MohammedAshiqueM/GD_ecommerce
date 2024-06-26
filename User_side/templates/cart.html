@@ -23,6 +23,7 @@
                 <thead class="thead-dark">
                     <tr>
                         <th>Products</th>
+                        <th>Variant</th>
                         <th>Price</th>
                         <th>Quantity</th>
                         <th>Total</th>
@@ -34,6 +35,11 @@
                     <tr>
                         <td class="align-middle">
                             <img src="{{ item.product_configuration.product.images.first.image.url }}" alt="" style="width: 50px;"> {{ item.product_configuration.product.name }}
+                        </td>
+                        <td class="align-middle">
+                            {% for option in item.product_configuration.variation_options.all %}
+                                {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
                         </td>
                         <td class="align-middle">${{ item.product_configuration.price }}</td>
                         <td class="align-middle">
