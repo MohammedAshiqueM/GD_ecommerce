@@ -237,7 +237,25 @@ left: 50%;
                             </div>
                         </form>
                     </div> -->
-
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="stockModal" tabindex="-1" role="dialog" aria-labelledby="stockModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stockModalLabel">Out of Stock</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Sorry, the selected quantity exceeds available stock. Please adjust your quantity.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
         <div class="d-flex align-items-center mb-4 pt-2">
             <div class="input-group quantity mr-3" style="width: 130px;">
                 <div class="input-group-btn">
@@ -245,7 +263,7 @@ left: 50%;
                         <i class="fa fa-minus"></i>
                     </button>
                 </div>
-                <input type="text" class="form-control bg-secondary border-0 text-center" value="1">
+                <input type="text" class="form-control bg-secondary border-0 text-center quantity-input" value="1">
                 <div class="input-group-btn">
                     <button class="btn btn-primary btn-plus">
                         <i class="fa fa-plus"></i>
@@ -606,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- JavaScript for adding to cart -->
 <!-- JavaScript for adding to cart -->
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.add-to-cart-btn').forEach(button => {
         button.addEventListener('click', function (e) {
             e.preventDefault();
@@ -614,100 +632,108 @@ document.addEventListener('DOMContentLoaded', function () {
             const productId = this.getAttribute('data-product-id');
             console.log('Product ID:', productId);
 
-            if (productId) {
-                const parentElement = this.closest('.d-flex.align-items-center.mb-4.pt-2');
-                if (parentElement) {
-                    const quantityInput = parentElement.querySelector('.form-control');
-                    if (quantityInput) {
-                        const quantity = quantityInput.value;
-                        console.log('Quantity:', quantity);
-
-                        // Collect selected options
-                        const selectedOptions = [];
-                        document.querySelectorAll('.variation-option:checked').forEach(option => {
-                            selectedOptions.push(option.value);
-                        });
-                        console.log('Selected Options:', selectedOptions);
-
-                        // Fetch the configuration ID based on selected options
-                        fetch("/get_configuration_id/", {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': '{{ csrf_token }}'  // Ensure CSRF token is included
-                            },
-                            body: JSON.stringify({
-                                product_id: productId,
-                                selected_options: selectedOptions
-                            })
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.success) {
-                                const configurationId = data.configuration_id;
-                                console.log('Configuration ID:', configurationId);
-
-                                // Now make the add to cart request
-                                fetch("/add_to_cart/", {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRFToken': '{{ csrf_token }}'  // Ensure CSRF token is included
-                                    },
-                                    body: JSON.stringify({
-                                        product_id: productId,
-                                        configuration_id: configurationId,
-                                        quantity: quantity
-                                    })
-                                })
-                                .then(response => {
-                                    if (!response.ok) {
-                                        throw new Error('Network response was not ok');
-                                    }
-                                    return response.json();
-                                })
-                                .then(data => {
-                                    if (data.success) {
-                                        alert('Product added to cart successfully!');
-                                    } else {
-                                        alert('Failed to add product to cart. Please try again.');
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error adding product to cart:', error);
-                                    alert('Failed to add product to cart. Please try again.');
-                                });
-                            } else {
-                                alert('Failed to fetch product configuration. Please try again.');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error fetching configuration ID:', error);
-                            alert('Failed to fetch product configuration. Please try again.');
-                        });
-                    } else {
-                        console.error('Form control input not found');
-                        alert('Quantity input not found. Please try again.');
-                    }
-                } else {
-                    console.error('Parent element not found');
-                    alert('Parent element not found. Please try again.');
-                }
-            } else {
+            if (!productId) {
                 console.error('Product ID not found');
                 alert('Product ID not found. Please try again.');
+                return;
             }
+
+            const parentElement = this.closest('.d-flex.align-items-center.mb-4.pt-2');
+            if (!parentElement) {
+                console.error('Parent element not found');
+                alert('Parent element not found. Please try again.');
+                return;
+            }
+
+            const quantityInput = parentElement.querySelector('.quantity-input');
+            if (!quantityInput) {
+                console.error('Quantity input not found');
+                alert('Quantity input not found. Please try again.');
+                return;
+            }
+
+            const quantity = parseInt(quantityInput.value);
+            console.log('Quantity:', quantity);
+
+            // Collect selected options
+            const selectedOptions = [];
+            document.querySelectorAll('.variation-option:checked').forEach(option => {
+                selectedOptions.push(parseInt(option.value));
+            });
+            console.log('Selected Options:', selectedOptions);
+
+            // Fetch the configuration ID based on selected options
+            fetch(`/get_configuration_id/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'  // Ensure CSRF token is included
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    selected_options: selectedOptions
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const configurationId = data.configuration_id;
+                    console.log('Configuration ID:', configurationId);
+
+                    // Check if quantity exceeds available stock
+                    if (quantity > data.qty_in_stock) {
+                        alert(`Only ${data.qty_in_stock} items available.`);
+                        return;
+                    }
+
+                    // Now make the add to cart request
+                    fetch("/add_to_cart/", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'  // Ensure CSRF token is included
+                        },
+                        body: JSON.stringify({
+                            product_id: productId,
+                            configuration_id: configurationId,
+                            quantity: quantity
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            alert('Product added to cart successfully!');
+                        } else {
+                            alert('Failed to add product to cart. Please try again.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error adding product to cart:', error);
+                        alert('Failed to add product to cart. Please try again.');
+                    });
+                } else {
+                    alert('Failed to fetch product configuration. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching configuration ID:', error);
+                alert('Failed to fetch product configuration. Please try again.');
+            });
         });
     });
 });
 
 </script>
-
 
 
 </body>

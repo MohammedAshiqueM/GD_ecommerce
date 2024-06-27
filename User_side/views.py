@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.db.models import Count
 from Admin_side.models import (
     User,
     Address,
@@ -419,33 +420,6 @@ from django.contrib.auth.decorators import login_required
 import json
 
 @require_POST
-def get_configuration_id(request):
-    try:
-        data = json.loads(request.body)
-        product_id = data.get('product_id')
-        selected_options = data.get('selected_options', [])
-
-        if not product_id or not selected_options:
-            raise ValueError('Product ID and selected options are required')
-
-        product = get_object_or_404(Product, id=product_id)
-        configuration = ProductConfiguration.objects.filter(
-            product=product,
-            variation_options__id__in=selected_options
-        ).distinct().first()
-
-        if not configuration:
-            raise ValueError('Product configuration not found')
-
-        return JsonResponse({'success': True, 'configuration_id': configuration.id}, status=200)
-    
-    except ValueError as ve:
-        return JsonResponse({'success': False, 'error': str(ve)}, status=400)
-    
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-@require_POST
 @login_required
 def add_to_cart(request):
     try:
@@ -481,35 +455,124 @@ def add_to_cart(request):
     
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404
+import json
+
+@require_POST
+def get_configuration_id(request):
+    try:
+        data = json.loads(request.body)
+        product_id = data.get('product_id')
+        selected_options = data.get('selected_options', [])
+        print("data", data)
+        print("product id", product_id)
+        print("selected options", selected_options)
+        
+        if not product_id or not selected_options:
+            raise ValueError('Product ID and selected options are required')
+
+        product = get_object_or_404(Product, id=product_id)
+        print("product", product)
+        
+        # Convert selected options to VariationOption objects
+        selected_options_objects = VariationOption.objects.filter(id__in=selected_options)
+        print("selected option objects", selected_options_objects)
+        
+        # Fetch the configuration that exactly matches all selected options
+        configuration = ProductConfiguration.objects.annotate(
+            num_options=Count('variation_options')
+        ).filter(
+            product=product,
+            num_options=len(selected_options),
+            variation_options__in=selected_options_objects
+        ).distinct().first()
+        print("configuration", configuration)
+        
+        if not configuration:
+            raise ValueError('Product configuration not found')
+
+        return JsonResponse({'success': True, 'configuration_id': configuration.id}, status=200)
+
+    except ValueError as ve:
+        return JsonResponse({'success': False, 'error': str(ve)}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404
+import json
+from django.db.models import Count, Q
+
+@require_POST
+def get_configuration_id(request):
+    try:
+        data = json.loads(request.body)
+        product_id = data.get('product_id')
+        selected_options = data.get('selected_options', [])
+        print("data", data)
+        print("product id", product_id)
+        print("selected options", selected_options)
+        
+        if not product_id or not selected_options:
+            raise ValueError('Product ID and selected options are required')
+
+        product = get_object_or_404(Product, id=product_id)
+        print("product", product)
+        
+        # Convert selected options to VariationOption objects
+        selected_options_objects = VariationOption.objects.filter(id__in=selected_options)
+        print("selected option objects", selected_options_objects)
+        
+        # Ensure the number of selected options matches the expected number
+        if len(selected_options_objects) != len(selected_options):
+            raise ValueError('Mismatch in the number of selected options and the variation options found')
+
+        # Fetch the configuration that exactly matches all selected options
+        configurations = ProductConfiguration.objects.filter(
+            product=product
+        ).annotate(
+            num_options=Count('variation_options')
+        ).filter(
+            num_options=len(selected_options)
+        ).distinct()
+
+        # Ensure the configuration matches the selected options exactly
+        matching_configurations = []
+        for config in configurations:
+            config_option_ids = set(config.variation_options.values_list('id', flat=True))
+            selected_option_ids = set(selected_options_objects.values_list('id', flat=True))
+            if config_option_ids == selected_option_ids:
+                matching_configurations.append(config)
+        
+        print("matching configurations", matching_configurations)
+        
+        if len(matching_configurations) == 1:
+            configuration = matching_configurations[0]
+            return JsonResponse({
+                'success': True, 
+                'configuration_id': configuration.id,
+                'price': configuration.price,
+                'qty_in_stock': configuration.qty_in_stock
+            }, status=200)
+        else:
+            raise ValueError('No matching configuration found or multiple configurations found')
+
+    except ValueError as ve:
+        return JsonResponse({'success': False, 'error': str(ve)}, status=400)
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
 def contact(request):
     return render(request, "contact.html")
 
-
-
-@require_POST
-def get_product_combination(request, product_id):
-    data = json.loads(request.body)
-    product = Product.objects.get(id=product_id)
-    selected_options = [VariationOption.objects.get(id=option_id) for option_id in data.values()]
-
-    try:
-        configuration = ProductConfiguration.objects.filter(
-            product=product, 
-            variation_options__in=selected_options
-        ).distinct().get()
-        response = {
-            'price': configuration.price,
-            'qty_in_stock': configuration.qty_in_stock,
-        }
-    except ProductConfiguration.DoesNotExist:
-        response = {
-            'price': product.price,
-            'qty_in_stock': product.qty_in_stock,
-        }
-
-    return JsonResponse(response)
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
