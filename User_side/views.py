@@ -456,51 +456,6 @@ def add_to_cart(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404
-import json
-
-@require_POST
-def get_configuration_id(request):
-    try:
-        data = json.loads(request.body)
-        product_id = data.get('product_id')
-        selected_options = data.get('selected_options', [])
-        print("data", data)
-        print("product id", product_id)
-        print("selected options", selected_options)
-        
-        if not product_id or not selected_options:
-            raise ValueError('Product ID and selected options are required')
-
-        product = get_object_or_404(Product, id=product_id)
-        print("product", product)
-        
-        # Convert selected options to VariationOption objects
-        selected_options_objects = VariationOption.objects.filter(id__in=selected_options)
-        print("selected option objects", selected_options_objects)
-        
-        # Fetch the configuration that exactly matches all selected options
-        configuration = ProductConfiguration.objects.annotate(
-            num_options=Count('variation_options')
-        ).filter(
-            product=product,
-            num_options=len(selected_options),
-            variation_options__in=selected_options_objects
-        ).distinct().first()
-        print("configuration", configuration)
-        
-        if not configuration:
-            raise ValueError('Product configuration not found')
-
-        return JsonResponse({'success': True, 'configuration_id': configuration.id}, status=200)
-
-    except ValueError as ve:
-        return JsonResponse({'success': False, 'error': str(ve)}, status=400)
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
 from django.http import JsonResponse
