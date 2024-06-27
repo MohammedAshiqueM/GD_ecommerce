@@ -515,32 +515,25 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-def calculate_subtotal_and_total(cart):
-    cart_items = CartItem.objects.filter(cart=cart)
-    subtotal = sum(item.qty * item.product_configuration.price for item in cart_items)
-    shipping = 10  # Assuming a fixed shipping cost
-    total = subtotal + shipping
-    return subtotal, total
-
 @csrf_exempt
 @require_POST
 def increment_quantity(request, item_id):
     try:
         cart_item = CartItem.objects.get(id=item_id)
-        cart_item.qty += 1
-        cart_item.save()
-        
-        cart = cart_item.cart
-        subtotal, total = calculate_subtotal_and_total(cart)
-
-        item_data = {
-            'quantity': cart_item.qty,
-            'price': cart_item.product_configuration.price,
-            'total': cart_item.qty * cart_item.product_configuration.price,
-            'subtotal': subtotal,
-            'total_cart': total
-        }
-        return JsonResponse({'status': 'success', **item_data})
+        if cart_item.product_configuration.qty_in_stock > cart_item.qty:
+            cart_item.qty += 1
+            cart_item.save()
+            response_data = {
+                'status': 'success',
+                'quantity': cart_item.qty,
+                'price': cart_item.product_configuration.price,
+                'total': cart_item.qty * cart_item.product_configuration.price,
+                'subtotal': calculate_subtotal(cart_item.cart),
+                'total_cart': calculate_total(cart_item.cart)
+            }
+        else:
+            response_data = {'status': 'error', 'message': 'Insufficient stock'}
+        return JsonResponse(response_data)
     except CartItem.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
 
@@ -552,18 +545,15 @@ def decrement_quantity(request, item_id):
         if cart_item.qty > 1:
             cart_item.qty -= 1
             cart_item.save()
-        
-        cart = cart_item.cart
-        subtotal, total = calculate_subtotal_and_total(cart)
-
-        item_data = {
+        response_data = {
+            'status': 'success',
             'quantity': cart_item.qty,
             'price': cart_item.product_configuration.price,
             'total': cart_item.qty * cart_item.product_configuration.price,
-            'subtotal': subtotal,
-            'total_cart': total
+            'subtotal': calculate_subtotal(cart_item.cart),
+            'total_cart': calculate_total(cart_item.cart)
         }
-        return JsonResponse({'status': 'success', **item_data})
+        return JsonResponse(response_data)
     except CartItem.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
 
@@ -572,14 +562,24 @@ def decrement_quantity(request, item_id):
 def remove_cart_item(request, item_id):
     try:
         cart_item = CartItem.objects.get(id=item_id)
-        cart = cart_item.cart
         cart_item.delete()
-        
-        subtotal, total = calculate_subtotal_and_total(cart)
-        
-        return JsonResponse({'status': 'success', 'subtotal': subtotal, 'total_cart': total})
+        response_data = {
+            'status': 'success',
+            'subtotal': calculate_subtotal(cart_item.cart),
+            'total_cart': calculate_total(cart_item.cart)
+        }
+        return JsonResponse(response_data)
     except CartItem.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
+
+def calculate_subtotal(cart):
+    cart_items = CartItem.objects.filter(cart=cart)
+    return sum(item.qty * item.product_configuration.price for item in cart_items)
+
+def calculate_total(cart):
+    # Assuming shipping cost is fixed at $10
+    return calculate_subtotal(cart) + 10
+
 
 
 

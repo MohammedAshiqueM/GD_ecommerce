@@ -105,7 +105,26 @@
     </div>
 </div>
 <!-- Cart End -->
-
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="errorModalLabel">Error</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p id="errorMessage"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
 <!-- Footer Start -->
 <div class="container-fluid bg-dark text-secondary mt-5 pt-5">
     <div class="row px-xl-5 pt-5">
@@ -210,6 +229,12 @@
             document.querySelector('.cart-total').textContent = `$${data.total_cart}`;
         }
 
+        function showError(message) {
+            const errorMessageElement = document.getElementById('errorMessage');
+            errorMessageElement.textContent = message;
+            $('#errorModal').modal('show');
+        }
+
         function sendUpdateRequest(url, itemId, callback) {
             fetch(url, {
                 method: 'POST',
@@ -224,6 +249,8 @@
                     if (data.status === 'success') {
                         if (callback) callback(itemId, data);
                         updateCartSummary(data);
+                    } else {
+                        showError(data.message);
                     }
                 })
                 .catch(error => console.error('Error:', error));
