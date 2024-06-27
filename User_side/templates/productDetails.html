@@ -623,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </script>
 <!-- JavaScript for adding to cart -->
 <!-- JavaScript for adding to cart -->
-<script>
+<!-- <script>
     document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.add-to-cart-btn').forEach(button => {
         button.addEventListener('click', function (e) {
@@ -733,9 +733,197 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+</script> -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Function to handle increment and decrement buttons
+    function setupQuantityButtons() {
+        document.querySelectorAll('.btn-plus').forEach(button => {
+            button.addEventListener('click', function () {
+                const parentElement = this.closest('.d-flex.align-items-center.mb-4.pt-2');
+                if (!parentElement) {
+                    console.error('Parent element not found');
+                    return;
+                }
+
+                const quantityInput = parentElement.querySelector('.quantity-input');
+                if (!quantityInput) {
+                    console.error('Quantity input not found');
+                    return;
+                }
+
+                let quantity = parseInt(quantityInput.value);
+                quantity++;
+                quantityInput.value = quantity;
+                console.log('Incremented Quantity:', quantity);
+            });
+        });
+
+        document.querySelectorAll('.btn-minus').forEach(button => {
+            button.addEventListener('click', function () {
+                const parentElement = this.closest('.d-flex.align-items-center.mb-4.pt-2');
+                if (!parentElement) {
+                    console.error('Parent element not found');
+                    return;
+                }
+
+                const quantityInput = parentElement.querySelector('.quantity-input');
+                if (!quantityInput) {
+                    console.error('Quantity input not found');
+                    return;
+                }
+
+                let quantity = parseInt(quantityInput.value);
+                if (quantity > 1) {
+                    quantity--;
+                    quantityInput.value = quantity;
+                }
+                console.log('Decremented Quantity:', quantity);
+            });
+        });
+    }
+
+    // Function to handle add-to-cart button
+    function setupAddToCartButtons() {
+        document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+            button.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const productId = this.getAttribute('data-product-id');
+                console.log('Product ID:', productId);
+
+                if (!productId) {
+                    console.error('Product ID not found');
+                    alert('Product ID not found. Please try again.');
+                    return;
+                }
+
+                const parentElement = this.closest('.d-flex.align-items-center.mb-4.pt-2');
+                if (!parentElement) {
+                    console.error('Parent element not found');
+                    alert('Parent element not found. Please try again.');
+                    return;
+                }
+
+                const quantityInput = parentElement.querySelector('.quantity-input');
+                if (!quantityInput) {
+                    console.error('Quantity input not found');
+                    alert('Quantity input not found. Please try again.');
+                    return;
+                }
+
+                const quantity = parseInt(quantityInput.value);
+                console.log('Quantity:', quantity);
+
+                // Collect selected options
+                const selectedOptions = [];
+                document.querySelectorAll('.variation-option:checked').forEach(option => {
+                    selectedOptions.push(parseInt(option.value));
+                });
+                console.log('Selected Options:', selectedOptions);
+
+                // Fetch the configuration ID based on selected options
+                fetch(`/get_configuration_id/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'  // Ensure CSRF token is included
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        selected_options: selectedOptions
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        const configurationId = data.configuration_id;
+                        console.log('Configuration ID:', configurationId);
+
+                        // Check if quantity exceeds available stock including cart quantity
+                        fetch(`/check_cart_quantity/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'  // Ensure CSRF token is included
+                            },
+                            body: JSON.stringify({
+                                product_id: productId,
+                                configuration_id: configurationId,
+                                quantity: quantity
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Now make the add to cart request
+                                fetch("/add_to_cart/", {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRFToken': '{{ csrf_token }}'  // Ensure CSRF token is included
+                                    },
+                                    body: JSON.stringify({
+                                        product_id: productId,
+                                        configuration_id: configurationId,
+                                        quantity: quantity
+                                    })
+                                })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Network response was not ok');
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    if (data.success) {
+                                        alert('Product added to cart successfully!');
+                                    } else {
+                                        alert('Failed to add product to cart. Please try again.');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error adding product to cart:', error);
+                                    alert('Failed to add product to cart. Please try again.');
+                                });
+                            } else {
+                                alert(data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error checking cart quantity:', error);
+                            alert('Failed to check cart quantity. Please try again.');
+                        });
+                    } else {
+                        alert('Failed to fetch product configuration. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching configuration ID:', error);
+                    alert('Failed to fetch product configuration. Please try again.');
+                });
+            });
+        });
+    }
+
+    // Initialize quantity buttons and add-to-cart buttons
+    setupQuantityButtons();
+    setupAddToCartButtons();
+});
+
+
 </script>
-
-
 </body>
 
 </html>

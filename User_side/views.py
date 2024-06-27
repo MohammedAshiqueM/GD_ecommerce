@@ -598,6 +598,42 @@ def calculate_total(cart):
     # Assuming shipping cost is fixed at $10
     return calculate_subtotal(cart) + 10
 
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404
+import json
+from django.db.models import Sum
+
+@require_POST
+def check_cart_quantity(request):
+    try:
+        data = json.loads(request.body)
+        product_id = data.get('product_id')
+        configuration_id = data.get('configuration_id')
+        quantity = data.get('quantity')
+
+        if not product_id or not configuration_id or quantity is None:
+            return JsonResponse({'success': False, 'message': 'Product ID, Configuration ID, and quantity are required'}, status=400)
+
+        # Fetch product configuration
+        product_configuration = get_object_or_404(ProductConfiguration, id=configuration_id)
+        
+        # Calculate the total quantity in the cart for this configuration
+        total_quantity_in_cart = CartItem.objects.filter(
+            product_configuration_id=configuration_id
+        ).aggregate(total=Sum('qty'))['total'] or 0
+
+        # Check if adding the requested quantity exceeds the available stock
+        if total_quantity_in_cart + quantity > product_configuration.qty_in_stock:
+            return JsonResponse({
+                'success': False,
+                'message': f'Only {product_configuration.qty_in_stock - total_quantity_in_cart} items available.'
+            }, status=200)
+        
+        return JsonResponse({'success': True}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
 
 
