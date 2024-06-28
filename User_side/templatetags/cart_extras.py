@@ -14,3 +14,7 @@ def calc_subtotal(cart_items):
 @register.filter
 def calc_total(cart_items):
     return calc_subtotal(cart_items) + 10  # assuming a flat shipping rate of $10
+
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)

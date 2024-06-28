@@ -8,9 +8,10 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.db.models import Count
+from django.db.models import Count,Avg
 from Admin_side.models import (
     User,
     Address,
@@ -244,7 +245,7 @@ def userHome(request):
 def productDetails(request, pk):
     product = get_object_or_404(Product, pk=pk)
     related = Product.objects.filter(
-        Q(category=product.category) | Q(subcategory=product.subcategory), 
+        Q(subcategory=product.subcategory), 
         is_active=True
     ).exclude(id=product.id)
     
@@ -280,7 +281,15 @@ def categoryProduct(request,pk):
 
 def subcategoryProduct(request,pk):
     products = Product.objects.filter(subcategory_id=pk)
-    context = {"product":products}
+    # Calculate the average price for each product
+    product_avg_prices = {}
+    for product in products:
+        avg_price = product.configurations.aggregate(Avg('price'))['price__avg']
+        product_avg_prices[product.id] = avg_price
+    context = {
+        "product":products,
+        "product_avg_prices": product_avg_prices,
+        }
     return render(request,"subcategoryProduct.html",context)
 
 def profile(request, pk):
@@ -529,9 +538,7 @@ def contact(request):
     return render(request, "contact.html")
 
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+
 
 @csrf_exempt
 @require_POST
