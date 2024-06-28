@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
+import django.utils.timezone as timezone
 
 class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -47,6 +48,8 @@ class Product(models.Model):
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name='products',null=True, blank=True) 
     SKU = models.CharField(max_length=255, unique=True)
     is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)  # Add this field if needed
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
     
     def has_combination_with_variation(self, variation_id):
         return self.configurations.filter(variation_options__variation_id=variation_id).exists()

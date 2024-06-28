@@ -279,18 +279,38 @@ def categoryProduct(request,pk):
     context = {"product":products}
     return render(request,"categoryProduct.html",context)
 
-def subcategoryProduct(request,pk):
+from django.db.models import Avg, Min, Max
+
+def subcategoryProduct(request, pk):
     products = Product.objects.filter(subcategory_id=pk)
-    # Calculate the average price for each product
+    sort = request.GET.get('sort', 'default')
+    
+    if sort == 'price_low_high':
+        products = products.annotate(min_price=Min('configurations__price')).order_by('min_price')
+    elif sort == 'price_high_low':
+        products = products.annotate(max_price=Max('configurations__price')).order_by('-max_price')
+    elif sort == 'featured':
+        products = products.order_by('-is_featured')  # Assuming you have an `is_featured` field
+    elif sort == 'new_arrivals':
+        products = products.order_by('-created_at')  # Assuming you have a `created_at` field
+    elif sort == 'a_z':
+        products = products.order_by('name')
+    elif sort == 'z_a':
+        products = products.order_by('-name')
+    
     product_avg_prices = {}
     for product in products:
         avg_price = product.configurations.aggregate(Avg('price'))['price__avg']
         product_avg_prices[product.id] = avg_price
+        
     context = {
-        "product":products,
+        "products":products,
         "product_avg_prices": product_avg_prices,
+        "sort": sort,
         }
-    return render(request,"subcategoryProduct.html",context)
+
+    return render(request, "subcategoryProduct.html", context)
+
 
 def profile(request, pk):
     user = get_object_or_404(User, pk=pk)
