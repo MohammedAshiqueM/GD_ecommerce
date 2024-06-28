@@ -276,7 +276,31 @@ def shop(request):
 
 def categoryProduct(request,pk):
     products = Product.objects.filter(category_id=pk)
-    context = {"product":products}
+    sort = request.GET.get('sort', 'default')
+    
+    if sort == 'price_low_high':
+        products = products.annotate(min_price=Min('configurations__price')).order_by('min_price')
+    elif sort == 'price_high_low':
+        products = products.annotate(max_price=Max('configurations__price')).order_by('-max_price')
+    elif sort == 'featured':
+        products = products.order_by('-is_featured') 
+    elif sort == 'new_arrivals':
+        products = products.order_by('-created_at') 
+    elif sort == 'a_z':
+        products = products.order_by('name')
+    elif sort == 'z_a':
+        products = products.order_by('-name')
+    
+    product_avg_prices = {}
+    for product in products:
+        avg_price = product.configurations.aggregate(Avg('price'))['price__avg']
+        product_avg_prices[product.id] = avg_price
+        
+    context = {
+        "products":products,
+        "product_avg_prices": product_avg_prices,
+        "sort": sort,
+        }
     return render(request,"categoryProduct.html",context)
 
 from django.db.models import Avg, Min, Max
@@ -290,9 +314,9 @@ def subcategoryProduct(request, pk):
     elif sort == 'price_high_low':
         products = products.annotate(max_price=Max('configurations__price')).order_by('-max_price')
     elif sort == 'featured':
-        products = products.order_by('-is_featured')  # Assuming you have an `is_featured` field
+        products = products.order_by('-is_featured') 
     elif sort == 'new_arrivals':
-        products = products.order_by('-created_at')  # Assuming you have a `created_at` field
+        products = products.order_by('-created_at') 
     elif sort == 'a_z':
         products = products.order_by('name')
     elif sort == 'z_a':
@@ -414,8 +438,24 @@ def deleteAddress(request, pk):
         messages.success(request, "Address deleted successfully.")
     return redirect('profile', pk=request.user.id)
 
+from django.shortcuts import render, get_object_or_404
 def checkOut(request):
-    return render(request, "checkOut.html")
+    addresses = Address.objects.filter(user=request.user)
+    
+    # Ensure there is one and only one default address
+    default_addresses = addresses.filter(is_default=True)
+    if default_addresses.exists():
+        default_address = default_addresses.first()
+    else:
+        default_address = addresses.first()  # Fallback to the first address if no default address is found
+
+    context = {
+        "addresses": addresses,
+        "default_address": default_address,
+        "edit": True
+    }
+    return render(request, "checkOut.html", context)
+
 
 
 def cart_view(request):

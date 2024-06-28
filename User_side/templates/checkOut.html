@@ -18,119 +18,65 @@
     <div class="container-fluid">
         <div class="row px-xl-5">
             <div class="col-lg-8">
-                <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Billing Address</span></h5>
+                <h5 class="section-title position-relative text-uppercase mb-3">
+                    <span class="bg-secondary pr-3">Billing Address</span>
+                </h5>
                 <div class="bg-light p-30 mb-5">
                     <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label>First Name</label>
-                            <input class="form-control" type="text" placeholder="John">
+                        <div class="col-md-12 form-group">
+                            <label for="address-select">Select Address</label>
+                            <div id="address-select" class="list-group">
+                                {% for address in addresses %}
+                                    <button type="button" class="list-group-item list-group-item-action {% if address == default_address %}active{% endif %}"
+                                            data-address-id="{{ address.id }}"
+                                            data-unit-number="{{ address.unit_number }}"
+                                            data-street-number="{{ address.street_number }}"
+                                            data-address-line1="{{ address.address_line1 }}"
+                                            data-address-line2="{{ address.address_line2 }}"
+                                            data-city="{{ address.city }}"
+                                            data-region="{{ address.region }}"
+                                            data-postal-code="{{ address.postal_code }}"
+                                            data-country="{{ address.country }}">
+                                        Address {{ forloop.counter }}
+                                    </button>
+                                {% endfor %}
+                            </div>
                         </div>
                         <div class="col-md-6 form-group">
-                            <label>Last Name</label>
-                            <input class="form-control" type="text" placeholder="Doe">
+                            <label>Unit Number</label>
+                            <input class="form-control" id="unit_number" type="text" value="{{ default_address.unit_number }}" readonly>
                         </div>
                         <div class="col-md-6 form-group">
-                            <label>E-mail</label>
-                            <input class="form-control" type="text" placeholder="example@email.com">
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label>Mobile No</label>
-                            <input class="form-control" type="text" placeholder="+123 456 789">
+                            <label>Street Number</label>
+                            <input class="form-control" id="street_number" type="text" value="{{ default_address.street_number }}" readonly>
                         </div>
                         <div class="col-md-6 form-group">
                             <label>Address Line 1</label>
-                            <input class="form-control" type="text" placeholder="123 Street">
+                            <input class="form-control" id="address_line1" type="text" value="{{ default_address.address_line1 }}" readonly>
                         </div>
                         <div class="col-md-6 form-group">
                             <label>Address Line 2</label>
-                            <input class="form-control" type="text" placeholder="123 Street">
-                        </div>
-                        <div class="col-md-6 form-group">
-                            <label>Country</label>
-                            <select class="custom-select">
-                                <option selected>United States</option>
-                                <option>Afghanistan</option>
-                                <option>Albania</option>
-                                <option>Algeria</option>
-                            </select>
+                            <input class="form-control" id="address_line2" type="text" value="{{ default_address.address_line2 }}" readonly>
                         </div>
                         <div class="col-md-6 form-group">
                             <label>City</label>
-                            <input class="form-control" type="text" placeholder="New York">
+                            <input class="form-control" id="city" type="text" value="{{ default_address.city }}" readonly>
                         </div>
                         <div class="col-md-6 form-group">
-                            <label>State</label>
-                            <input class="form-control" type="text" placeholder="New York">
+                            <label>Region</label>
+                            <input class="form-control" id="region" type="text" value="{{ default_address.region }}" readonly>
                         </div>
                         <div class="col-md-6 form-group">
-                            <label>ZIP Code</label>
-                            <input class="form-control" type="text" placeholder="123">
+                            <label>Postal Code</label>
+                            <input class="form-control" id="postal_code" type="text" value="{{ default_address.postal_code }}" readonly>
                         </div>
-                        <div class="col-md-12 form-group">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="newaccount">
-                                <label class="custom-control-label" for="newaccount">Create an account</label>
-                            </div>
+                        <div class="col-md-6 form-group">
+                            <label>Country</label>
+                            <input class="form-control" id="country" type="text" value="{{ default_address.country }}" readonly>
                         </div>
-                        <div class="col-md-12">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="shipto">
-                                <label class="custom-control-label" for="shipto"  data-toggle="collapse" data-target="#shipping-address">Ship to different address</label>
-                            </div>
-                        </div>
+                        <!-- Other form fields if needed -->
                     </div>
-                </div>
-                <div class="collapse mb-5" id="shipping-address">
-                    <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Shipping Address</span></h5>
-                    <div class="bg-light p-30">
-                        <div class="row">
-                            <div class="col-md-6 form-group">
-                                <label>First Name</label>
-                                <input class="form-control" type="text" placeholder="John">
-                            </div>
-                            <div class="col-md-6 form-group">
-                                <label>Last Name</label>
-                                <input class="form-control" type="text" placeholder="Doe">
-                            </div>
-                            <div class="col-md-6 form-group">
-                                <label>E-mail</label>
-                                <input class="form-control" type="text" placeholder="example@email.com">
-                            </div>
-                            <div class="col-md-6 form-group">
-                                <label>Mobile No</label>
-                                <input class="form-control" type="text" placeholder="+123 456 789">
-                            </div>
-                            <div class="col-md-6 form-group">
-                                <label>Address Line 1</label>
-                                <input class="form-control" type="text" placeholder="123 Street">
-                            </div>
-                            <div class="col-md-6 form-group">
-                                <label>Address Line 2</label>
-                                <input class="form-control" type="text" placeholder="123 Street">
-                            </div>
-                            <div class="col-md-6 form-group">
-                                <label>Country</label>
-                                <select class="custom-select">
-                                    <option selected>United States</option>
-                                    <option>Afghanistan</option>
-                                    <option>Albania</option>
-                                    <option>Algeria</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 form-group">
-                                <label>City</label>
-                                <input class="form-control" type="text" placeholder="New York">
-                            </div>
-                            <div class="col-md-6 form-group">
-                                <label>State</label>
-                                <input class="form-control" type="text" placeholder="New York">
-                            </div>
-                            <div class="col-md-6 form-group">
-                                <label>ZIP Code</label>
-                                <input class="form-control" type="text" placeholder="123">
-                            </div>
-                        </div>
-                    </div>
+                    <a href="{% url 'addAddress' user.id %}"><button class="add-address-btn"><i class="fas fa-plus"></i> Add New Address</button></a>
                 </div>
             </div>
             <div class="col-lg-4">
@@ -269,3 +215,27 @@
         </div>
     </div>
     <!-- Footer End -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const addressButtons = document.querySelectorAll('#address-select .list-group-item');
+
+        addressButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                addressButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+
+                document.getElementById('unit_number').value = this.dataset.unitNumber || '';
+                document.getElementById('street_number').value = this.dataset.streetNumber || '';
+                document.getElementById('address_line1').value = this.dataset.addressLine1 || '';
+                document.getElementById('address_line2').value = this.dataset.addressLine2 || '';
+                document.getElementById('city').value = this.dataset.city || '';
+                document.getElementById('region').value = this.dataset.region || '';
+                document.getElementById('postal_code').value = this.dataset.postalCode || '';
+                document.getElementById('country').value = this.dataset.country || '';
+            });
+        });
+
+        // Trigger click event to populate form with default address on page load
+        document.querySelector('#address-select .list-group-item.active').click();
+    });
+</script>
