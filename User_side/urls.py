@@ -34,4 +34,6 @@ urlpatterns = [
     path('get_configuration_id/', views.get_configuration_id, name='get_configuration_id'),
     path('check_cart_quantity/', views.check_cart_quantity, name='check_cart_quantity'),
     path('add_to_cart/', views.add_to_cart, name='add_to_cart'),
+    path('place_order/', views.place_order, name='place_order'),
+    
 ]

@@ -1,5 +1,4 @@
 {% load cart_extras %}
-    
     {% include 'common.html' %}
     <!-- Breadcrumb Start -->
     <div class="container-fluid">
@@ -111,6 +110,7 @@
             </div>
         </div>
     </div>
+                
                 <div class="mb-5">
                     <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Payment</span></h5>
                     <div class="bg-light p-30">
@@ -123,7 +123,7 @@
                         <div class="form-group">
                             <div class="custom-control custom-radio">
                                 <input type="radio" class="custom-control-input" name="payment" id="directcheck">
-                                <label class="custom-control-label" for="directcheck">Direct Check</label>
+                                <label class="custom-control-label" for="directcheck">Cash On Delivery</label>
                             </div>
                         </div>
                         <div class="form-group mb-4">
@@ -138,7 +138,30 @@
             </div>
         </div>
     </div>
+
     <!-- Checkout End -->
+
+<!-- Modal -->
+<div class="modal fade" id="addressConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="addressConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addressConfirmationModalLabel">Confirm Your Address</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Address: <span id="userAddress"></span></p>
+                <p>Are you sure you want to use this address for Cash on Delivery?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmAddressButton">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
     <!-- Footer Start -->
@@ -212,6 +235,10 @@
         </div>
     </div>
     <!-- Footer End -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const addressButtons = document.querySelectorAll('#address-select .list-group-item');
@@ -235,4 +262,54 @@
         // Trigger click event to populate form with default address on page load
         document.querySelector('#address-select .list-group-item.active').click();
     });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var codRadio = document.getElementById('directcheck');
+    var placeOrderButton = document.querySelector('.btn-primary.font-weight-bold.py-3');
+    var confirmButton = document.getElementById('confirmAddressButton');
+    var userAddressElement = document.getElementById('userAddress');
+    var addressButtons = document.querySelectorAll('#address-select .list-group-item');
+
+    addressButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            addressButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            document.getElementById('unit_number').value = button.getAttribute('data-unit-number');
+            document.getElementById('street_number').value = button.getAttribute('data-street-number');
+            document.getElementById('address_line1').value = button.getAttribute('data-address-line1');
+            document.getElementById('address_line2').value = button.getAttribute('data-address-line2');
+            document.getElementById('city').value = button.getAttribute('data-city');
+            document.getElementById('region').value = button.getAttribute('data-region');
+            document.getElementById('postal_code').value = button.getAttribute('data-postal-code');
+            document.getElementById('country').value = button.getAttribute('data-country');
+        });
+    });
+
+    placeOrderButton.addEventListener('click', function (event) {
+        if (codRadio.checked) {
+            event.preventDefault();
+            var unitNumber = document.getElementById('unit_number').value;
+            var streetNumber = document.getElementById('street_number').value;
+            var addressLine1 = document.getElementById('address_line1').value;
+            var addressLine2 = document.getElementById('address_line2').value;
+            var city = document.getElementById('city').value;
+            var region = document.getElementById('region').value;
+            var postalCode = document.getElementById('postal_code').value;
+            var country = document.getElementById('country').value;
+
+            userAddressElement.innerText = `${unitNumber}, ${streetNumber}, ${addressLine1}, ${addressLine2}, ${city}, ${region}, ${postalCode}, ${country}`;
+
+            $('#addressConfirmationModal').modal('show');
+        }
+    });
+
+    confirmButton.addEventListener('click', function () {
+        // Perform the actions needed after confirming the address
+        $('#addressConfirmationModal').modal('hide');
+        // Submit the form or proceed with the order placement
+        placeOrderButton.form.submit();
+    });
+});
 </script>
