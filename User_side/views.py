@@ -448,13 +448,19 @@ def checkOut(request):
         default_address = default_addresses.first()
     else:
         default_address = addresses.first()  # Fallback to the first address if no default address is found
+    
+    # Retrieve the cart and its items
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = CartItem.objects.filter(cart=cart)
 
     context = {
         "addresses": addresses,
         "default_address": default_address,
+        "cart_items": cart_items,
         "edit": True
     }
     return render(request, "checkOut.html", context)
+
 
 
 

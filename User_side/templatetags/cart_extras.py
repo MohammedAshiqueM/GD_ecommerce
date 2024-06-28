@@ -18,3 +18,4 @@ def calc_total(cart_items):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+
