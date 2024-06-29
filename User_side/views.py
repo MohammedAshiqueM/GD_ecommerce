@@ -448,20 +448,23 @@ def checkOut(request):
     if request.method == 'POST':
         # Retrieve the payment method
         payment_method = request.POST.get('payment')
-        if payment_method == 'directcheck':
-            payment_method_instance = PaymentMethod.objects.get(name='Cash On Delivery')
-        elif payment_method == 'paypal':
-            payment_method_instance = PaymentMethod.objects.get(name='Paypal')
-        elif payment_method == 'banktransfer':
-            payment_method_instance = PaymentMethod.objects.get(name='Bank Transfer')
+        try:
+            if payment_method == 'directcheck':
+                payment_method_instance = PaymentMethod.objects.get(name='Cash On Delivery')
+            elif payment_method == 'paypal':
+                payment_method_instance = PaymentMethod.objects.get(name='Paypal')
+            elif payment_method == 'banktransfer':
+                payment_method_instance = PaymentMethod.objects.get(name='Bank Transfer')
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Invalid payment method.'})
+        except PaymentMethod.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Payment method not found.'})
 
         # Get the default address
         addresses = Address.objects.filter(user=request.user)
-        default_addresses = addresses.filter(is_default=True)
-        if default_addresses.exists():
-            default_address = default_addresses.first()
-        else:
-            default_address = addresses.first()  # Fallback to the first address if no default address is found
+        default_address = addresses.filter(is_default=True).first() or addresses.first()
+        if not default_address:
+            return JsonResponse({'status': 'error', 'message': 'No address found for user.'})
 
         # Retrieve the cart and its items
         cart, created = Cart.objects.get_or_create(user=request.user)
@@ -471,7 +474,7 @@ def checkOut(request):
         order_total = sum(item.qty * item.product_configuration.price for item in cart_items) + 10  # +10 for shipping
 
         # Create order status
-        order_status = OrderStatus.objects.get(status='Pending')
+        order_status, created = OrderStatus.objects.get_or_create(status='Pending')
 
         # Create the order
         order = Order.objects.create(
@@ -498,13 +501,9 @@ def checkOut(request):
         return redirect('order_success')
 
     addresses = Address.objects.filter(user=request.user)
-
-    # Ensure there is one and only one default address
-    default_addresses = addresses.filter(is_default=True)
-    if default_addresses.exists():
-        default_address = default_addresses.first()
-    else:
-        default_address = addresses.first()  # Fallback to the first address if no default address is found
+    default_address = addresses.filter(is_default=True).first() or addresses.first()
+    if not default_address:
+        return JsonResponse({'status': 'error', 'message': 'No address found for user.'})
 
     # Retrieve the cart and its items
     cart, created = Cart.objects.get_or_create(user=request.user)
@@ -517,8 +516,6 @@ def checkOut(request):
         "edit": True
     }
     return render(request, "checkOut.html", context)
-
-
 
 
 
@@ -776,31 +773,52 @@ from django.views.decorators.csrf import csrf_exempt
 @csrf_exempt
 def place_order(request):
     if request.method == 'POST':
-        user = request.user
-        payment_method_id = request.POST.get('payment')
-        shipping_address_id = request.POST.get('shipping_address')
-        
-        # Assuming you have logic to calculate order_total
-        order_total = ...  # Calculate the order total
-        
         try:
-            # Retrieve or create the necessary objects
-            payment_method = PaymentMethod.objects.get(id=payment_method_id)
-            shipping_address = Address.objects.get(id=shipping_address_id)
-            order_status = OrderStatus.objects.get(status="Pending")
-            
-            # Create the order
+            data = json.loads(request.body)
+            user = request.user
+            payment_method_value = data.get('payment')
+
+            if not payment_method_value:
+                return JsonResponse({'status': 'error', 'message': 'Payment method is required.'})
+
+            # Create or get COD payment method
+            if payment_method_value == 'cod':
+                payment_method = create_cod_payment_method(user)
+            else:
+                try:
+                    payment_method = PaymentMethod.objects.get(id=payment_method_value)
+                except PaymentMethod.DoesNotExist:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid payment method.'})
+
+            shipping_address_id = data.get('shipping_address_id')
+            if not shipping_address_id:
+                return JsonResponse({'status': 'error', 'message': 'Shipping address ID is required.'})
+
+            # Fetch existing address based on address ID
+            try:
+                shipping_address = Address.objects.get(id=shipping_address_id, user=user)
+            except Address.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Invalid shipping address.'})
+
+            # Calculate order total
+            cart = Cart.objects.get(user=user)
+            cart_items = CartItem.objects.filter(cart=cart)
+            order_total = sum(item.qty * item.product_configuration.price for item in cart_items) + 10  # Add fixed shipping cost
+
+            # Create or get the default order status
+            order_status, created = OrderStatus.objects.get_or_create(status='Pending')
+
+            # Create order
             order = Order.objects.create(
                 user=user,
                 payment_method=payment_method,
                 shipping_address=shipping_address,
-                shipping_method=ShippingMethod.objects.first(),  # Adjust as necessary
+                shipping_method=ShippingMethod.objects.first(),  # Replace with actual logic if needed
                 order_total=order_total,
                 order_status=order_status
             )
-            
-            # Create the order lines
-            cart_items = CartItem.objects.filter(cart__user=user)
+
+            # Create order lines
             for item in cart_items:
                 OrderLine.objects.create(
                     order=order,
@@ -808,14 +826,34 @@ def place_order(request):
                     qty=item.qty,
                     price=item.product_configuration.price
                 )
-            
-            # Clear the cart
+
+            # Optionally, clear the cart after placing the order
             cart_items.delete()
-            
-            return JsonResponse({'status': 'success'})
+
+            return JsonResponse({'status': 'success', 'message': 'Order placed successfully.'})
+
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+def create_cod_payment_method(user):
+    cod_payment_type = PaymentType.objects.get(value="Cash on Delivery")
+
+    # Calculate expiry date as 365 days from today
+    expiry_date = datetime.now().date() + timedelta(days=365)
+
+    payment_method, created = PaymentMethod.objects.get_or_create(
+        user=user,
+        payment_type=cod_payment_type,
+        defaults={
+            'provider': "N/A",  # or any default value
+            'account_number': "N/A",  # or any default value
+            'expiry_date': expiry_date,  # dynamically calculated expiry date
+            'is_default': False
+        }
+    )
+    return payment_method
 
 ########################## function for logout ############################
 def logout(request):

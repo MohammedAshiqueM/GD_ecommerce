@@ -98,7 +98,7 @@ class Order(models.Model):
     order_date = models.DateField(auto_now_add=True)
     payment_method = models.ForeignKey(PaymentMethod, on_delete=models.CASCADE)
     shipping_address = models.ForeignKey(Address, on_delete=models.CASCADE)
-    shipping_method = models.ForeignKey(ShippingMethod, on_delete=models.CASCADE)
+    shipping_method = models.ForeignKey(ShippingMethod, on_delete=models.CASCADE,null=True)
     order_total = models.FloatField()
     order_status = models.ForeignKey(OrderStatus, on_delete=models.CASCADE)
 
