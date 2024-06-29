@@ -438,84 +438,6 @@ def deleteAddress(request, pk):
         messages.success(request, "Address deleted successfully.")
     return redirect('profile', pk=request.user.id)
 
-from django.shortcuts import render, get_object_or_404
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.utils import timezone
-
-@login_required
-def checkOut(request):
-    if request.method == 'POST':
-        # Retrieve the payment method
-        payment_method = request.POST.get('payment')
-        try:
-            if payment_method == 'directcheck':
-                payment_method_instance = PaymentMethod.objects.get(name='Cash On Delivery')
-            elif payment_method == 'paypal':
-                payment_method_instance = PaymentMethod.objects.get(name='Paypal')
-            elif payment_method == 'banktransfer':
-                payment_method_instance = PaymentMethod.objects.get(name='Bank Transfer')
-            else:
-                return JsonResponse({'status': 'error', 'message': 'Invalid payment method.'})
-        except PaymentMethod.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Payment method not found.'})
-
-        # Get the default address
-        addresses = Address.objects.filter(user=request.user)
-        default_address = addresses.filter(is_default=True).first() or addresses.first()
-        if not default_address:
-            return JsonResponse({'status': 'error', 'message': 'No address found for user.'})
-
-        # Retrieve the cart and its items
-        cart, created = Cart.objects.get_or_create(user=request.user)
-        cart_items = CartItem.objects.filter(cart=cart)
-
-        # Calculate order total
-        order_total = sum(item.qty * item.product_configuration.price for item in cart_items) + 10  # +10 for shipping
-
-        # Create order status
-        order_status, created = OrderStatus.objects.get_or_create(status='Pending')
-
-        # Create the order
-        order = Order.objects.create(
-            user=request.user,
-            payment_method=payment_method_instance,
-            shipping_address=default_address,
-            shipping_method=ShippingMethod.objects.get(name='Standard'),  # Replace with actual logic if needed
-            order_total=order_total,
-            order_status=order_status
-        )
-
-        # Create order lines
-        for item in cart_items:
-            OrderLine.objects.create(
-                order=order,
-                product=item.product_configuration.product,
-                qty=item.qty,
-                price=item.product_configuration.price
-            )
-
-        # Clear the cart
-        cart_items.delete()
-
-        return redirect('order_success')
-
-    addresses = Address.objects.filter(user=request.user)
-    default_address = addresses.filter(is_default=True).first() or addresses.first()
-    if not default_address:
-        return JsonResponse({'status': 'error', 'message': 'No address found for user.'})
-
-    # Retrieve the cart and its items
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    cart_items = CartItem.objects.filter(cart=cart)
-
-    context = {
-        "addresses": addresses,
-        "default_address": default_address,
-        "cart_items": cart_items,
-        "edit": True
-    }
-    return render(request, "checkOut.html", context)
 
 
 
@@ -767,8 +689,81 @@ def check_cart_quantity(request):
 def order_success(request):
     return render(request, 'order_success.html')
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+
+@login_required
+def checkOut(request):
+    if request.method == 'POST':
+        # Retrieve the payment method
+        payment_method = request.POST.get('payment')
+        try:
+            if payment_method == 'directcheck':
+                payment_method_instance = PaymentMethod.objects.get(name='Cash On Delivery')
+            elif payment_method == 'paypal':
+                payment_method_instance = PaymentMethod.objects.get(name='Paypal')
+            elif payment_method == 'banktransfer':
+                payment_method_instance = PaymentMethod.objects.get(name='Bank Transfer')
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Invalid payment method.'})
+        except PaymentMethod.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Payment method not found.'})
+
+        # Get the default address
+        addresses = Address.objects.filter(user=request.user)
+        default_address = addresses.filter(is_default=True).first() or addresses.first()
+        if not default_address:
+            return JsonResponse({'status': 'error', 'message': 'No address found for user.'})
+
+        # Retrieve the cart and its items
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart_items = CartItem.objects.filter(cart=cart)
+
+        # Calculate order total
+        order_total = sum(item.qty * item.product_configuration.price for item in cart_items) + 10  # +10 for shipping
+
+        # Create order status
+        order_status, created = OrderStatus.objects.get_or_create(status='Pending')
+
+        # Create the order
+        order = Order.objects.create(
+            user=request.user,
+            payment_method=payment_method_instance,
+            shipping_address=default_address,
+            shipping_method=ShippingMethod.objects.get(name='Standard'),  # Replace with actual logic if needed
+            order_total=order_total,
+            order_status=order_status
+        )
+
+        # Create order lines
+        for item in cart_items:
+            OrderLine.objects.create(
+                order=order,
+                product=item.product_configuration.product,
+                qty=item.qty,
+                price=item.product_configuration.price
+            )
+
+        # Clear the cart
+        cart_items.delete()
+
+        return redirect('order_success')
+
+    addresses = Address.objects.filter(user=request.user)
+    default_address = addresses.filter(is_default=True).first() or addresses.first()
+    if not default_address:
+        return JsonResponse({'status': 'error', 'message': 'No address found for user.'})
+
+    # Retrieve the cart and its items
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = CartItem.objects.filter(cart=cart)
+
+    context = {
+        "addresses": addresses,
+        "default_address": default_address,
+        "cart_items": cart_items,
+        "edit": True
+    }
+    return render(request, "checkOut.html", context)
+
 
 @csrf_exempt
 def place_order(request):

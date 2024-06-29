@@ -139,34 +139,6 @@
 </div>
 
                 
-                <div class="mb-5">
-                    <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Payment</span></h5>
-                    <div class="bg-light p-30">
-                        <div class="form-group">
-                            <div class="custom-control custom-radio">
-                                <input type="radio" class="custom-control-input" name="payment" id="paypal">
-                                <label class="custom-control-label" for="paypal">Paypal</label>
-                            </div>
-                        </div>
-<div class="form-group">
-    <div class="custom-control custom-radio">
-        <input type="radio" class="custom-control-input" name="payment" id="cod" value="cod">
-        <label class="custom-control-label" for="cod">Cash On Delivery</label>
-    </div>
-</div>
-                        <div class="form-group mb-4">
-                            <div class="custom-control custom-radio">
-                                <input type="radio" class="custom-control-input" name="payment" id="banktransfer">
-                                <label class="custom-control-label" for="banktransfer">Bank Transfer</label>
-                            </div>
-                        </div>
-                        <button class="btn btn-block btn-primary font-weight-bold py-3">Place Order</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Checkout End -->
 
 <!-- Modal -->
@@ -262,6 +234,7 @@
             </div>
         </div>
     </div>
+    
     <!-- Footer End -->
     <form id="checkoutForm" action="{% url 'place_order' %}" method="POST">
     {% csrf_token %}
@@ -306,11 +279,16 @@
         document.querySelector('#address-select .list-group-item.active').click();
     });
 </script>
+<!-- Include SweetAlert CSS and JS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var addressSelectButtons = document.querySelectorAll('#address-select .list-group-item');
     var placeOrderButton = document.getElementById('place-order-btn');
 
+    // Address selection handling
     addressSelectButtons.forEach(function (button) {
         button.addEventListener('click', function () {
             // Remove active class from all buttons
@@ -333,28 +311,46 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Place order button click event
     placeOrderButton.addEventListener('click', function (event) {
         event.preventDefault();
-        
-        var paymentMethod = document.querySelector('input[name="payment"]:checked');
-        
-        if (!paymentMethod) {
-            console.error('Payment method not selected');
+
+        // Validate cart items
+        var cartItems = {{ cart_items|length }};
+        if (cartItems === 0) {
+            swal({
+                title: "Oops",
+                text: "Your cart is empty. Please add items to your cart before placing an order.",
+                icon: "warning",
+                buttons: true,
+                dangerMode: true,
+            });
             return;
         }
-        
+
+        // Validate payment method selection
+        var paymentMethod = document.querySelector('input[name="payment"]:checked');
+        if (!paymentMethod) {
+            console.error('Payment method not selected');
+            // Optionally show an error message
+            return;
+        }
+
         var paymentValue = paymentMethod.value;
         console.log('Selected payment method:', paymentValue);
 
+        // Validate selected shipping address
         var activeAddressButton = document.querySelector('#address-select .list-group-item.active');
         if (!activeAddressButton) {
             console.error('Shipping address not selected');
+            // Optionally show an error message
             return;
         }
 
         var addressId = activeAddressButton.getAttribute('data-address-id');
-        console.log(addressId)
+        console.log('Selected address ID:', addressId);
 
+        // Perform AJAX request to place the order
         fetch("{% url 'place_order' %}", {
             method: 'POST',
             headers: {
@@ -362,8 +358,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-CSRFToken': '{{ csrf_token }}'
             },
             body: JSON.stringify({
-                'payment': paymentValue,
-                'shipping_address_id': addressId
+                payment: paymentValue,
+                shipping_address_id: addressId
             })
         })
         .then(response => {
@@ -375,6 +371,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
             console.log('Order placed:', data);
             // Optionally show a success modal or redirect to a success page
+            window.location.href = '{% url "order_success" %}'; // Replace with your success page URL
         })
         .catch(error => {
             console.error('Error placing order:', error);
@@ -382,5 +379,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
-
 </script>
+
