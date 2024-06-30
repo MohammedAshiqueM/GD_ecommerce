@@ -1,1 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Details</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table th, table td {
+            border: 1px solid #bf2f2f;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
     {% include 'common_block.html' %}
+    <div class="projects">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="heading">Order Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table width="100%">
+                        <thead>
+                            <tr>
+                                <th>Order Id</th>
+                                <th>Product Image</th>
+                                <th>Product Name</th>
+                                <th>User</th>
+                                <th>Variations</th>
+                                <th>SKU</th>
+                                <th>Payment Method</th>
+                                <th>Shipping Address</th>
+                                <th>Order Total</th>
+                                <th>Order Status</th>
+                                <th>Change Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            {% for line in order.orderline_set.all %}
+                            <tr>
+                                {% if forloop.first %}
+                                <td rowspan="{{ order.orderline_set.count }}">#{{ order.id }}</td>
+                                {% endif %}
+                    
+                                <td>
+                                    {% if line.product.images.first %}
+                                    <img src="{{ line.product.images.first.image.url }}" alt="Product Image" width="60" height="60">
+                                    {% else %}
+                                    <img src="https://via.placeholder.com/60" alt="Product Image">
+                                    {% endif %}
+                                </td>
+                                <td>{{ line.product.name }}</td>
+                                <td>{{ order.user.username }}</td>
+                                <td>
+                                    {% for option in line.product.configurations.first.variation_options.all %}
+                                    {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>{{ line.product.SKU }}</td>
+                                {% if forloop.first %}
+                                <td rowspan="{{ order.orderline_set.count }}">{{ order.payment_method.payment_type }}</td>
+                                <td rowspan="{{ order.orderline_set.count }}">{{ order.shipping_address.address_line1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.region }}, {{ order.shipping_address.country }}</td>
+                                <td rowspan="{{ order.orderline_set.count }}">${{ order.order_total }}</td>
+                                <td rowspan="{{ order.orderline_set.count }}">{{ order.order_status.status }}</td>
+                                <td rowspan="{{ order.orderline_set.count }}">
+                                    <button onclick="changeOrderStatus('{{ order.id }}', 'cancel')">Cancel</button>
+                                    <button onclick="changeOrderStatus('{{ order.id }}', 'pending')">Pending</button>
+                                    <button onclick="changeOrderStatus('{{ order.id }}', 'delivered')">Delivered</button>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function changeOrderStatus(orderId, status) {
+            fetch(`/administration/change_order_status/${orderId}/?status=${status}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        console.error('Failed to change order status');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error changing order status:', error);
+                });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+
+</html>

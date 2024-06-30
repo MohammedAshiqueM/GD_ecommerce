@@ -665,7 +665,9 @@ def editvariant(request, pk):
     }
     return render(request, "editvariant.html", context)
 
-
+def orders(request):
+    orders = Order.objects.all()
+    return render(request,"orders.html",{'orders': orders})
 
 def adminLogout(request):
     auth_logout(request)
