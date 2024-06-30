@@ -705,7 +705,7 @@ def update_stock(request):
                     config.save()
                 except (ProductConfiguration.DoesNotExist, ValueError):
                     pass
-    return redirect('stockManagement')
+    return redirect('stock_management')
 
 def adminLogout(request):
     auth_logout(request)
