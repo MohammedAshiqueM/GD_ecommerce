@@ -27,5 +27,7 @@ urlpatterns = [
     path('editProduct/<pk>/', views.editProduct, name='editProduct'),
     path('orders/', views.orders, name='orders'),
     path('change_order_status/<int:order_id>/', views.change_order_status, name='change_order_status'),
+    path('stock_management/', views.stock_management, name='stock_management'),
+    path('admin/update-stock/', views.update_stock, name='update_stock'),
     path('adminLogout/', views.adminLogout, name='adminLogout'),
 ]

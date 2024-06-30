@@ -1,0 +1,127 @@
+{% include 'common_block.html' %}
+<div class="projects">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="heading">Product Stock Management</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <form method="post" action="{% url 'update_stock' %}">
+                    {% csrf_token %}
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Product Name</th>
+                                <th scope="col">SKU</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            <tr class="product-row">
+                                <td class="product-name">{{ product.name }}</td>
+                                <td>{{ product.SKU }}</td>
+                                <td><button type="button" class="view-button" onclick="toggleVariations({{ product.id }})">View Variations</button></td>
+                            </tr>
+                            <tr id="variations-{{ product.id }}" class="variation-row" style="display: none;">
+                                <td colspan="3">
+                                    <table class="inner-table">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Variations</th>
+                                                <th scope="col">Current Stock</th>
+                                                <th scope="col">New Stock</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for config in product.configurations.all %}
+                                            <tr>
+                                                <td>
+                                                    {% for option in config.variation_options.all %}
+                                                        {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                </td>
+                                                <td>{{ config.qty_in_stock }}</td>
+                                                <td>
+                                                    <input type="number" class="stock-input" name="config_{{ config.id }}" value="{{ config.qty_in_stock }}" min="0">
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <button type="submit" class="update-button">Update Stock</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleVariations(productId) {
+    var row = document.getElementById('variations-' + productId);
+    if (row.style.display === 'none') {
+        row.style.display = 'table-row';
+    } else {
+        row.style.display = 'none';
+    }
+}
+</script>
+
+<style>
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .custom-table th,
+    .custom-table td {
+        border: 1px solid #ddd; /* Light gray border for table cells */
+        padding: 8px;
+        text-align: left;
+    }
+    .product-row {
+        background-color: #b296aa; /* Light cyan background for product rows */
+        margin-bottom: 10px; /* Adds margin bottom to each product row */
+    }
+    .product-name {
+        font-weight: bold;
+    }
+    .view-button {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+    .variation-row {
+        background-color: #8e858c; /* Light orange background for variation rows */
+    }
+    .inner-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    .inner-table th,
+    .inner-table td {
+        border: 1px solid #ddd; /* Light gray border for inner table cells */
+        padding: 8px;
+        text-align: left;
+    }
+    .stock-input {
+        width: 80px;
+        padding: 4px;
+    }
+    .update-button {
+        margin-top: 10px;
+        padding: 8px 16px;
+        font-size: 16px;
+        background-color: #007bff; /* Bootstrap's primary button color */
+        color: #fff;
+        border: none;
+        cursor: pointer;
+    }
+    .update-button:hover {
+        background-color: #0056b3; /* Darker shade of primary color on hover */
+    }
+</style>

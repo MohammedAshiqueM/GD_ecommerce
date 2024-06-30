@@ -687,6 +687,25 @@ def change_order_status(request, order_id):
         return JsonResponse({'message': 'Order status changed successfully.'})
     else:
         return JsonResponse({'message': 'Invalid status.'}, status=400)
+    
+@login_required
+def stock_management(request):
+    products = Product.objects.prefetch_related('configurations__variation_options').all()
+    return render(request, 'stockManagement.html', {'products': products})
+
+@login_required
+def update_stock(request):
+    if request.method == 'POST':
+        for config_id, qty in request.POST.items():
+            if config_id.startswith('config_'):
+                config_id = config_id.replace('config_', '')
+                try:
+                    config = ProductConfiguration.objects.get(id=config_id)
+                    config.qty_in_stock = int(qty)
+                    config.save()
+                except (ProductConfiguration.DoesNotExist, ValueError):
+                    pass
+    return redirect('stockManagement')
 
 def adminLogout(request):
     auth_logout(request)
