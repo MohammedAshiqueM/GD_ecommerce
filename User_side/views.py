@@ -854,6 +854,16 @@ def my_orders(request):
     orders = Order.objects.filter(user=request.user).prefetch_related('orderline_set__product__images', 'orderline_set__product__configurations__variation_options')
     return render(request, "myOrders.html", {'orders': orders})
 
+def cancel_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+
+    if order.order_status.status == 'pending':
+        cancel_status, created = OrderStatus.objects.get_or_create(status='cancel')
+        order.order_status = cancel_status
+        order.save()
+        return JsonResponse({'message': 'Order cancelled successfully.'})
+    else:
+        return JsonResponse({'message': 'Order cannot be cancelled.'}, status=400)
 ########################## function for logout ############################
 def logout(request):
     auth_logout(request)

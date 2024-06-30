@@ -107,7 +107,7 @@
         .order-summary .status.delivered {
             background-color: #90be6d;
         }
-        .order-summary .status.out-of-delivery {
+        .order-summary .status.cancel {
             background-color: #f94144;
         }
         .order-summary .actions {
@@ -123,6 +123,7 @@
             margin-left: 5px;
         }
     </style>
+    
 </head>
 <body>
 
@@ -167,12 +168,14 @@
         {% endfor %}
         
         <div class="order-summary">
-            <span class='status {{ order.order_status.status|lower|replace_space:"-" }}'>{{ order.order_status.status }}</span>
+            <span class='status {{ order.order_status.status|lower|replace_space:"-" }}'>{% if order.order_status.status == 'cancel' %}Cancelled{% else %}{{ order.order_status.status }}{% endif %}</span>
             <div class="total-amount">
                 Total: ${{ order.order_total }}
             </div>
             <div class="actions">
-                <button>Manage Order</button>
+                {% if order.order_status.status == 'pending' %}
+                <button onclick="confirmCancel('{{ order.id }}')">Cancel</button>
+                {% endif %}
                 <button>View Invoice</button>
             </div>
         </div>
@@ -180,6 +183,58 @@
     {% endfor %}
 
 </div>
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+<script>
+        function confirmCancel(orderId) {
+            swal({
+                title: "Are you sure?",
+                text: "Once cancelled, you will not be able to change the status",
+                icon: "warning",
+                buttons: true,
+                dangerMode: true,
+            })
+            .then((willCancel) => {
+                if (willCancel) {
+                    cancelOrder(orderId);
+                }
+            });
+        }
 
+        function cancelOrder(orderId) {
+            fetch(`/user/cancel_order/${orderId}/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    console.error('Failed to cancel order');
+                }
+            })
+            .catch(error => {
+                console.error('Error canceling order:', error);
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+    </script>
 </body>
 </html>
