@@ -26,7 +26,6 @@ urlpatterns = [
     path('get_subcategories/<int:category_id>/', views.get_subcategories, name='get_subcategories'),
     path('editProduct/<pk>/', views.editProduct, name='editProduct'),
     path('orders/', views.orders, name='orders'),
+    path('change_order_status/<int:order_id>/', views.change_order_status, name='change_order_status'),
     path('adminLogout/', views.adminLogout, name='adminLogout'),
-    
-    
 ]

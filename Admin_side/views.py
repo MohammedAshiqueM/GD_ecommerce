@@ -669,6 +669,25 @@ def orders(request):
     orders = Order.objects.all()
     return render(request,"orders.html",{'orders': orders})
 
+def admin_orders(request):
+    orders = Order.objects.all()
+    context = {
+        'orders': orders
+    }
+    return render(request, 'admin_orders.html', context)
+
+def change_order_status(request, order_id):
+    status = request.GET.get('status')
+    order = get_object_or_404(Order, id=order_id)
+
+    if status:
+        order_status, created = OrderStatus.objects.get_or_create(status=status)
+        order.order_status = order_status
+        order.save()
+        return JsonResponse({'message': 'Order status changed successfully.'})
+    else:
+        return JsonResponse({'message': 'Invalid status.'}, status=400)
+
 def adminLogout(request):
     auth_logout(request)
     return redirect("adminLogin")
