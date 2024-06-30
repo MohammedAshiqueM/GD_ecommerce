@@ -850,6 +850,10 @@ def create_cod_payment_method(user):
     )
     return payment_method
 
+def my_orders(request):
+    orders = Order.objects.filter(user=request.user).prefetch_related('orderline_set__product__images', 'orderline_set__product__configurations__variation_options')
+    return render(request, "myOrders.html", {'orders': orders})
+
 ########################## function for logout ############################
 def logout(request):
     auth_logout(request)

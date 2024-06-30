@@ -19,3 +19,7 @@ def calc_total(cart_items):
 def get_item(dictionary, key):
     return dictionary.get(key)
 
+@register.filter(name='replace_space')
+def replace_space(value, arg):
+    """Replaces all spaces with the given argument."""
+    return value.replace(' ', arg)

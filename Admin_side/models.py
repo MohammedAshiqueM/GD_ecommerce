@@ -17,7 +17,9 @@ class Address(models.Model):
 
 class PaymentType(models.Model):
     value = models.CharField(max_length=255)
-
+    def __str__(self):
+        return f"{self.value}"
+    
 class PaymentMethod(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     payment_type = models.ForeignKey(PaymentType, on_delete=models.CASCADE)

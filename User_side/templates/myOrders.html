@@ -1,0 +1,185 @@
+{% load cart_extras %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order History</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .order-history {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .order-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .order {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        .order:last-child {
+            border-bottom: none;
+        }
+        .order-details, .order-items {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .order-details {
+            font-size: 14px;
+            color: #555;
+        }
+        .order-items img {
+            width: 60px;
+            height: 60px;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .order-items div {
+            flex: 1;
+        }
+        .order-items .item-info {
+            display: flex;
+            align-items: center;
+        }
+        .order-items .item-info div {
+            margin-left: 10px;
+        }
+        .order-items .item-info div h4 {
+            margin: 0;
+            font-size: 16px;
+        }
+        .order-items .item-info div p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            color: #777;
+        }
+        .order-items .item-actions {
+            text-align: right;
+        }
+        .order-items .item-actions button {
+            background-color: #6c63ff;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 5px;
+        }
+        .order-items .item-actions button.shop-similar {
+            background-color: #555;
+        }
+        .order-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .order-summary .status {
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+        }
+        .order-summary .status.pending {
+            background-color: #f9c74f;
+        }
+        .order-summary .status.delivered {
+            background-color: #90be6d;
+        }
+        .order-summary .status.out-of-delivery {
+            background-color: #f94144;
+        }
+        .order-summary .actions {
+            text-align: right;
+        }
+        .order-summary .actions button {
+            background-color: #6c63ff;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="order-history">
+    <div class="order-header">
+        <h2>Your Order History</h2>
+    </div>
+    
+    {% for order in orders %}
+    <div class="order">
+        <div class="order-details">
+            <span>Order #{{ order.id }}</span>
+            <span>Placed on {{ order.order_date }}</span>
+           
+        </div>
+        
+        {% for line in order.orderline_set.all %}
+        <div class="order-items">
+            <div class="item-info">
+                {% if line.product.images.first %}
+                <img src="{{ line.product.images.first.image.url }}" alt="Product Image">
+                {% else %}
+                <img src="https://via.placeholder.com/60" alt="Product Image">
+                {% endif %}
+                <div>
+                    <h4>{{ line.product.name }}</h4>
+                    {% if line.product.configurations.exists %}
+                    <p>Options: 
+                        {% for option in line.product.configurations.first.variation_options.all %}
+                        {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                    <p>Price: ${{ line.price }}</p>
+                    <p>Shipping Charge: $10</p>
+                    <p>Quantity: {{ line.qty }}</p>
+                    <p>Payment Method: {{ order.payment_method.payment_type }} </p>   {% comment %} ending in {{ order.payment_method.account_number|slice:"-4" }} //this is for after creating the other payment methods{% endcomment %}
+                    <p>Shipping Address: {{ order.shipping_address.address_line1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.region }}, {{ order.shipping_address.country }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="order-summary">
+            <span class='status {{ order.order_status.status|lower|replace_space:"-" }}'>{{ order.order_status.status }}</span>
+            <div class="total-amount">
+                Total: ${{ order.order_total }}
+            </div>
+            <div class="actions">
+                <button>Manage Order</button>
+                <button>View Invoice</button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+
+</body>
+</html>
