@@ -5,18 +5,19 @@ class onFocus {
 
     init() {
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('Document loaded');
             this.addFocusClass();
             this.keyUpObserve();
             this.clickLink();
             this.initialLabelState();
-            this.setInitialFormState();  // Added method to set initial form state
+            this.setInitialFormState();
         });
         return 0;
     }
 
     addFocusClass() {
         const formControls = document.querySelectorAll('.form-control');
-        
+
         formControls.forEach(control => {
             control.addEventListener('focus', function () {
                 control.classList.add('on-focus');
@@ -26,7 +27,7 @@ class onFocus {
                 }
             });
 
-            control.addEventListener('focusout', function () {
+            control.addEventListener('blur', function () {  // Changed 'focusout' to 'blur'
                 control.classList.remove('on-focus');
                 const previousElement = control.previousElementSibling;
                 if (previousElement && previousElement.classList.contains('form-label')) {
@@ -38,7 +39,7 @@ class onFocus {
 
     keyUpObserve() {
         const formControls = document.querySelectorAll('.form-control');
-        
+
         formControls.forEach(control => {
             control.addEventListener('keyup', function () {
                 const previousElement = control.previousElementSibling;
@@ -68,17 +69,17 @@ class onFocus {
 
     clickLink() {
         const links = document.querySelectorAll('.link');
-        
+
         links.forEach(link => {
             link.addEventListener('click', function (event) {
                 event.preventDefault();
-                
+
                 const openId = link.getAttribute('data-open');
                 const closeId = link.getAttribute('data-close');
-                
+
                 const closeElement = document.getElementById(closeId);
                 const openElement = document.getElementById(openId);
-                
+
                 if (closeElement && openElement) {
                     closeElement.style.opacity = '0';
                     closeElement.style.top = '100px';
@@ -97,12 +98,17 @@ class onFocus {
     }
 
     setInitialFormState() {
-        const activeForm = "{{ active_form }}";
+        const activeForm = "{{ active_form }}";  // Ensure this is passed from your backend correctly
         if (activeForm === "signup") {
-            document.getElementById('login-page').classList.remove('open');
-            document.getElementById('login-page').classList.add('close');
-            document.getElementById('new-account-page').classList.remove('close');
-            document.getElementById('new-account-page').classList.add('open');
+            const loginPage = document.getElementById('login-page');
+            const newAccountPage = document.getElementById('new-account-page');
+
+            if (loginPage && newAccountPage) {
+                loginPage.classList.remove('open');
+                loginPage.classList.add('close');
+                newAccountPage.classList.remove('close');
+                newAccountPage.classList.add('open');
+            }
         }
     }
 }
@@ -110,6 +116,7 @@ class onFocus {
 const run = new onFocus();
 
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('Setting up password input toggles');
     const passwordInputs = [
         { inputId: 'sign-in-password-input', checkboxId: 'sign-in-show-password-checkbox' },
         { inputId: 'sign-up-password-input', checkboxId: 'sign-up-show-password-checkbox' },
@@ -119,14 +126,10 @@ document.addEventListener('DOMContentLoaded', function () {
     passwordInputs.forEach(({ inputId, checkboxId }) => {
         const passwordInput = document.getElementById(inputId);
         const showPasswordCheckbox = document.getElementById(checkboxId);
-        
+
         if (passwordInput && showPasswordCheckbox) {
             showPasswordCheckbox.addEventListener('change', function () {
-                if (this.checked) {
-                    passwordInput.type = 'text';
-                } else {
-                    passwordInput.type = 'password';
-                }
+                passwordInput.type = this.checked ? 'text' : 'password';
             });
         }
     });

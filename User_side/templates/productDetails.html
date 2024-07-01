@@ -126,7 +126,9 @@ left: 50%;
 .align-items-center {
     align-items: center;
 }
-
+.out-of-stock{
+    width:100px
+}
     </style>
 </head>
 
@@ -609,7 +611,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('stock-info').textContent = `${variationDetails} (${matchingConfig.qty_in_stock} stock remains)`;
         } else {
             document.getElementById('product-price').textContent = 'N/A';
-            document.getElementById('stock-info').textContent = `${variationDetails} (Out of stock)`;
+            document.getElementById('stock-info').innerHTML = `${variationDetails} <img class="out-of-stock" src="{% static 'user_img/out-of-stock.jpg' %}" alt="Out of stock" />`;
         }
     }
 
@@ -734,7 +736,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 </script> -->
-
+<script src="https://cdn.jsdelivr.net/gh/noumanqamar450/alertbox@main/version/1.0.2/alertbox.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // Function to handle increment and decrement buttons
@@ -898,7 +900,13 @@ document.addEventListener('DOMContentLoaded', function () {
                                     alert('Failed to add product to cart. Please try again.');
                                 });
                             } else {
-                                alert(data.message);
+                                alertbox.render({
+                                alertIcon: 'info',
+                                title: data.message,
+                                message: 'Sorry, the selected quantity exceeds available stock. Please adjust your quantity.',
+                                btnTitle: 'Ok',
+                                border:true
+                                });
                             }
                         })
                         .catch(error => {

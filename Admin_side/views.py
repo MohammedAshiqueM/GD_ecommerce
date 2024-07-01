@@ -13,6 +13,7 @@ from django.http import JsonResponse, HttpResponse
 from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile
+from django.forms import CheckboxInput
 from itertools import product as iter_product
 from .models import (
     User,
@@ -515,7 +516,6 @@ def unblockProduct(request, pk):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
     
-from django.forms import CheckboxInput
 
 def editProduct(request, pk):
     product = get_object_or_404(Product, id=pk)

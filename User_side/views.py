@@ -11,7 +11,11 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from django.db.models import Count,Avg
+from django.db.models import Count,Avg,Sum
+import re
+from .utils import generate_otp, send_otp
+from datetime import datetime, timedelta
+from django.db.models import Avg, Min, Max,Q
 from Admin_side.models import (
     User,
     Address,
@@ -37,9 +41,6 @@ from Admin_side.models import (
 
 
 # from django.core.validators import validate_email,EmailValidator
-import re
-from .utils import generate_otp, send_otp
-from datetime import datetime, timedelta
 
 
 ########################## function for login & singUp ###############################
@@ -233,6 +234,11 @@ def resend_otp(request):
 
 
 ########################## function for home page ############################
+def common(request):
+    categories = Category.objects.all()
+    context = {"categories":categories}
+    return redirect(request,'common.html',context)
+
 @login_required(login_url='userLogin')
 @never_cache
 def userHome(request):
@@ -271,7 +277,8 @@ def productDetails(request, pk):
 
 def shop(request):
     product = Product.objects.filter(is_active=True)
-    context = {"product": product}
+    categories = Category.objects.all()
+    context = {"product": product,"categories":categories}
     return render(request, "shop.html", context)
 
 def categoryProduct(request,pk):
@@ -297,17 +304,19 @@ def categoryProduct(request,pk):
         product_avg_prices[product.id] = avg_price
         
     context = {
+        
         "products":products,
         "product_avg_prices": product_avg_prices,
         "sort": sort,
         }
     return render(request,"categoryProduct.html",context)
 
-from django.db.models import Avg, Min, Max
+
 
 def subcategoryProduct(request, pk):
     products = Product.objects.filter(subcategory_id=pk)
     sort = request.GET.get('sort', 'default')
+    categories = Category.objects.all()
     
     if sort == 'price_low_high':
         products = products.annotate(min_price=Min('configurations__price')).order_by('min_price')
@@ -331,6 +340,7 @@ def subcategoryProduct(request, pk):
         "products":products,
         "product_avg_prices": product_avg_prices,
         "sort": sort,
+        "categories":categories
         }
 
     return render(request, "subcategoryProduct.html", context)
@@ -445,8 +455,10 @@ def cart_view(request):
     cart, created = Cart.objects.get_or_create(user=request.user)
     print('cart',cart)
     cart_items = CartItem.objects.filter(cart=cart)
+    categories = Category.objects.all()
     context = {
-        'cart_items': cart_items
+        'cart_items': cart_items,
+        "categories":categories
     }
     
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -465,11 +477,6 @@ def cart_view(request):
     
     return render(request, 'cart.html', context)
 
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-import json
 
 @require_POST
 @login_required
@@ -508,13 +515,6 @@ def add_to_cart(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
-
-
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404
-import json
-from django.db.models import Count, Q
 
 @require_POST
 def get_configuration_id(request):
@@ -581,8 +581,6 @@ def contact(request):
     return render(request, "contact.html")
 
 
-
-
 @csrf_exempt
 @require_POST
 def increment_quantity(request, item_id):
@@ -604,6 +602,7 @@ def increment_quantity(request, item_id):
         return JsonResponse(response_data)
     except CartItem.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
+
 
 @csrf_exempt
 @require_POST
@@ -648,11 +647,6 @@ def calculate_total(cart):
     # Assuming shipping cost is fixed at $10
     return calculate_subtotal(cart) + 10
 
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404
-import json
-from django.db.models import Sum
 
 @require_POST
 def check_cart_quantity(request):
@@ -692,6 +686,7 @@ def order_success(request):
 
 @login_required
 def checkOut(request):
+    categories = Category.objects.all()
     if request.method == 'POST':
         # Retrieve the payment method
         payment_method = request.POST.get('payment')
@@ -760,6 +755,7 @@ def checkOut(request):
         "addresses": addresses,
         "default_address": default_address,
         "cart_items": cart_items,
+        "categories":categories,
         "edit": True
     }
     return render(request, "checkOut.html", context)
@@ -851,8 +847,9 @@ def create_cod_payment_method(user):
     return payment_method
 
 def my_orders(request):
+    categories = Category.objects.all()
     orders = Order.objects.filter(user=request.user).prefetch_related('orderline_set__product__images', 'orderline_set__product__configurations__variation_options')
-    return render(request, "myOrders.html", {'orders': orders})
+    return render(request, "myOrders.html", {'orders': orders,"categories":categories})
 
 def cancel_order(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
@@ -864,6 +861,7 @@ def cancel_order(request, order_id):
         return JsonResponse({'message': 'Order cancelled successfully.'})
     else:
         return JsonResponse({'message': 'Order cannot be cancelled.'}, status=400)
+    
 ########################## function for logout ############################
 def logout(request):
     auth_logout(request)
