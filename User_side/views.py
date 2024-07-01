@@ -745,7 +745,9 @@ def checkOut(request):
     addresses = Address.objects.filter(user=request.user)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
     if not default_address:
-        return JsonResponse({'status': 'error', 'message': 'No address found for user.'})
+        show_modal = True
+    else:
+        show_modal = False
 
     # Retrieve the cart and its items
     cart, created = Cart.objects.get_or_create(user=request.user)
@@ -756,7 +758,8 @@ def checkOut(request):
         "default_address": default_address,
         "cart_items": cart_items,
         "categories":categories,
-        "edit": True
+        "edit": True,
+        'show_modal': show_modal
     }
     return render(request, "checkOut.html", context)
 

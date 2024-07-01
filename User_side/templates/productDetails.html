@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('stock-info').textContent = `${variationDetails} (${matchingConfig.qty_in_stock} stock remains)`;
         } else {
             document.getElementById('product-price').textContent = 'N/A';
-            document.getElementById('stock-info').innerHTML = `${variationDetails} <img class="out-of-stock" src="{% static 'user_img/out-of-stock.jpg' %}" alt="Out of stock" />`;
+            document.getElementById('stock-info').innerHTML = `${variationDetails} <img class="out-of-stock" src="{% static 'user_img/stock.png' %}" alt="Out of stock" />`;
         }
     }
 

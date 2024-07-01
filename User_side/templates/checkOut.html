@@ -249,6 +249,26 @@
     </div>
     <!-- Other checkout form fields here -->
     <button type="submit" class="btn btn-primary font-weight-bold py-3">Place Order</button>
+    {% if show_modal %}
+    <div class="modal" tabindex="-1" role="dialog" id="noAddressModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">No Address Found</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>No address found for user. Please add an address to proceed with the checkout.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </form>
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
@@ -380,4 +400,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
+<script>
+    $(document).ready(function() {
+        {% if show_modal %}
+        $('#noAddressModal').modal('show');
+        {% endif %}
+    });
+</script>
