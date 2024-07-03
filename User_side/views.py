@@ -774,7 +774,7 @@ def place_order(request):
             data = json.loads(request.body)
             user = request.user
             payment_method_value = data.get('payment')
-            user_confirmation = data.get('confirmation')  # This indicates if the user confirmed the order with available stock
+            confirmation = data.get('confirmation', False)
 
             if not payment_method_value:
                 return JsonResponse({'status': 'error', 'message': 'Payment method is required.'})
@@ -805,63 +805,38 @@ def place_order(request):
 
             # Check product configurations and quantities
             error_messages = []
-            insufficient_stock_items = []
+            confirmation_required = False
+
             with transaction.atomic():
                 for item in cart_items:
                     product_config = item.product_configuration
                     requested_qty = item.qty
 
-                    if product_config.qty_in_stock < requested_qty:
+                    if product_config.qty_in_stock == 0:
                         variation_options = ', '.join(option.value for option in product_config.variation_options.all())
                         error_messages.append(
-                            f'Insufficient stock for {product_config.product.name} ({variation_options}). Available: {product_config.qty_in_stock}'
+                            f'Out of stock for {product_config.product.name} ({variation_options}).'
                         )
-                        insufficient_stock_items.append(item)
-                        
+                    elif product_config.qty_in_stock < requested_qty:
+                        variation_options = ', '.join(option.value for option in product_config.variation_options.all())
+                        error_messages.append(
+                            f'Insufficient stock for {product_config.product.name} ({variation_options}). Requested: {requested_qty}, Available: {product_config.qty_in_stock}'
+                        )
+                        confirmation_required = True
+
             if error_messages:
-                if user_confirmation:
-                    # User confirmed the available quantity
-                    for item in insufficient_stock_items:
-                        product_config = item.product_configuration
-                        requested_qty = item.qty
-                        available_qty = product_config.qty_in_stock
-
-                        # Create or get the default order status
-                        order_status, created = OrderStatus.objects.get_or_create(status='Pending')
-
-                        # Create order
-                        order = Order.objects.create(
-                            user=user,
-                            payment_method=payment_method,
-                            shipping_address=shipping_address,
-                            shipping_method=ShippingMethod.objects.first(),  # Replace with actual logic if needed
-                            order_total=order_total,
-                            order_status=order_status
-                        )
-
-                        # Create order lines for available quantity
-                        OrderLine.objects.create(
-                            order=order,
-                            product=item.product_configuration.product,
-                            qty=available_qty,
-                            price=item.product_configuration.price
-                        )
-
-                        # Update stock
-                        product_config.qty_in_stock -= available_qty
-                        product_config.save()
-
-                        # Update the item quantity in the cart to reflect the remaining balance
-                        item.qty -= available_qty
-                        item.save()
-
-                    # Optionally, clear the cart after placing the order
-                    CartItem.objects.filter(cart=cart, qty=0).delete()
-
-                    return JsonResponse({'status': 'success', 'message': 'Order placed successfully with available stock. Remaining items are still in the cart.'})
+                if any("Out of stock" in msg for msg in error_messages):
+                    return JsonResponse({'status': 'error', 'messages': error_messages})
                 else:
-                    return JsonResponse({'status': 'error', 'messages': error_messages, 'confirmation_required': True})
-
+                    if confirmation_required and not confirmation:
+                        return JsonResponse({'status': 'error', 'messages': error_messages, 'confirmation_required': True})
+                    else:
+                        # Adjust quantities based on available stock
+                        for item in cart_items:
+                            product_config = item.product_configuration
+                            if product_config.qty_in_stock < item.qty:
+                                item.qty = product_config.qty_in_stock
+                                item.save()
 
             # Create or get the default order status
             order_status, created = OrderStatus.objects.get_or_create(status='Pending')
@@ -876,8 +851,12 @@ def place_order(request):
                 order_status=order_status
             )
 
-            # Create order lines
+            # Create order lines and update stock
             for item in cart_items:
+                product_config = item.product_configuration
+                if product_config.qty_in_stock < item.qty:
+                    item.qty = product_config.qty_in_stock  # Adjust to available stock
+
                 OrderLine.objects.create(
                     order=order,
                     product=item.product_configuration.product,
@@ -885,9 +864,10 @@ def place_order(request):
                     price=item.product_configuration.price
                 )
 
-            # Update stock
-            item.product_configuration.qty_in_stock -= item.qty
-            item.product_configuration.save()
+                # Update stock
+                product_config.qty_in_stock -= item.qty
+                product_config.save()
+
             # Optionally, clear the cart after placing the order
             cart_items.delete()
 
