@@ -668,11 +668,11 @@ def check_cart_quantity(request):
         ).aggregate(total=Sum('qty'))['total'] or 0
 
         # Check if adding the requested quantity exceeds the available stock
-        if total_quantity_in_cart + quantity > product_configuration.qty_in_stock:
-            return JsonResponse({
-                'success': False,
-                'message': f'Only {product_configuration.qty_in_stock - total_quantity_in_cart} items available.'
-            }, status=200)
+        # if total_quantity_in_cart + quantity > product_configuration.qty_in_stock:
+        #     return JsonResponse({
+        #         'success': False,
+        #         'message': f'Only {product_configuration.qty_in_stock - total_quantity_in_cart} items available.'
+        #     }, status=200)
         
         return JsonResponse({'success': True}, status=200)
 
@@ -715,6 +715,8 @@ def checkOut(request):
         # Calculate order total
         order_total = sum(item.qty * item.product_configuration.price for item in cart_items) + 10  # +10 for shipping
 
+
+        
         # Create order status
         order_status, created = OrderStatus.objects.get_or_create(status='Pending')
 
@@ -763,6 +765,7 @@ def checkOut(request):
     }
     return render(request, "checkOut.html", context)
 
+from django.db import transaction
 
 @csrf_exempt
 def place_order(request):
@@ -799,6 +802,25 @@ def place_order(request):
             cart_items = CartItem.objects.filter(cart=cart)
             order_total = sum(item.qty * item.product_configuration.price for item in cart_items) + 10  # Add fixed shipping cost
 
+            # Check product configurations and quantities
+            error_messages = []
+            with transaction.atomic():
+                for item in cart_items:
+                    product_config = item.product_configuration
+                    requested_qty = item.qty
+
+                    if product_config.qty_in_stock < requested_qty:
+                        variation_options = ', '.join(option.value for option in product_config.variation_options.all())
+                        error_messages.append(
+                            f'Insufficient stock for {product_config.product.name} ({variation_options}). Available: {product_config.qty_in_stock}'
+                        )
+
+            if error_messages:
+                return JsonResponse({'status': 'error', 'messages': error_messages})
+
+            # Reduce stock temporarily (rollback if order placement fails)
+            product_config.qty_in_stock -= requested_qty
+            product_config.save()
             # Create or get the default order status
             order_status, created = OrderStatus.objects.get_or_create(status='Pending')
 
@@ -821,6 +843,9 @@ def place_order(request):
                     price=item.product_configuration.price
                 )
 
+            # Update stock
+            item.product_configuration.qty_in_stock -= item.qty
+            item.product_configuration.save()
             # Optionally, clear the cart after placing the order
             cart_items.delete()
 

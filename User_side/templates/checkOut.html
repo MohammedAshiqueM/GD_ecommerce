@@ -389,9 +389,22 @@ document.addEventListener('DOMContentLoaded', function () {
             return response.json();
         })
         .then(data => {
-            console.log('Order placed:', data);
-            // Optionally show a success modal or redirect to a success page
-            window.location.href = '{% url "order_success" %}'; // Replace with your success page URL
+            if (data.status === 'success') {
+                console.log('Order placed:', data);
+                // Optionally show a success modal or redirect to a success page
+                window.location.href = '{% url "order_success" %}'; // Replace with your success page URL
+            } else if (data.status === 'error') {
+                console.error('Error placing order:', data.message);
+                // Display error message to the user
+                var errorMessage = data.messages.join('\n');  // Join all error messages into a single string
+                swal({
+                    title: "Error",
+                    text: errorMessage,
+                    icon: "error",
+                    buttons: true,
+                    dangerMode: true,
+                });
+            }
         })
         .catch(error => {
             console.error('Error placing order:', error);
