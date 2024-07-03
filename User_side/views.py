@@ -774,6 +774,7 @@ def place_order(request):
             data = json.loads(request.body)
             user = request.user
             payment_method_value = data.get('payment')
+            user_confirmation = data.get('confirmation')  # This indicates if the user confirmed the order with available stock
 
             if not payment_method_value:
                 return JsonResponse({'status': 'error', 'message': 'Payment method is required.'})
@@ -804,6 +805,7 @@ def place_order(request):
 
             # Check product configurations and quantities
             error_messages = []
+            insufficient_stock_items = []
             with transaction.atomic():
                 for item in cart_items:
                     product_config = item.product_configuration
@@ -814,9 +816,52 @@ def place_order(request):
                         error_messages.append(
                             f'Insufficient stock for {product_config.product.name} ({variation_options}). Available: {product_config.qty_in_stock}'
                         )
-
+                        insufficient_stock_items.append(item)
+                        
             if error_messages:
-                return JsonResponse({'status': 'error', 'messages': error_messages})
+                if user_confirmation:
+                    # User confirmed the available quantity
+                    for item in insufficient_stock_items:
+                        product_config = item.product_configuration
+                        requested_qty = item.qty
+                        available_qty = product_config.qty_in_stock
+
+                        # Create or get the default order status
+                        order_status, created = OrderStatus.objects.get_or_create(status='Pending')
+
+                        # Create order
+                        order = Order.objects.create(
+                            user=user,
+                            payment_method=payment_method,
+                            shipping_address=shipping_address,
+                            shipping_method=ShippingMethod.objects.first(),  # Replace with actual logic if needed
+                            order_total=order_total,
+                            order_status=order_status
+                        )
+
+                        # Create order lines for available quantity
+                        OrderLine.objects.create(
+                            order=order,
+                            product=item.product_configuration.product,
+                            qty=available_qty,
+                            price=item.product_configuration.price
+                        )
+
+                        # Update stock
+                        product_config.qty_in_stock -= available_qty
+                        product_config.save()
+
+                        # Update the item quantity in the cart to reflect the remaining balance
+                        item.qty -= available_qty
+                        item.save()
+
+                    # Optionally, clear the cart after placing the order
+                    CartItem.objects.filter(cart=cart, qty=0).delete()
+
+                    return JsonResponse({'status': 'success', 'message': 'Order placed successfully with available stock. Remaining items are still in the cart.'})
+                else:
+                    return JsonResponse({'status': 'error', 'messages': error_messages, 'confirmation_required': True})
+
 
             # Create or get the default order status
             order_status, created = OrderStatus.objects.get_or_create(status='Pending')

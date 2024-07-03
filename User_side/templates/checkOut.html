@@ -304,7 +304,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
     var addressSelectButtons = document.querySelectorAll('#address-select .list-group-item');
     var placeOrderButton = document.getElementById('place-order-btn');
 
@@ -370,48 +370,78 @@ document.addEventListener('DOMContentLoaded', function () {
         var addressId = activeAddressButton.getAttribute('data-address-id');
         console.log('Selected address ID:', addressId);
 
-        // Perform AJAX request to place the order
-        fetch("{% url 'place_order' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({
-                payment: paymentValue,
-                shipping_address_id: addressId
+        // Function to place order with confirmation if needed
+        function placeOrderWithConfirmation(confirmation = false) {
+            fetch("{% url 'place_order' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    payment: paymentValue,
+                    shipping_address_id: addressId,
+                    confirmation: confirmation  // Include confirmation flag
+                })
             })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === 'success') {
-                console.log('Order placed:', data);
-                // Optionally show a success modal or redirect to a success page
-                window.location.href = '{% url "order_success" %}'; // Replace with your success page URL
-            } else if (data.status === 'error') {
-                console.error('Error placing order:', data.message);
-                // Display error message to the user
-                var errorMessage = data.messages.join('\n');  // Join all error messages into a single string
-                swal({
-                    title: "Error",
-                    text: errorMessage,
-                    icon: "error",
-                    buttons: true,
-                    dangerMode: true,
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error placing order:', error);
-            // Optionally show an error modal or message
-        });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log('Order placed:', data);
+                    // Optionally show a success modal or redirect to a success page
+                    window.location.href = '{% url "order_success" %}'; // Replace with your success page URL
+                } else if (data.status === 'error') {
+                    if (data.confirmation_required) {
+                        var errorMessage = data.messages.join('\n');  // Join all error messages into a single string
+                        swal({
+                            title: "Insufficient Stock",
+                            text: errorMessage + "\nDo you want to place the order with the available stock?",
+                            icon: "warning",
+                            buttons: {
+                                cancel: "No",
+                                confirm: {
+                                    text: "Yes",
+                                    value: true,
+                                    visible: true,
+                                    closeModal: true
+                                }
+                            },
+                            dangerMode: true,
+                        }).then((willPlaceOrder) => {
+                            if (willPlaceOrder) {
+                                placeOrderWithConfirmation(true);  // Place order with confirmation
+                            }
+                        });
+                    } else {
+                        console.error('Error placing order:', data.message);
+                        // Display error message to the user
+                        var errorMessage = data.messages.join('\n');  // Join all error messages into a single string
+                        swal({
+                            title: "Error",
+                            text: errorMessage,
+                            icon: "error",
+                            buttons: true,
+                            dangerMode: true,
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error placing order:', error);
+                // Optionally show an error modal or message
+            });
+        }
+
+        // Perform AJAX request to place the order
+        placeOrderWithConfirmation();
     });
 });
+
 </script>
 <script>
     $(document).ready(function() {
