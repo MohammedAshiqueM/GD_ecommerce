@@ -94,7 +94,9 @@ class ShippingMethod(models.Model):
 
 class OrderStatus(models.Model):
     status = models.CharField(max_length=255)
-
+    def __str__(self):
+        return f"{self.status}"
+    
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     order_date = models.DateField(auto_now_add=True)

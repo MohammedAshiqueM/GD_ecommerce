@@ -101,13 +101,13 @@
             border-radius: 5px;
             color: white;
         }
-        .order-summary .status.pending {
+        .order-summary .status.Pending {
             background-color: #f9c74f;
         }
-        .order-summary .status.delivered {
+        .order-summary .status.Delivered {
             background-color: #90be6d;
         }
-        .order-summary .status.cancel {
+        .order-summary .status.Cancelled {
             background-color: #f94144;
         }
         .order-summary .actions {
@@ -168,12 +168,12 @@
         {% endfor %}
         
         <div class="order-summary">
-            <span class='status {{ order.order_status.status|lower|replace_space:"-" }}'>{% if order.order_status.status == 'cancel' %}Cancelled{% else %}{{ order.order_status.status }}{% endif %}</span>
+            <span class='status {{ order.order_status.status }}'>{% if order.order_status.status == 'Cancelled' %}Cancelled{% else %}{{ order.order_status.status }}{% endif %}</span>
             <div class="total-amount">
                 Total: ${{ order.order_total }}
             </div>
             <div class="actions">
-                {% if order.order_status.status == 'pending' %}
+                {% if order.order_status.status == 'Pending' %}
                 <button onclick="confirmCancel('{{ order.id }}')">Cancel</button>
                 {% endif %}
                 <button>View Invoice</button>

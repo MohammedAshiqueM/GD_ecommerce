@@ -24,13 +24,13 @@
             border-radius: 5px;
             color: white;
         }
-        .orderStatus.pending {
+        .orderStatus.Pending {
             background-color: #f9c74f;
         }
-        .orderStatus.delivered {
+        .orderStatus.Delivered {
             background-color: #90be6d;
         }
-        .orderStatus.cancel {
+        .orderStatus.Cancelled {
             background-color: #f94144;
         }
     </style>
@@ -88,11 +88,11 @@
                                 <td rowspan="{{ order.orderline_set.count }}">{{ order.payment_method.payment_type }}</td>
                                 <td rowspan="{{ order.orderline_set.count }}">{{ order.shipping_address.address_line1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.region }}, {{ order.shipping_address.country }}</td>
                                 <td rowspan="{{ order.orderline_set.count }}">${{ order.order_total }}</td>
-                                <td rowspan="{{ order.orderline_set.count }}"><span class='orderStatus {{ order.order_status.status|lower|replace_space:"-" }}' >{{ order.order_status.status }}</span></td>
+                                <td rowspan="{{ order.orderline_set.count }}"><span class='orderStatus {{ order.order_status.status }}' >{{ order.order_status.status }}</span></td>
                                 <td rowspan="{{ order.orderline_set.count }}">
-                                    <button onclick="changeOrderStatus('{{ order.id }}', 'cancel')">Cancel</button>
-                                    <button onclick="changeOrderStatus('{{ order.id }}', 'pending')">Pending</button>
-                                    <button onclick="changeOrderStatus('{{ order.id }}', 'delivered')">Delivered</button>
+                                    <button onclick="changeOrderStatus('{{ order.id }}', 'Cancelled')">Cancel</button>
+                                    <button onclick="changeOrderStatus('{{ order.id }}', 'Pending')">Pending</button>
+                                    <button onclick="changeOrderStatus('{{ order.id }}', 'Delivered')">Delivered</button>
                                 </td>
                                 {% endif %}
                             </tr>

@@ -586,19 +586,19 @@ def contact(request):
 def increment_quantity(request, item_id):
     try:
         cart_item = CartItem.objects.get(id=item_id)
-        if cart_item.product_configuration.qty_in_stock > cart_item.qty:
-            cart_item.qty += 1
-            cart_item.save()
-            response_data = {
-                'status': 'success',
-                'quantity': cart_item.qty,
-                'price': cart_item.product_configuration.price,
-                'total': cart_item.qty * cart_item.product_configuration.price,
-                'subtotal': calculate_subtotal(cart_item.cart),
-                'total_cart': calculate_total(cart_item.cart)
-            }
-        else:
-            response_data = {'status': 'error', 'message': 'Insufficient stock'}
+        # if cart_item.product_configuration.qty_in_stock > cart_item.qty:
+        cart_item.qty += 1
+        cart_item.save()
+        response_data = {
+            'status': 'success',
+            'quantity': cart_item.qty,
+            'price': cart_item.product_configuration.price,
+            'total': cart_item.qty * cart_item.product_configuration.price,
+            'subtotal': calculate_subtotal(cart_item.cart),
+            'total_cart': calculate_total(cart_item.cart)
+        }
+        # else:
+        #     response_data = {'status': 'error', 'message': 'Insufficient stock'}
         return JsonResponse(response_data)
     except CartItem.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
@@ -818,9 +818,6 @@ def place_order(request):
             if error_messages:
                 return JsonResponse({'status': 'error', 'messages': error_messages})
 
-            # Reduce stock temporarily (rollback if order placement fails)
-            product_config.qty_in_stock -= requested_qty
-            product_config.save()
             # Create or get the default order status
             order_status, created = OrderStatus.objects.get_or_create(status='Pending')
 
@@ -882,8 +879,15 @@ def my_orders(request):
 def cancel_order(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
 
-    if order.order_status.status == 'pending':
-        cancel_status, created = OrderStatus.objects.get_or_create(status='cancel')
+    if order.order_status.status == 'Pending':
+        cancel_status, created = OrderStatus.objects.get_or_create(status='Cancelled')
+        with transaction.atomic():
+            for order_line in order.orderline_set.all():
+                # Assuming each product in the order line can have only one valid configuration
+                product_configs = ProductConfiguration.objects.filter(product=order_line.product)
+                for product_config in product_configs:
+                    product_config.qty_in_stock += order_line.qty
+                    product_config.save()
         order.order_status = cancel_status
         order.save()
         return JsonResponse({'message': 'Order cancelled successfully.'})
