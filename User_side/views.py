@@ -901,23 +901,64 @@ def my_orders(request):
     orders = Order.objects.filter(user=request.user).prefetch_related('orderline_set__product__images', 'orderline_set__product__configurations__variation_options')
     return render(request, "myOrders.html", {'orders': orders,"categories":categories})
 
-def cancel_order(request, order_id):
-    order = get_object_or_404(Order, id=order_id, user=request.user)
 
-    if order.order_status.status == 'Pending':
-        cancel_status, created = OrderStatus.objects.get_or_create(status='Cancelled')
-        with transaction.atomic():
-            for order_line in order.orderline_set.all():
-                # Assuming each product in the order line can have only one valid configuration
-                product_configs = ProductConfiguration.objects.filter(product=order_line.product)
-                for product_config in product_configs:
-                    product_config.qty_in_stock += order_line.qty
-                    product_config.save()
-        order.order_status = cancel_status
-        order.save()
-        return JsonResponse({'message': 'Order cancelled successfully.'})
-    else:
-        return JsonResponse({'message': 'Order cannot be cancelled.'}, status=400)
+
+@csrf_exempt
+def cancel_order(request, order_id):
+    try:
+        order = get_object_or_404(Order, id=order_id, user=request.user)
+
+        if order.order_status.status == 'Pending':
+            cancel_status, created = OrderStatus.objects.get_or_create(status='Cancelled')
+            with transaction.atomic():
+                for order_line in order.orderline_set.all():
+                    product = order_line.product
+                    product_config = get_product_configuration(product, order_line)
+
+                    if product_config:
+                        product_config.qty_in_stock += order_line.qty
+                        product_config.save()
+                    else:
+                        raise Exception(f"Product configuration not found for order line {order_line.id}")
+
+            order.order_status = cancel_status
+            order.save()
+            return JsonResponse({'message': 'Order cancelled successfully.'})
+        else:
+            return JsonResponse({'message': 'Order cannot be cancelled.'}, status=400)
+
+    except Order.DoesNotExist:
+        return JsonResponse({'message': 'Order not found.'}, status=404)
+
+    except Exception as e:
+        return JsonResponse({'message': str(e)}, status=500)
+
+def get_product_configuration(product, order_line):
+    """
+    Helper function to retrieve the appropriate ProductConfiguration for an OrderLine.
+    Modify as per your model relationships and criteria.
+    """
+    try:
+        # Retrieve all variation options for the order line's product
+        product_variations = Variation.objects.filter(product=product)
+
+        for product_variation in product_variations:
+            variation_options = order_line.variation_options.filter(variation=product_variation)
+
+            if variation_options.exists():
+                product_config = ProductConfiguration.objects.filter(
+                    product=product,
+                    variation_options__in=variation_options,
+                ).first()
+
+                if product_config:
+                    return product_config
+
+        return None
+
+    except Exception as e:
+        raise Exception(f"Error retrieving product configuration: {str(e)}")
+
     
 ########################## function for logout ############################
 def logout(request):
