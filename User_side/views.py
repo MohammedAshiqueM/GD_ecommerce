@@ -734,7 +734,7 @@ def checkOut(request):
         for item in cart_items:
             OrderLine.objects.create(
                 order=order,
-                product=item.product_configuration.product,
+                product_configuration=item.product_configuration,
                 qty=item.qty,
                 price=item.product_configuration.price
             )
@@ -859,9 +859,9 @@ def place_order(request):
 
                 OrderLine.objects.create(
                     order=order,
-                    product=item.product_configuration.product,
+                    product_configuration=product_config,
                     qty=item.qty,
-                    price=item.product_configuration.price
+                    price=product_config.price
                 )
 
                 # Update stock
@@ -898,8 +898,12 @@ def create_cod_payment_method(user):
 
 def my_orders(request):
     categories = Category.objects.all()
-    orders = Order.objects.filter(user=request.user).prefetch_related('orderline_set__product__images', 'orderline_set__product__configurations__variation_options')
-    return render(request, "myOrders.html", {'orders': orders,"categories":categories})
+    orders = Order.objects.filter(user=request.user).prefetch_related(
+        'orderline_set__product_configuration__product__images',
+        'orderline_set__product_configuration__variation_options'
+    )
+    return render(request, "myOrders.html", {'orders': orders, 'categories': categories})
+
 
 
 
@@ -912,8 +916,7 @@ def cancel_order(request, order_id):
             cancel_status, created = OrderStatus.objects.get_or_create(status='Cancelled')
             with transaction.atomic():
                 for order_line in order.orderline_set.all():
-                    product = order_line.product
-                    product_config = get_product_configuration(product, order_line)
+                    product_config = get_product_configuration(order_line)
 
                     if product_config:
                         product_config.qty_in_stock += order_line.qty
@@ -933,31 +936,19 @@ def cancel_order(request, order_id):
     except Exception as e:
         return JsonResponse({'message': str(e)}, status=500)
 
-def get_product_configuration(product, order_line):
+def get_product_configuration(order_line):
     """
-    Helper function to retrieve the appropriate ProductConfiguration for an OrderLine.
-    Modify as per your model relationships and criteria.
+    Helper function to retrieve the ProductConfiguration for an OrderLine.
     """
     try:
-        # Retrieve all variation options for the order line's product
-        product_variations = Variation.objects.filter(product=product)
-
-        for product_variation in product_variations:
-            variation_options = order_line.variation_options.filter(variation=product_variation)
-
-            if variation_options.exists():
-                product_config = ProductConfiguration.objects.filter(
-                    product=product,
-                    variation_options__in=variation_options,
-                ).first()
-
-                if product_config:
-                    return product_config
-
-        return None
-
+        product_config = order_line.product_configuration
+        if product_config:
+            return product_config
+        else:
+            raise Exception(f"Product configuration not found for order line {order_line.id}")
     except Exception as e:
         raise Exception(f"Error retrieving product configuration: {str(e)}")
+
 
     
 ########################## function for logout ############################

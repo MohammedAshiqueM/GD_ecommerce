@@ -143,16 +143,16 @@
         {% for line in order.orderline_set.all %}
         <div class="order-items">
             <div class="item-info">
-                {% if line.product.images.first %}
-                <img src="{{ line.product.images.first.image.url }}" alt="Product Image">
+                {% if line.product_configuration.product.images.first %}
+                <img src="{{ line.product_configuration.product.images.first.image.url }}" alt="Product Image">
                 {% else %}
                 <img src="https://via.placeholder.com/60" alt="Product Image">
                 {% endif %}
                 <div>
-                    <h4>{{ line.product.name }}</h4>
-                    {% if line.product.configurations.exists %}
+                    <h4>{{ line.product_configuration.product.name }}</h4>
+                    {% if line.product_configuration.variation_options.exists %}
                     <p>Options: 
-                        {% for option in line.product.configurations.first.variation_options.all %}
+                        {% for option in line.product_configuration.variation_options.all %}
                         {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
                     </p>

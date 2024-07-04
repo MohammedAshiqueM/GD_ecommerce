@@ -87,11 +87,15 @@
                     {% for item in cart_items %}
                         <div class="d-flex justify-content-between">
                             <p>{{ item.product_configuration.product.name }}</p>
+                            {% if item.product_configuration.variation %}
+                                <p>{{ item.product_configuration.variation.get_variation_display }}</p>
+                            {% endif %}
                             <p>${{ item.product_configuration.price }} x {{ item.qty }}</p>
                             <p>${{ item.qty|mul:item.product_configuration.price }}</p>
                         </div>
                     {% endfor %}
                 </div>
+                
                 <div class="border-bottom pt-3 pb-2">
                     <div class="d-flex justify-content-between mb-3">
                         <h6>Subtotal</h6>

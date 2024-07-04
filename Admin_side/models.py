@@ -108,7 +108,7 @@ class Order(models.Model):
 
 class OrderLine(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_configuration = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE, null=True, blank=True)
     qty = models.IntegerField()
     price = models.FloatField()
 
