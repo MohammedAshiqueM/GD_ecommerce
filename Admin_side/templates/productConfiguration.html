@@ -4,6 +4,8 @@
     <title>Variation Combination</title>
 </head>
 <body>
+    {% include 'common_block.html' %}
+
     <h1>Select Variation Options for {{ product.name }}</h1>
 
     <form method="post" id="productConfigurationForm">
@@ -38,7 +40,9 @@
                 {% endfor %}
             </tbody>
         </table>
+        <div class="card-header">
         <button type="submit">Save Selected Combinations</button>
+        </div>
     </form>
 
     <script>
