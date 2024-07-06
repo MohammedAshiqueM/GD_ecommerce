@@ -39,5 +39,6 @@ urlpatterns = [
     
     path('my_orders/', views.my_orders, name='my_orders'),
     path('user/cancel_order/<int:order_id>/', views.cancel_order, name='cancel_order'),
+    path('razorpay_checkout/', views.razorpay_checkout, name='razorpay_checkout'),
     
 ]

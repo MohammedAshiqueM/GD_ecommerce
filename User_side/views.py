@@ -16,6 +16,7 @@ import re
 from .utils import generate_otp, send_otp
 from datetime import datetime, timedelta
 from django.db.models import Avg, Min, Max,Q
+from django.conf import settings
 from Admin_side.models import (
     User,
     Address,
@@ -683,7 +684,55 @@ def check_cart_quantity(request):
 def order_success(request):
     return render(request, 'order_success.html')
 
+# views.py
 
+from django.shortcuts import render
+from django.http import JsonResponse
+import razorpay
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+
+@csrf_exempt
+def razorpay_checkout(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            amount = data.get('amount')
+            
+            if amount is None:
+                return JsonResponse({'error': 'Amount is required'}, status=400)
+            
+            # Convert amount to paise
+            order_amount = int(float(amount) * 100)
+            
+            client = razorpay.Client(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
+            
+            order_currency = 'INR'
+            order_receipt = 'order_rcptid_11'
+            notes = {'Shipping address': 'Bommanahalli, Bangalore'}
+
+            razorpay_order = client.order.create(
+                {
+                    'amount': order_amount,
+                    'currency': order_currency,
+                    'receipt': order_receipt,
+                    'notes': notes,
+                }
+            )
+
+            print('Razorpay order created:', razorpay_order) 
+            return JsonResponse({
+                'razorpay_order_id': razorpay_order['id'],
+                'amount': order_amount
+            })
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            print(f"Error in razorpay_checkout: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
 @login_required
 def checkOut(request):
     categories = Category.objects.all()
@@ -761,7 +810,8 @@ def checkOut(request):
         "cart_items": cart_items,
         "categories":categories,
         "edit": True,
-        'show_modal': show_modal
+        'show_modal': show_modal,
+        'razorpay_key':settings.RAZORPAY_KEY
     }
     return render(request, "checkOut.html", context)
 
@@ -775,12 +825,32 @@ def place_order(request):
             user = request.user
             payment_method_value = data.get('payment')
             confirmation = data.get('confirmation', False)
+            print("Received data:", data)
+            print("the pay method : ",payment_method_value)
 
             if not payment_method_value:
                 return JsonResponse({'status': 'error', 'message': 'Payment method is required.'})
-
+            if payment_method_value == 'razorpay':
+                print("yaaaaaaaaaaaaaaaaaaah inside")
+                # Verify Razorpay payment
+                razorpay_payment_id = data.get('razorpay_payment_id')
+                razorpay_order_id = data.get('razorpay_order_id')
+                razorpay_signature = data.get('razorpay_signature')
+                
+                # Implement Razorpay payment verification here
+                expiry_date = datetime.now().date() + timedelta(days=365)
+                
+                # If verification is successful, create PaymentMethod for Razorpay
+                payment_method = PaymentMethod.objects.create(
+                    user=user,
+                    payment_type=PaymentType.objects.get(value="razorpay"),
+                    provider="Razorpay",
+                    expiry_date = expiry_date,  # dynamically calculated expiry date
+                    account_number=razorpay_payment_id,
+                    is_default=False
+                )
             # Create or get COD payment method
-            if payment_method_value == 'cod':
+            elif payment_method_value == 'cod':
                 payment_method = create_cod_payment_method(user)
             else:
                 try:
@@ -878,6 +948,20 @@ def place_order(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
 
+from razorpay import Client as RazorpayClient
+
+def verify_razorpay_payment(payment_id, order_id, signature):
+    client = RazorpayClient(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
+    try:
+        return client.utility.verify_payment_signature({
+            'razorpay_order_id': order_id,
+            'razorpay_payment_id': payment_id,
+            'razorpay_signature': signature
+        })
+    except Exception as e:
+        print(f"Razorpay verification error: {str(e)}")
+        return False
+    
 def create_cod_payment_method(user):
     cod_payment_type = PaymentType.objects.get(value="Cash on Delivery")
 

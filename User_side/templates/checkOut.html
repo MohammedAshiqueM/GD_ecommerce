@@ -283,61 +283,167 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const paymentRadios = document.querySelectorAll('input[name="payment"]');
-    const razorpayButtonContainer = document.getElementById('razorpay-button-container');
-    const placeOrderBtn = document.getElementById('place-order-btn');
-
-    function updatePaymentUI() {
-        const selectedPayment = document.querySelector('input[name="payment"]:checked');
-        
-        if (selectedPayment && selectedPayment.value === 'razorpay') {
-            // Show Razorpay button, hide place order button
-            razorpayButtonContainer.innerHTML = '<button id="razorpay-pay-btn" class="btn btn-primary">Pay with Razorpay</button>';
-            razorpayButtonContainer.style.display = 'block';
-            placeOrderBtn.style.display = 'none';
-
-            // Add click event listener to the Razorpay button
-            document.getElementById('razorpay-pay-btn').addEventListener('click', function(e) {
-                e.preventDefault();
-                // Razorpay integration code here (same as before)
-                var options = {
-                    "key": "YOUR_RAZORPAY_KEY",
-                    "amount": "{{ cart_items|calc_total|floatformat:2 }}",
-                    "currency": "INR",
-                    "name": "Your Store Name",
-                    "description": "Purchase Description",
-                    "image": "your_logo_url",
-                    "handler": function (response){
-                        alert("Payment successful. Payment ID: " + response.razorpay_payment_id);
-                    },
-                    "prefill": {
-                        "name": "{{ user.get_full_name }}",
-                        "email": "{{ user.email }}"
-                    },
-                    "theme": {
-                        "color": "#F7941D"
-                    }
-                };
-                var rzp1 = new Razorpay(options);
-                rzp1.open();
-            });
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOM content loaded');
+        if (typeof Razorpay === 'undefined') {
+            console.error('Razorpay script not loaded');
         } else {
-            // Hide Razorpay button, show place order button
-            razorpayButtonContainer.style.display = 'none';
-            placeOrderBtn.style.display = 'block';
+            console.log('Razorpay script loaded successfully');
         }
-    }
-
-    // Add change event listener to all payment radio buttons
-    paymentRadios.forEach(radio => {
-        radio.addEventListener('change', updatePaymentUI);
+        const paymentRadios = document.querySelectorAll('input[name="payment"]');
+        const razorpayButtonContainer = document.getElementById('razorpay-button-container');
+        const placeOrderBtn = document.getElementById('place-order-btn');
+    
+        function updatePaymentUI() {
+            const selectedPayment = document.querySelector('input[name="payment"]:checked');
+            
+            if (selectedPayment && selectedPayment.value === 'razorpay') {
+                razorpayButtonContainer.innerHTML = '<button id="razorpay-pay-btn" class="btn btn-primary">Pay with Razorpay</button>';
+                razorpayButtonContainer.style.display = 'block';
+                placeOrderBtn.style.display = 'none';
+    
+                console.log('Razorpay button created');
+                document.getElementById('razorpay-pay-btn').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const selectedAddressId = getSelectedAddressId();
+                    if (!selectedAddressId) {
+                        alert("Please select a shipping address before proceeding to payment.");
+                        return;
+                    }
+                    initiateRazorpayCheckout(selectedAddressId);
+                });
+            } else {
+                razorpayButtonContainer.style.display = 'none';
+                placeOrderBtn.style.display = 'block';
+            }
+        }
+    
+        function getSelectedAddressId() {
+    const activeAddressButton = document.querySelector('#address-select .list-group-item.active');
+    return activeAddressButton ? activeAddressButton.getAttribute('data-address-id') : null;
+}
+    
+        function initiateRazorpayCheckout(selectedAddressId) {
+            console.log('initiateRazorpayCheckout function called');
+            const amount = '{{ cart_items|calc_total|floatformat:2 }}';
+            console.log('Amount:', amount);
+            console.log('Razorpay Key:', "{{ razorpay_key }}");
+            console.log('CSRF Token:', '{{ csrf_token }}');
+            console.log('Selected Address ID:', selectedAddressId);
+    
+            fetch('/razorpay_checkout/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    'amount': amount
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.razorpay_order_id) {
+                    var options = {
+                        "key": "{{ razorpay_key }}",
+                        "amount": data.amount,
+                        "currency": "INR",
+                        "name": "Your Store Name",
+                        "description": "Purchase Description",
+                        "order_id": data.razorpay_order_id,
+                        "handler": function (response){
+                            console.log('Handler function called');
+                            console.log('Payment successful:', response);
+                            
+                            console.log('Selected Address ID:', selectedAddressId);
+    
+                            try {
+                                console.log('About to send fetch request to /place_order/');
+                                fetch('/place_order/', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRFToken': '{{ csrf_token }}'
+                                    },
+                                    body: JSON.stringify({
+                                        payment: 'razorpay',
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        shipping_address_id: selectedAddressId
+                                    })
+                                })
+                                .then(response => {
+                                    console.log('Fetch response received:', response);
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    console.log('Parsed response data:', data);
+                                    if (data.status === 'success') {
+                                        window.location.href = '/order_success/';
+                                    } else {
+                                        console.error('Error creating order:', data.message);
+                                        alert('Error creating order: ' + data.message);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error in fetch:', error);
+                                    alert('An error occurred while creating the order. Please contact support.');
+                                });
+                            } catch (error) {
+                                console.error('Error before fetch:', error);
+                                alert('An unexpected error occurred. Please try again or contact support.');
+                            }
+                        },
+                        "prefill": {
+                            "name": "{{ user.get_full_name }}",
+                            "email": "{{ user.email }}"
+                        },
+                        "theme": {
+                            "color": "#3399cc"
+                        },
+                        "modal": {
+                            "ondismiss": function(){
+                                console.log('Checkout form closed');
+                                alert('Payment cancelled');
+                            }
+                        }
+                    };
+                    try {
+                        var rzp1 = new Razorpay(options);
+                        rzp1.on('payment.failed', function (response){
+                            console.error('Payment failed:', response.error);
+                            if (response.error.reason === 'payment_cancelled') {
+                                alert("You've cancelled the payment. Feel free to try again when you're ready.");
+                            } else {
+                                alert("Payment failed. Error: " + response.error.description);
+                            }
+                        });
+                        console.log('Opening Razorpay popup');
+                        rzp1.open();
+                        console.log('Razorpay popup opened');
+                    } catch (error) {
+                        console.error('Error initializing Razorpay:', error);
+                        alert('Error initializing payment. Please try again.');
+                    }
+                } else {
+                    console.error('Error:', data.error);
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        }
+    
+        paymentRadios.forEach(radio => {
+            radio.addEventListener('change', updatePaymentUI);
+        });
+    
+        updatePaymentUI();
     });
-
-    // Initial UI update
-    updatePaymentUI();
-});
-</script>
+    </script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const addressButtons = document.querySelectorAll('#address-select .list-group-item');
