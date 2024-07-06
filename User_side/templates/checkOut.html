@@ -118,10 +118,10 @@
                 <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Payment</span></h5>
                 <div class="bg-light p-30">
                     <div class="form-group">
-                        <div class="custom-control custom-radio">
-                            <input type="radio" class="custom-control-input" name="payment" id="paypal">
-                            <label class="custom-control-label" for="paypal">Paypal</label>
-                        </div>
+                <div class="custom-control custom-radio">
+                    <input type="radio" class="custom-control-input" name="payment" id="razorpay" value="razorpay">
+                    <label class="custom-control-label" for="razorpay">Razorpay</label>
+                </div>
                     </div>
                     <div class="form-group">
                         <div class="custom-control custom-radio">
@@ -136,6 +136,9 @@
                         </div>
                     </div>
                     <button class="btn btn-block btn-primary font-weight-bold py-3" id="place-order-btn">Place Order</button>
+                    <div id="razorpay-button-container" style="display: none;">
+                        <!-- Razorpay button will be inserted here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -278,7 +281,63 @@
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const paymentRadios = document.querySelectorAll('input[name="payment"]');
+    const razorpayButtonContainer = document.getElementById('razorpay-button-container');
+    const placeOrderBtn = document.getElementById('place-order-btn');
 
+    function updatePaymentUI() {
+        const selectedPayment = document.querySelector('input[name="payment"]:checked');
+        
+        if (selectedPayment && selectedPayment.value === 'razorpay') {
+            // Show Razorpay button, hide place order button
+            razorpayButtonContainer.innerHTML = '<button id="razorpay-pay-btn" class="btn btn-primary">Pay with Razorpay</button>';
+            razorpayButtonContainer.style.display = 'block';
+            placeOrderBtn.style.display = 'none';
+
+            // Add click event listener to the Razorpay button
+            document.getElementById('razorpay-pay-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                // Razorpay integration code here (same as before)
+                var options = {
+                    "key": "YOUR_RAZORPAY_KEY",
+                    "amount": "{{ cart_items|calc_total|floatformat:2 }}",
+                    "currency": "INR",
+                    "name": "Your Store Name",
+                    "description": "Purchase Description",
+                    "image": "your_logo_url",
+                    "handler": function (response){
+                        alert("Payment successful. Payment ID: " + response.razorpay_payment_id);
+                    },
+                    "prefill": {
+                        "name": "{{ user.get_full_name }}",
+                        "email": "{{ user.email }}"
+                    },
+                    "theme": {
+                        "color": "#F7941D"
+                    }
+                };
+                var rzp1 = new Razorpay(options);
+                rzp1.open();
+            });
+        } else {
+            // Hide Razorpay button, show place order button
+            razorpayButtonContainer.style.display = 'none';
+            placeOrderBtn.style.display = 'block';
+        }
+    }
+
+    // Add change event listener to all payment radio buttons
+    paymentRadios.forEach(radio => {
+        radio.addEventListener('change', updatePaymentUI);
+    });
+
+    // Initial UI update
+    updatePaymentUI();
+});
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const addressButtons = document.querySelectorAll('#address-select .list-group-item');
