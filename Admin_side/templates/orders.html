@@ -70,20 +70,20 @@
                                 {% endif %}
                     
                                 <td>
-                                    {% if line.product.images.first %}
-                                    <img src="{{ line.product.images.first.image.url }}" alt="Product Image" width="60" height="60">
+                                    {% if line.product_configuration.product.images.first %}
+                                    <img src="{{ line.product_configuration.product.images.first.image.url }}" alt="Product Image" width="60" height="60">
                                     {% else %}
                                     <img src="https://via.placeholder.com/60" alt="Product Image">
                                     {% endif %}
                                 </td>
-                                <td>{{ line.product.name }}</td>
+                                <td>{{ line.product_configuration.product.name }}</td>
                                 <td>{{ order.user.username }}</td>
                                 <td>
-                                    {% for option in line.product.configurations.first.variation_options.all %}
+                                    {% for option in line.product_configuration.product.configurations.first.variation_options.all %}
                                     {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
                                     {% endfor %}
                                 </td>
-                                <td>{{ line.product.SKU }}</td>
+                                <td>{{ line.product_configuration.product.SKU }}</td>
                                 {% if forloop.first %}
                                 <td rowspan="{{ order.orderline_set.count }}">{{ order.payment_method.payment_type }}</td>
                                 <td rowspan="{{ order.orderline_set.count }}">{{ order.shipping_address.address_line1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.region }}, {{ order.shipping_address.country }}</td>

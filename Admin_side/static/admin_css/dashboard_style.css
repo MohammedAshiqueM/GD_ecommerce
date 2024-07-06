@@ -262,22 +262,22 @@ body {
 	background-repeat: no-repeat;
 }
 .switch {
-	position: absolute;
-	top: 90px;
-	left: calc(50% - 75px);
-	max-height: 80px;
-	max-width: 160px;
-	display: flex;
-	justify-content: center;
-	align-items: center;
+    position: absolute;
+    top: 107px;
+    left: calc(100% - 200px);
+    max-height: 80px;
+    max-width: 160px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #toggle {
-	position: relative;
-	display: block;
-	width: 160px;
-	height: 60px;
-	border-radius: 50px;
+    position: relative;
+    display: block;
+    width: 134px;
+    height: 47px;
+    border-radius: 50px;
 	background: var(--new-content);
 	box-shadow: inset 0 5px 6px rgb(0 0 0 / 27%), inset 0 3px 6px rgb(0 0 0 / 6%),
 		inset 0 -5px 6px rgb(0 0 0 / 21%);
@@ -285,11 +285,11 @@ body {
 #toggle:after {
 	content: "Light";
 	position: absolute;
-	left: 84px;
+	left: 66px;
 	top: 13px;
 	color: #fff;
 	font-weight: 600;
-	font-size: 29px;
+	font-size: 24px;
 }
 #toggle:hover:after,
 #dashboard:hover,
@@ -304,7 +304,7 @@ body {
 	position: absolute;
 	left: 0;
 	top: 0;
-	width: 80px;
+	width: 53px;
 	height: 100%;
 	background: var(--new-content);
 	cursor: pointer;
@@ -337,7 +337,7 @@ body.light #toggle:after {
 	top: 13px;
 	color: cyan;
 	font-weight: 600;
-	font-size: 29px;
+	font-size: 24px;
 }
 body.light #toggle .indicator {
 	background: var(--dark-BG);
@@ -352,7 +352,7 @@ body.light #toggle:hover .indicator {
 
 body.light .switch {
 	background: transparent;
-	top: 90px;
+	top: 107px;
 	color: #fff;
 	overflow: hidden;
 	display: block;
