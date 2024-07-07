@@ -53,6 +53,11 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{% url 'coupons' %}"><span class="las la-receipt"><i class="fa-solid fa-receipt"></i></span>
+                        <span>Coupon</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#"><span class="la la-user-circle"></span>
                         <span>Banner</span>
                     </a>
@@ -60,6 +65,11 @@
                 <li>
                     <a href="#"><span class="las la-clipboard"></span>
                         <span>Discount</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'adminLogout' %}"><span class="las la-clipboard"><i class="fa-solid fa-door-open"></i></span>
+                        <span>Logout</span>
                     </a>
                 </li>
             </ul>
@@ -84,7 +94,6 @@
                 <button>Search</button>
             </div>
             </form>
-            <a href="{% url 'adminLogout' %}">Logout</a>
             <div class="user-wrapper">
                 <!-- <img src="https://assets.codepen.io/3853433/internal/avatars/users/default.png?format=auto&version=1617122449&width=40&height=40" alt=""> -->
                 <div>

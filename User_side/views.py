@@ -17,6 +17,9 @@ from .utils import generate_otp, send_otp
 from datetime import datetime, timedelta
 from django.db.models import Avg, Min, Max,Q
 from django.conf import settings
+import razorpay
+from razorpay import Client as RazorpayClient
+from django.db import transaction
 from Admin_side.models import (
     User,
     Address,
@@ -684,15 +687,6 @@ def check_cart_quantity(request):
 def order_success(request):
     return render(request, 'order_success.html')
 
-# views.py
-
-from django.shortcuts import render
-from django.http import JsonResponse
-import razorpay
-import json
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-
 @csrf_exempt
 def razorpay_checkout(request):
     if request.method == 'POST':
@@ -733,6 +727,7 @@ def razorpay_checkout(request):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
 @login_required
 def checkOut(request):
     categories = Category.objects.all()
@@ -814,8 +809,6 @@ def checkOut(request):
         'razorpay_key':settings.RAZORPAY_KEY
     }
     return render(request, "checkOut.html", context)
-
-from django.db import transaction
 
 @csrf_exempt
 def place_order(request):
@@ -948,8 +941,6 @@ def place_order(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
 
-from razorpay import Client as RazorpayClient
-
 def verify_razorpay_payment(payment_id, order_id, signature):
     client = RazorpayClient(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
     try:
@@ -987,9 +978,6 @@ def my_orders(request):
         'orderline_set__product_configuration__variation_options'
     )
     return render(request, "myOrders.html", {'orders': orders, 'categories': categories})
-
-
-
 
 @csrf_exempt
 def cancel_order(request, order_id):

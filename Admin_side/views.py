@@ -15,6 +15,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 from django.forms import CheckboxInput
 from itertools import product as iter_product
+from .forms import CouponForm
 from .models import (
     User,
     Address,
@@ -35,7 +36,8 @@ from .models import (
     Review,
     Promotion,
     PromotionCategory,
-    ProductImage
+    ProductImage,
+    Coupon
 )
 
 
@@ -669,12 +671,28 @@ def orders(request):
     orders = Order.objects.all()
     return render(request,"orders.html",{'orders': orders})
 
-def admin_orders(request):
-    orders = Order.objects.all()
-    context = {
-        'orders': orders
-    }
-    return render(request, 'admin_orders.html', context)
+def coupons(request):
+    data = Coupon.objects.all()
+    return render(request,"coupons.html",{"data":data})
+
+def addCoupon(request):
+    if request.method == 'POST':
+        form = CouponForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('coupons')  # Redirect to the 'product' page after saving
+    else:
+        form = CouponForm()
+
+    return render(request, 'addCoupon.html', {'form': form})
+
+
+# def admin_orders(request):
+#     orders = Order.objects.all()
+#     context = {
+#         'orders': orders
+#     }
+#     return render(request, 'admin_orders.html', context)
 
 def change_order_status(request, order_id):
     status = request.GET.get('status')

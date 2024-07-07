@@ -92,6 +92,31 @@ class ShippingMethod(models.Model):
     name = models.CharField(max_length=255)
     price = models.FloatField()
 
+class Coupon(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    discount_type = models.CharField(max_length=10, choices=[('percentage', 'Percentage'), ('fixed', 'Fixed')])
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    active = models.BooleanField(default=True)
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+    usage_limit = models.PositiveIntegerField(null=True, blank=True)
+    used_count = models.PositiveIntegerField(default=0)
+    min_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # New field for minimum purchase amount
+    image = models.ImageField(upload_to='coupons/', null=True, blank=True)  # Image for coupon card
+    details = models.TextField(null=True)
+    
+    def __str__(self):
+        return self.code
+
+    def is_valid(self, order_total):
+        now = timezone.now()
+        return (
+            self.active and
+            self.valid_from <= now <= self.valid_to and
+            (self.usage_limit is None or self.used_count < self.usage_limit) and
+            order_total >= self.min_purchase_amount
+        )
+        
 class OrderStatus(models.Model):
     status = models.CharField(max_length=255)
     def __str__(self):
@@ -105,7 +130,25 @@ class Order(models.Model):
     shipping_method = models.ForeignKey(ShippingMethod, on_delete=models.CASCADE,null=True)
     order_total = models.FloatField()
     order_status = models.ForeignKey(OrderStatus, on_delete=models.CASCADE)
-
+    coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    def calculate_total(self):
+        total = sum(item.get_total_price() for item in self.orderline_set.all())
+        if self.coupon and self.coupon.is_valid(total):
+            if self.coupon.discount_type == 'percentage':
+                discount = total * (self.coupon.discount_value / 100)
+            else:
+                discount = self.coupon.discount_value
+            self.discount_amount = min(discount, total)  # Ensure discount does not exceed total
+            total -= self.discount_amount
+        else:
+            self.discount_amount = 0
+        self.order_total = total
+        self.save()
+        return total
+    
+    
 class OrderLine(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     product_configuration = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE, null=True, blank=True)
@@ -128,3 +171,4 @@ class Promotion(models.Model):
 class PromotionCategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='promotion_categories')
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE)
+

@@ -22,6 +22,7 @@ from .models import (
     Promotion,
     PromotionCategory,
     ProductImage,
+    Coupon
 )
 
 admin.site.register(
@@ -45,5 +46,6 @@ admin.site.register(
         Promotion,
         PromotionCategory,
         ProductImage,
+        Coupon
     ]
 )

@@ -1,0 +1,152 @@
+{% include 'common_block.html' %}
+<style>
+    .error {
+        color: red;
+        font-size: 0.9em;
+    }
+    input,select {
+        color: black;
+        opacity: .6;
+        width: 250px;
+        height: 40px;
+        font-size: 20px !important;
+        border-radius: 5px;
+    }
+    label {
+            justify-content: space-between;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    textarea{
+        color: black;
+        opacity: .6;
+        width: 430px;
+        height: 115px;
+        font-size: 20px !important;
+        border-radius: 5px;
+    }
+</style>
+
+<div class="projects">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="heading">Add Coupon</h3>
+            <a href="{% url 'product' %}"><button>Cancel</button></a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <form id="productForm" action="" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <table>
+                        <tr>
+                            <td><label>Coupon code</label></td>
+                            <td>
+                                {{ form.code }}
+                                {% if form.code.errors %}
+                                    <div class="error">{{ form.code.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label>Discount type</label></td>
+                            <td>
+                                {{ form.discount_type }}
+                                {% if form.discount_type.errors %}
+                                    <div class="error">{{ form.discount_type.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label>Valid from</label></td>
+                            <td>
+                                {{ form.valid_from }}
+                                {% if form.valid_from.errors %}
+                                    <div class="error">{{ form.valid_from.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label>Valid to</label></td>
+                            <td>
+                                {{ form.valid_to }}
+                                {% if form.valid_to.errors %}
+                                    <div class="error">{{ form.valid_to.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label>Discount value</label></td>
+                            <td>
+                                {{ form.discount_value }}
+                                {% if form.discount_value.errors %}
+                                    <div class="error">{{ form.discount_value.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label>Minimum purchase amount for discount</label></td>
+                            <td>
+                                {{ form.min_purchase_amount }}
+                                {% if form.min_purchase_amount.errors %}
+                                    <div class="error">{{ form.min_purchase_amount.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label>Usage limit</label></td>
+                            <td>
+                                {{ form.usage_limit }}
+                                {% if form.usage_limit.errors %}
+                                    <div class="error">{{ form.usage_limit.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label>Usage count</label></td>
+                            <td>
+                                {{ form.used_count }}
+                                {% if form.used_count.errors %}
+                                    <div class="error">{{ form.used_count.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label>Image</label></td>
+                            <td>
+                                {{ form.image }}
+                                {% if form.image.errors %}
+                                    <div class="error">{{ form.image.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label>Details</label></td>
+                            <td>
+                                {{ form.details }}
+                                {% if form.details.errors %}
+                                    <div class="error">{{ form.details.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label>Active</label></td>
+                            <td>
+                                {{ form.active }}
+                                {% if form.active.errors %}
+                                    <div class="error">{{ form.active.errors }}</div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                    {% if form.non_field_errors %}
+                        <div class="error">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    <div class="card-header">
+                        <button type="submit" id="submit">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
