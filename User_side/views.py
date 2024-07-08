@@ -19,6 +19,7 @@ from django.db.models import Avg, Min, Max,Q
 from django.conf import settings
 import razorpay
 from razorpay import Client as RazorpayClient
+from django.utils import timezone
 from django.db import transaction
 from Admin_side.models import (
     User,
@@ -41,6 +42,8 @@ from Admin_side.models import (
     Promotion,
     PromotionCategory,
     ProductImage,
+    Coupon,
+    CouponUsage
 )
 
 
@@ -451,8 +454,6 @@ def deleteAddress(request, pk):
         address.delete()
         messages.success(request, "Address deleted successfully.")
     return redirect('profile', pk=request.user.id)
-
-
 
 
 def cart_view(request):
@@ -970,6 +971,13 @@ def create_cod_payment_method(user):
         }
     )
     return payment_method
+
+def view_coupons(request):
+    now = timezone.now()
+    all_coupons = Coupon.objects.all()
+    for coupon in all_coupons:
+        coupon.is_expired = now > coupon.valid_to or not coupon.active
+    return render(request, 'viewCoupon.html', {'coupons': all_coupons})
 
 def my_orders(request):
     categories = Category.objects.all()

@@ -1,0 +1,119 @@
+{% include 'common.html' %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+{% block content %}
+<style>
+    .coupon-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        gap: 20px;
+    }
+    .coupon-card {
+        width: 300px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .coupon-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .coupon-card img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    }
+    .coupon-content {
+        padding: 15px;
+    }
+    .coupon-title {
+        font-size: 1.2em;
+        margin-bottom: 10px;
+    }
+    .coupon-details {
+        font-size: 0.9em;
+        color: #666;
+    }
+    .coupon-code {
+        display: flex;
+        margin-top: 10px;
+    }
+    .coupon-code input {
+        flex-grow: 1;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-right: none;
+        border-radius: 4px 0 0 4px;
+    }
+    .copy-btn {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        border-radius: 0 4px 4px 0;
+    }
+    .copy-btn:hover {
+        background-color: #0056b3;
+    }
+    .expired {
+        opacity: 0.7;
+    }
+    .expired .coupon-content {
+        background-color: #f8d7da;
+    }
+    .expired-badge {
+        background-color: #dc3545;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+    }
+</style>
+
+<h2 style="text-align: center; margin-bottom: 20px;">Available Coupons</h2>
+<div class="coupon-container">
+    {% for coupon in coupons %}
+    <div class="coupon-card {% if coupon.is_expired %}expired{% endif %}">
+        {% if coupon.image %}
+        <img src="{{ coupon.image.url }}" alt="{{ coupon.code }}">
+        {% endif %}
+        <div class="coupon-content">
+            <h3 class="coupon-title">{{ coupon.code }}</h3>
+            <p class="coupon-details">
+                {{ coupon.get_discount_type_display }}:
+                {% if coupon.discount_type == 'percentage' %}
+                    {{ coupon.discount_value }}%
+                {% else %}
+                    ${{ coupon.discount_value }}
+                {% endif %}
+            </p>
+            <p class="coupon-details">Min. Purchase: ${{ coupon.min_purchase_amount }}</p>
+            {% if coupon.is_expired %}
+            <span class="expired-badge">Expired</span>
+            {% else %}
+            <div class="coupon-code">
+                <input type="text" value="{{ coupon.code }}" readonly>
+                <button class="copy-btn" onclick="copyToClipboard('{{ coupon.code }}')">
+                    <i class="fas fa-clipboard"></i>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function copyToClipboard(code) {
+    navigator.clipboard.writeText(code).then(function() {
+        alert('Coupon code copied to clipboard: ' + code);
+        window.location.href = "{% url 'checkout' %}";  // Redirect to checkout page after copying
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+</script>
+{% endblock %}

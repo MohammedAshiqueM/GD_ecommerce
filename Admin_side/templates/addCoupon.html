@@ -39,6 +39,9 @@
                 <form id="productForm" action="" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <table>
+                        {% if form.non_field_errors %}
+                        <div class="error"><span><i class="fa-solid fa-triangle-exclamation"></i></span>{{ form.non_field_errors }}</div>
+                        {% endif %}
                         <tr>
                             <td><label>Coupon code</label></td>
                             <td>
@@ -103,15 +106,6 @@
                             </td>
                         </tr>
                         <tr>
-                            <td><label>Usage count</label></td>
-                            <td>
-                                {{ form.used_count }}
-                                {% if form.used_count.errors %}
-                                    <div class="error">{{ form.used_count.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
                             <td><label>Image</label></td>
                             <td>
                                 {{ form.image }}
@@ -139,9 +133,6 @@
                             </td>
                         </tr>
                     </table>
-                    {% if form.non_field_errors %}
-                        <div class="error">{{ form.non_field_errors }}</div>
-                    {% endif %}
                     <div class="card-header">
                         <button type="submit" id="submit">Save</button>
                     </div>

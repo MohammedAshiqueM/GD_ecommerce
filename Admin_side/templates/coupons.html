@@ -17,7 +17,6 @@
                                 <td>Discount value</td>
                                 <td>Minimum purcase amount for discount</td>
                                 <td>Usage limit</td>
-                                <td>Usage count </td>
                                 <td>Image</td>
                                 <td>Active</td>
                             </tr>
@@ -31,11 +30,9 @@
                                 <td>{{i.valid_to}}</td>
                                 <td>{{i.discount_value}}</td>
                                 <td>{{i.min_purchase_amount}}</td>
-                                <td>{{i.discount_value}}</td>
                                 <td>{{i.usage_limit}}</td>
-                                <td>{{i.used_count}}</td>
                                 <td>
-                                    {% if i.images  %}
+                                    {% if i.image  %}
                                     <img src="{{ i.images.url }}" alt="{{i.code}}" width="100">
                                     {% endif %}
                                 </td>

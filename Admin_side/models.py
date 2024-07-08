@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 import django.utils.timezone as timezone
 
 class Address(models.Model):
@@ -99,15 +100,22 @@ class Coupon(models.Model):
     active = models.BooleanField(default=True)
     valid_from = models.DateTimeField()
     valid_to = models.DateTimeField()
-    usage_limit = models.PositiveIntegerField(null=True, blank=True)
-    used_count = models.PositiveIntegerField(default=0)
+    usage_limit = models.PositiveIntegerField(default=1)
     min_purchase_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # New field for minimum purchase amount
     image = models.ImageField(upload_to='coupons/', null=True, blank=True)  # Image for coupon card
     details = models.TextField(null=True)
     
     def __str__(self):
         return self.code
-
+    
+    def clean(self):
+        if self.discount_value < 0:
+            raise ValidationError('Discount value cannot be negative.')
+        if self.min_purchase_amount < 0:
+            raise ValidationError('Minimum purchase amount cannot be negative.')
+        if self.usage_limit <= 0:
+            raise ValidationError('Usage limit must be greater than 0.')
+        
     def is_valid(self, order_total):
         now = timezone.now()
         return (
@@ -117,6 +125,15 @@ class Coupon(models.Model):
             order_total >= self.min_purchase_amount
         )
         
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+       
+class CouponUsage(models.Model):
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    usage_date = models.DateTimeField(auto_now_add=True)
+     
 class OrderStatus(models.Model):
     status = models.CharField(max_length=255)
     def __str__(self):
