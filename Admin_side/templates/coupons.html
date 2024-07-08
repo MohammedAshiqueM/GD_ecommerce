@@ -33,14 +33,18 @@
                                 <td>{{i.usage_limit}}</td>
                                 <td>
                                     {% if i.image  %}
-                                    <img src="{{ i.images.url }}" alt="{{i.code}}" width="100">
+                                    <img src="{{ i.image.url }}" alt="{{i.code}}" width="100">
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if i.active %}
-                                    <button class="block_btn"><i class="fa-solid fa-check"></i></button>
+                                    <button class="unblock_btn" onclick="toggleCouponStatus('{{ i.code }}', false)">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
                                     {% else %}
-                                    <button class="unblock_btn"><i class="fa-solid fa-xmark"></i></button>
+                                    <button class="block_btn" onclick="toggleCouponStatus('{{ i.code }}', true)">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -51,3 +55,62 @@
             </div>
         </div>
     </div>
+    <script>
+function toggleCouponStatus(couponCode, setActive) {
+    const csrftoken = getCookie('csrftoken');
+
+    fetch('/administration/toggle-coupon-status/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            coupon_code: couponCode,
+            active: setActive
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Find the button by its parent td and the coupon code
+            const td = document.querySelector(`td:has(button[onclick*="'${couponCode}'"])`);
+            if (td) {
+                const button = td.querySelector('button');
+                if (button) {
+                    if (setActive) {
+                        button.className = 'unblock_btn';
+                        button.innerHTML = '<i class="fa-solid fa-check"></i>';
+                        button.setAttribute('onclick', `toggleCouponStatus('${couponCode}', false)`);
+                    } else {
+                        button.className = 'block_btn';
+                        button.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                        button.setAttribute('onclick', `toggleCouponStatus('${couponCode}', true)`);
+                    }
+                }
+            }
+        } else {
+            alert('Failed to update coupon status. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+// Function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>

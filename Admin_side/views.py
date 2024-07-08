@@ -16,6 +16,9 @@ from django.core.files.base import ContentFile
 from django.forms import CheckboxInput
 from itertools import product as iter_product
 from .forms import CouponForm
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
+import json
 from .models import (
     User,
     Address,
@@ -685,6 +688,23 @@ def addCoupon(request):
         form = CouponForm()
 
     return render(request, 'addCoupon.html', {'form': form})
+
+@require_POST
+@csrf_protect
+def toggle_coupon_status(request):
+    data = json.loads(request.body)
+    coupon_code = data.get('coupon_code')
+    active = data.get('active')
+
+    try:
+        coupon = Coupon.objects.get(code=coupon_code)
+        coupon.active = active
+        coupon.save()
+        return JsonResponse({'success': True})
+    except Coupon.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Coupon not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 # def admin_orders(request):
