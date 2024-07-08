@@ -819,6 +819,7 @@ def place_order(request):
             user = request.user
             payment_method_value = data.get('payment')
             confirmation = data.get('confirmation', False)
+            coupon_code = data.get('coupon_code')
             print("Received data:", data)
             print("the pay method : ",payment_method_value)
 
@@ -870,7 +871,25 @@ def place_order(request):
             # Check product configurations and quantities
             error_messages = []
             confirmation_required = False
-
+            coupon = None
+            if coupon_code:
+                try:
+                    coupon = Coupon.objects.get(code=coupon_code)
+                    if coupon.is_valid(order_total):
+                        # Check if the user has already used the coupon
+                        user_coupon_usage = CouponUsage.objects.filter(coupon=coupon, user=user).count()
+                        if user_coupon_usage >= coupon.usage_limit:
+                            return JsonResponse({'status': 'error', 'message': 'You have already used this coupon the maximum number of times.'})
+                        
+                        # Apply coupon discount
+                        discount_value = coupon.discount_value
+                        if coupon.discount_type == 'percentage':
+                            discount_value = (coupon.discount_value / 100) * order_total
+                        order_total -= discount_value
+                    else:
+                        return JsonResponse({'status': 'error', 'message': 'This coupon is not valid.'})
+                except Coupon.DoesNotExist:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid coupon code.'})
             with transaction.atomic():
                 for item in cart_items:
                     product_config = item.product_configuration
@@ -979,6 +998,80 @@ def view_coupons(request):
         coupon.is_expired = now > coupon.valid_to or not coupon.active
     return render(request, 'viewCoupon.html', {'coupons': all_coupons})
 
+def test_view(request):
+    return JsonResponse({'message': 'Test successful'})
+
+
+from decimal import Decimal
+import logging
+from django.core.exceptions import ObjectDoesNotExist
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+@require_POST
+def apply_coupon(request):
+    try:
+        data = json.loads(request.body)
+        code = data.get('code')
+        order_total = Decimal(data.get('order_total', '0'))
+
+        logger.info(f"Received data: {data}")
+        logger.info(f"Coupon code: {code}")
+        logger.info(f"Order total: {order_total}")
+
+        if not code or order_total <= 0:
+            return JsonResponse({'success': False, 'message': 'Invalid coupon code or order total'}, status=400)
+
+        try:
+            coupon = Coupon.objects.get(code=code)
+        except ObjectDoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Coupon not found'}, status=404)
+
+        logger.info(f"Coupon found: {coupon}")
+
+        # Check if the order total meets the minimum purchase amount
+        if order_total < coupon.min_purchase_amount:
+            return JsonResponse({
+                'success': False, 
+                'message': f'This coupon requires a minimum purchase of ${coupon.min_purchase_amount:.2f}'
+            })
+
+        if not coupon.is_valid(order_total):
+            return JsonResponse({'success': False, 'message': 'This coupon is not valid.'})
+
+        user_coupon_usage = CouponUsage.objects.filter(coupon=coupon, user=request.user).count()
+        if user_coupon_usage >= coupon.usage_limit:
+            return JsonResponse({'success': False, 'message': 'You have already used this coupon the maximum number of times.'})
+
+        discount_value = coupon.discount_value
+        if coupon.discount_type == 'percentage':
+            discount_value = (discount_value / Decimal('100')) * order_total
+        new_total = order_total - discount_value
+
+        logger.info(f"Discount value: {discount_value}")
+        logger.info(f"New total: {new_total}")
+
+        # Update coupon usage count
+        coupon.usage_limit += 1
+        coupon.save()
+
+        # Create a CouponUsage record
+        CouponUsage.objects.create(coupon=coupon, user=request.user)
+
+        return JsonResponse({
+            'success': True, 
+            'message': f'Coupon applied! You saved ${discount_value:.2f}. New total is ${new_total:.2f}', 
+            'new_total': str(new_total),
+            'discount_value': str(discount_value)
+        })
+
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON data received")
+        return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        logger.exception(f"Error in apply_coupon: {str(e)}")
+        return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
+    
 def my_orders(request):
     categories = Category.objects.all()
     orders = Order.objects.filter(user=request.user).prefetch_related(

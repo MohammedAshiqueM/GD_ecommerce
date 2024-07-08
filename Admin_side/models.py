@@ -121,7 +121,6 @@ class Coupon(models.Model):
         return (
             self.active and
             self.valid_from <= now <= self.valid_to and
-            (self.usage_limit is None or self.used_count < self.usage_limit) and
             order_total >= self.min_purchase_amount
         )
         
