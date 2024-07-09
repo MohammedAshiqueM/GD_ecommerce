@@ -158,6 +158,7 @@
                     </p>
                     {% endif %}
                     <p>Price: ${{ line.price }}</p>
+                    <p>Discount: {{ order.discount_amount }}</p>
                     <p>Shipping Charge: $10</p>
                     <p>Quantity: {{ line.qty }}</p>
                     <p>Payment Method: {{ order.payment_method.payment_type }} </p>   {% comment %} ending in {{ order.payment_method.account_number|slice:"-4" }} //this is for after creating the other payment methods{% endcomment %}

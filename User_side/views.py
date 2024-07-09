@@ -819,29 +819,30 @@ def place_order(request):
             user = request.user
             payment_method_value = data.get('payment')
             confirmation = data.get('confirmation', False)
-            coupon_code = data.get('coupon_code')
-            print("coupon:",coupon_code)
+            coupon_code = data.get('coupon_code', None)
+            print("coupon:", coupon_code)
             print("Received data:", data)
-            print("the pay method : ",payment_method_value)
+            print("the pay method: ", payment_method_value)
 
             if not payment_method_value:
                 return JsonResponse({'status': 'error', 'message': 'Payment method is required.'})
+
             if payment_method_value == 'razorpay':
                 print("yaaaaaaaaaaaaaaaaaaah inside")
                 # Verify Razorpay payment
                 razorpay_payment_id = data.get('razorpay_payment_id')
                 razorpay_order_id = data.get('razorpay_order_id')
                 razorpay_signature = data.get('razorpay_signature')
-                
+
                 # Implement Razorpay payment verification here
                 expiry_date = datetime.now().date() + timedelta(days=365)
-                
+
                 # If verification is successful, create PaymentMethod for Razorpay
                 payment_method = PaymentMethod.objects.create(
                     user=user,
                     payment_type=PaymentType.objects.get(value="razorpay"),
                     provider="Razorpay",
-                    expiry_date = expiry_date,  # dynamically calculated expiry date
+                    expiry_date=expiry_date,  # dynamically calculated expiry date
                     account_number=razorpay_payment_id,
                     is_default=False
                 )
@@ -872,16 +873,17 @@ def place_order(request):
             # Check product configurations and quantities
             error_messages = []
             confirmation_required = False
-            coupon = None
+            discount_value = Decimal(0)  # Initialize discount_value
+
             if coupon_code:
                 try:
                     coupon = Coupon.objects.get(code=coupon_code)
-                    if coupon.is_valid(order_total,request.user):
+                    if coupon.is_valid(order_total, request.user):
                         # Check if the user has already used the coupon
                         user_coupon_usage = CouponUsage.objects.filter(coupon=coupon, user=user).count()
                         if user_coupon_usage >= coupon.usage_limit:
                             return JsonResponse({'status': 'error', 'message': 'You have already used this coupon the maximum number of times.'})
-                        
+
                         # Apply coupon discount
                         discount_value = Decimal(coupon.discount_value)
                         if coupon.discount_type == 'Percentage':
@@ -897,6 +899,7 @@ def place_order(request):
                 except Exception as e:
                     logger.error(f"Error processing coupon {coupon_code}: {str(e)}")
                     return JsonResponse({'status': 'error', 'message': f'Error processing coupon: {str(e)}'})
+
             with transaction.atomic():
                 for item in cart_items:
                     product_config = item.product_configuration
@@ -938,7 +941,8 @@ def place_order(request):
                 shipping_address=shipping_address,
                 shipping_method=ShippingMethod.objects.first(),  # Replace with actual logic if needed
                 order_total=order_total,
-                order_status=order_status
+                order_status=order_status,
+                discount_amount=discount_value
             )
 
             # Create order lines and update stock
