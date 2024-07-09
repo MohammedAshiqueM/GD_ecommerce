@@ -92,7 +92,7 @@
             <a href="{% url 'viewCoupon' %}"><button class="btn btn-outline-primary btn-block coupon_btn">View Available Coupons</button></a>
             <form id="coupon-form" class="mb-30">
                 <div class="input-group">
-                    <input type="text" id="coupon-code" class="form-control border-0 p-4 coupon" placeholder="Coupon Code">
+                    <input type="text" id="coupon-code" name="coupon_code" class="form-control border-0 p-4 coupon" placeholder="Coupon Code">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-primary">Apply Coupon</button>
                     </div>
@@ -453,6 +453,7 @@
         function initiateRazorpayCheckout(selectedAddressId) {
             console.log('initiateRazorpayCheckout function called');
             const amount = '{{ cart_items|calc_total|floatformat:2 }}';
+            const couponCode = document.getElementById('coupon-code').value; 
             console.log('Amount:', amount);
             console.log('Razorpay Key:', "{{ razorpay_key }}");
             console.log('CSRF Token:', '{{ csrf_token }}');
@@ -465,7 +466,8 @@
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
                 body: JSON.stringify({
-                    'amount': amount
+                    'amount': amount,
+                    'coupon_code': couponCode
                 })
             })
             .then(response => response.json())
@@ -497,7 +499,8 @@
                                         razorpay_payment_id: response.razorpay_payment_id,
                                         razorpay_order_id: response.razorpay_order_id,
                                         razorpay_signature: response.razorpay_signature,
-                                        shipping_address_id: selectedAddressId
+                                        shipping_address_id: selectedAddressId,
+                                        coupon_code: couponCode 
                                     })
                                 })
                                 .then(response => {
@@ -668,6 +671,7 @@
 
         // Function to place order with confirmation if needed
         function placeOrderWithConfirmation(confirmation = false) {
+        var couponCode = document.getElementById('coupon-code').value;
             fetch("{% url 'place_order' %}", {
                 method: 'POST',
                 headers: {
@@ -677,7 +681,9 @@
                 body: JSON.stringify({
                     payment: paymentValue,
                     shipping_address_id: addressId,
-                    confirmation: confirmation  // Include confirmation flag
+                    confirmation: confirmation,  // Include confirmation flag
+                    coupon_code: couponCode 
+
                 })
             })
             .then(response => {

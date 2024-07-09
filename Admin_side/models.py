@@ -116,17 +116,23 @@ class Coupon(models.Model):
         if self.usage_limit <= 0:
             raise ValidationError('Usage limit must be greater than 0.')
         
-    def is_valid(self, order_total):
+    def is_valid(self, order_total, user):
         now = timezone.now()
+        user_usage_count = self.couponusage_set.filter(user=user).count()
+        total_usage_count = self.couponusage_set.count()
+
         return (
             self.active and
             self.valid_from <= now <= self.valid_to and
-            order_total >= self.min_purchase_amount
+            order_total >= self.min_purchase_amount and
+            user_usage_count < self.usage_limit and
+            total_usage_count < self.usage_limit
         )
-        
-    def save(self, *args, **kwargs):
-        self.clean()
-        super().save(*args, **kwargs)
+
+    def available_for_user(self, user):
+        user_usage_count = self.couponusage_set.filter(user=user).count()
+        total_usage_count = self.couponusage_set.count()
+        return user_usage_count < self.usage_limit and total_usage_count < self.usage_limit
        
 class CouponUsage(models.Model):
     coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE)
