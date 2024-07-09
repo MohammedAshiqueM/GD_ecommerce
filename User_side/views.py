@@ -880,19 +880,21 @@ def place_order(request):
                     coupon = Coupon.objects.get(code=coupon_code)
                     if coupon.is_valid(order_total, request.user):
                         # Check if the user has already used the coupon
-                        user_coupon_usage = CouponUsage.objects.filter(coupon=coupon, user=user).count()
-                        if user_coupon_usage >= coupon.usage_limit:
-                            return JsonResponse({'status': 'error', 'message': 'You have already used this coupon the maximum number of times.'})
 
                         # Apply coupon discount
                         discount_value = Decimal(coupon.discount_value)
-                        if coupon.discount_type == 'Percentage':
+                        if coupon.discount_type == 'percentage':
+                            print(discount_value)
                             discount_value = (discount_value / Decimal('100')) * Decimal(order_total)
+                            print(discount_value)
                         order_total = Decimal(order_total) - discount_value
                         logger.info(f"Coupon applied. Discount: {discount_value}, New total: {order_total}")
-                    else:
-                        logger.warning(f"Invalid coupon attempted: {coupon_code}")
-                        return JsonResponse({'status': 'error', 'message': 'This coupon is not valid.'})
+                    # else:
+                    #     user_coupon_usage = CouponUsage.objects.filter(coupon=coupon, user=user).count()
+                    #     # if user_coupon_usage >= coupon.usage_limit:
+                    #     #     return JsonResponse({'status': 'error', 'message': 'You have already used this coupon the maximum number of times.'})
+                    #     # logger.warning(f"Invalid coupon attempted: {coupon_code}")
+                    #     return JsonResponse({'status': 'error', 'message': 'This coupon is not valid.'})
                 except Coupon.DoesNotExist:
                     logger.warning(f"Non-existent coupon code attempted: {coupon_code}")
                     return JsonResponse({'status': 'error', 'message': 'Invalid coupon code.'})
@@ -1048,18 +1050,21 @@ def apply_coupon(request):
             })
 
         if not coupon.is_valid(order_total,request.user):
+
+            user_coupon_usage = CouponUsage.objects.filter(coupon=coupon, user=request.user).count()
+            if user_coupon_usage >= coupon.usage_limit:
+                return JsonResponse({'success': False, 'message': 'You have already used this coupon the maximum number of times.'})
             return JsonResponse({'success': False, 'message': 'This coupon is not valid.'})
 
-        user_coupon_usage = CouponUsage.objects.filter(coupon=coupon, user=request.user).count()
-        if user_coupon_usage >= coupon.usage_limit:
-            return JsonResponse({'success': False, 'message': 'You have already used this coupon the maximum number of times.'})
+        discount_value = Decimal(coupon.discount_value)
+        if coupon.discount_type == 'percentage':
+            print(discount_value)
+            discount_value = (discount_value / Decimal('100')) * Decimal(order_total)
+            print(discount_value)
+        new_total = Decimal(order_total) - discount_value
 
-        discount_value = coupon.discount_value
-        if coupon.discount_type == 'Percentage':
-            discount_value = (Decimal(coupon.discount_value) / Decimal('100')) * Decimal(order_total)
 
-
-        new_total = order_total - discount_value
+        # new_total = order_total - discount_value
 
         logger.info(f"Discount value: {discount_value}")
         logger.info(f"New total: {new_total}")

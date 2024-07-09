@@ -119,14 +119,14 @@ class Coupon(models.Model):
     def is_valid(self, order_total, user):
         now = timezone.now()
         user_usage_count = self.couponusage_set.filter(user=user).count()
-        total_usage_count = self.couponusage_set.count()
+        # total_usage_count = self.couponusage_set.count()
 
         return (
             self.active and
             self.valid_from <= now <= self.valid_to and
             order_total >= self.min_purchase_amount and
-            user_usage_count < self.usage_limit and
-            total_usage_count < self.usage_limit
+            user_usage_count < self.usage_limit 
+            
         )
 
     def available_for_user(self, user):
