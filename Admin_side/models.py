@@ -194,3 +194,13 @@ class PromotionCategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='promotion_categories')
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE)
 
+class Wishlist(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+class WishlistItem(models.Model):
+    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
+    product_configuration = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE)
+    added_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('wishlist', 'product_configuration')

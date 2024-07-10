@@ -43,6 +43,8 @@ urlpatterns = [
     
     path('viewCoupon/', views.view_coupons, name='viewCoupon'),
     path('apply_coupon/', views.apply_coupon, name='apply_coupon'),
-    path('test/', views.test_view, name='test_view')
+    path('test/', views.test_view, name='test_view'),
+    path("wishlist/",views.wishlist,name='wishlist'),
+    path('add_to_wishlist/',views.add_to_wishlist, name='add_to_wishlist'),
 
 ]

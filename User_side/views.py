@@ -43,7 +43,9 @@ from Admin_side.models import (
     PromotionCategory,
     ProductImage,
     Coupon,
-    CouponUsage
+    CouponUsage,
+    Wishlist,
+    WishlistItem
 )
 
 
@@ -1014,7 +1016,39 @@ def view_coupons(request):
 def test_view(request):
     return JsonResponse({'message': 'Test successful'})
 
+@login_required
+def wishlist(request):
+    try:
+        user_wishlist = Wishlist.objects.get(user=request.user)
+        wishlist_items = WishlistItem.objects.filter(wishlist=user_wishlist)
+    except Wishlist.DoesNotExist:
+        wishlist_items = []
 
+    context = {
+        'wishlist_items': wishlist_items
+    }
+    return render(request, "wishlist.html", context)
+
+@login_required
+@require_POST
+def add_to_wishlist(request):
+    data = json.loads(request.body)
+    product_id = data.get('product_id')
+    configuration_id = data.get('configuration_id')
+
+    try:
+        wishlist, created = Wishlist.objects.get_or_create(user=request.user)
+        product_config = ProductConfiguration.objects.get(id=configuration_id)
+        
+        wishlist_item, created = WishlistItem.objects.get_or_create(
+            wishlist=wishlist,
+            product_configuration=product_config
+        )
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
 from decimal import Decimal
 import logging
 from django.core.exceptions import ObjectDoesNotExist
