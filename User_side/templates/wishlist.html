@@ -50,231 +50,325 @@
             object-fit: cover;
         }
         .wishlist-item-info {
-            padding: 15px;
-            background-color: #fdf8e4;
-        }
-        .wishlist-item-title {
-            font-size: 18px;
-            font-weight: 500;
-            margin-bottom: 10px;
-        }
-        .wishlist-item-price {
-            font-size: 16px;
-            color: #e74c3c;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        .wishlist-item-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        .btn-primary {
-            background-color: #184153;
-            color: #fff;
-        }
-        .btn-primary:hover {
-            background-color: #2980b9;
-        }
-        .btn-danger {
-            background-color: #e74c3c;
-            color: #fff;
-        }
-        .btn-danger:hover {
-            background-color: #c0392b;
-        }
-        .empty-wishlist {
-            text-align: center;
-            font-size: 18px;
-            color: #7f8c8d;
-            margin-top: 50px;
-        }
+        padding: 15px;
+        background-color: #fdf8e4;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .wishlist-item-title {
+        font-size: 18px;
+        font-weight: 500;
+        margin-bottom: 10px;
+    }
+
+    .wishlist-item-price {
+        font-size: 16px;
+        color: #e74c3c;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .wishlist-item-options {
+        margin-bottom: 10px;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .wishlist-item-actions-container {
+        margin-top: auto;
+    }
+
+    .quantity-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .input-group.quantity {
+        display: flex;
+        align-items: center;
+        width: 100px;
+        margin-right: 10px;
+    }
+
+    .quantity-input {
+        width: 40px;
+        text-align: center;
+        border: 1px solid #ddd;
+        padding: 5px;
+    }
+
+    .wishlist-item-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .btn {
+        padding: 8px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background-color: #184153;
+        color: #fff;
+    }
+
+    .btn-danger {
+        background-color: #e74c3c;
+        color: #fff;
+        padding: 8px 12px;
+    }
+
+    .add-to-cart-btn {
+        flex-grow: 1;
+        margin-right: 10px;
+    }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>My Wishlist</h1>
-    
-    <div class="wishlist-grid">
-        {% for item in wishlist_items %}
-            <div class="wishlist-item">
-                {% if item.product_configuration.product.images.first %}
-                    <img src="{{ item.product_configuration.product.images.first.image.url }}" alt="{{ item.product_configuration.product.name }}">
-                {% else %}
-                    <img src="https://via.placeholder.com/250x200" alt="No image available">
-                {% endif %}
-                <div class="wishlist-item-info">
-                    <h3 class="wishlist-item-title">{{ item.product_configuration.product.name }}</h3>
-                    <p class="wishlist-item-price">${{ item.product_configuration.price }}</p>
-                    {% for option in item.product_configuration.variation_options.all %}
-                    {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                    <div class="d-flex align-items-center mb-4 pt-2">
-                        <div class="input-group quantity mr-3" style="width: 130px;">
-                            <div class="input-group-btn">
-                                <button class="btn btn-primary btn-minus">
-                                    <i class="fa fa-minus"></i>
-                                </button>
+    <div class="container">
+        <h1>My Wishlist</h1>
+        
+        <div class="wishlist-grid">
+            {% for item in wishlist_items %}
+                <div class="wishlist-item" data-item-id="{{ item.id }}">
+                    {% if item.product_configuration.product.images.first %}
+                        <img src="{{ item.product_configuration.product.images.first.image.url }}" alt="{{ item.product_configuration.product.name }}">
+                    {% else %}
+                        <img src="https://via.placeholder.com/250x200" alt="No image available">
+                    {% endif %}
+                    <div class="wishlist-item-info">
+                        <h3 class="wishlist-item-title">{{ item.product_configuration.product.name }}</h3>
+                        <p class="wishlist-item-price">${{ item.product_configuration.price }}</p>
+                        {% for option in item.product_configuration.variation_options.all %}
+                        {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        <div class="d-flex align-items-center mb-4 pt-2">
+                            <div class="input-group quantity mr-3" style="width: 130px;">
+                                <div class="input-group-btn">
+                                    <button class="btn btn-primary btn-minus">
+                                        <i class="fa fa-minus"></i>
+                                    </button>
+                                </div>
+                                <input type="text" class="form-control bg-secondary border-0 text-center quantity-input" value="1">
+                                <div class="input-group-btn">
+                                    <button class="btn btn-primary btn-plus">
+                                        <i class="fa fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>                    
+                            <div class="wishlist-item-actions">
+                                <button class="btn btn-primary add-to-cart-btn" data-configuration-id="{{ item.product_configuration.id }}" data-product-id="{{ item.product_configuration.product.id }}">Add to Cart</button>
+                                <button class="btn btn-danger" data-item-id="{{ item.id }}"><i class="fas fa-trash"></i></button>
                             </div>
-                            <input type="text" class="form-control bg-secondary border-0 text-center quantity-input" value="1">
-                            <div class="input-group-btn">
-                                <button class="btn btn-primary btn-plus">
-                                    <i class="fa fa-plus"></i>
-                                </button>
-                            </div>
-                        </div>                    
-                        <div class="wishlist-item-actions">
-                            <button class="btn btn-primary add-to-cart-btn" data-configuration-id="{{ item.product_configuration.id }}" data-product-id="{{ item.product_configuration.product.id }}">Add to Cart</button>
-                            <button class="btn btn-danger" data-product-id="{{ product.id }}" onclick="removeFromWishlist({{ item.id }})"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
-            </div>
-        {% empty %}
-            <p class="empty-wishlist">Your wishlist is empty. Start adding some products!</p>
-        {% endfor %}
+            {% empty %}
+                <p class="empty-wishlist">Your wishlist is empty. Start adding some products!</p>
+            {% endfor %}
+        </div>
     </div>
-</div>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        function setupQuantityButtons() {
-            document.querySelectorAll('.btn-plus').forEach(button => {
-                button.addEventListener('click', function () {
-                    const parentElement = this.closest('.d-flex.align-items-center.mb-4.pt-2');
-                    const quantityInput = parentElement.querySelector('.quantity-input');
-                    let quantity = parseInt(quantityInput.value);
-                    quantity++;
-                    quantityInput.value = quantity;
-                });
-            });
-    
-            document.querySelectorAll('.btn-minus').forEach(button => {
-                button.addEventListener('click', function () {
-                    const parentElement = this.closest('.d-flex.align-items-center.mb-4.pt-2');
-                    const quantityInput = parentElement.querySelector('.quantity-input');
-                    let quantity = parseInt(quantityInput.value);
-                    if (quantity > 1) {
-                        quantity--;
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            function setupQuantityButtons() {
+                document.querySelectorAll('.btn-plus').forEach(button => {
+                    button.addEventListener('click', function () {
+                        const parentElement = this.closest('.d-flex.align-items-center.mb-4.pt-2');
+                        const quantityInput = parentElement.querySelector('.quantity-input');
+                        let quantity = parseInt(quantityInput.value);
+                        quantity++;
                         quantityInput.value = quantity;
-                    }
-                });
-            });
-        }
-    
-        function setupAddToCartButtons() {
-            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
-                button.addEventListener('click', function (e) {
-                    e.preventDefault();
-    
-                    const configurationId = this.getAttribute('data-configuration-id');
-                    const productId = this.getAttribute('data-product-id');
-                    const parentElement = this.closest('.wishlist-item');
-                    const quantityInput = parentElement.querySelector('.quantity-input');
-                    const quantity = parseInt(quantityInput.value);
-    
-                    console.log('Configuration ID:', configurationId);  // Debugging
-                    console.log('Product ID:', productId);  // Debugging
-                    console.log('Quantity:', quantity);  // Debugging
-    
-                    if (!configurationId || !productId) {
-                        alert('Product ID and Configuration ID are required');
-                        return;
-                    }
-    
-                    // Check if quantity exceeds available stock including cart quantity
-                    fetch(`/check_cart_quantity/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': '{{ csrf_token }}'
-                        },
-                        body: JSON.stringify({
-                            configuration_id: configurationId,
-                            product_id: productId,
-                            quantity: quantity
-                        })
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(errorData => {
-                                throw new Error(errorData.error);
-                            });
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            // Now make the add to cart request
-                            fetch("/add_to_cart/", {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRFToken': '{{ csrf_token }}'
-                                },
-                                body: JSON.stringify({
-                                    configuration_id: configurationId,
-                                    product_id: productId,
-                                    quantity: quantity
-                                })
-                            })
-                            .then(response => {
-                                if (!response.ok) {
-                                    return response.json().then(errorData => {
-                                        throw new Error(errorData.error);
-                                    });
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                if (data.success) {
-                                    alert('Product added to cart successfully!');
-                                } else {
-                                    alert(data.error);
-                                }
-                            })
-                            .catch(error => {
-                                alert('Error: ' + error.message);
-                            });
-                        } else {
-                            alert(data.error);
-                        }
-                    })
-                    .catch(error => {
-                        alert('Error: ' + error.message);
                     });
                 });
-            });
-        }
+        
+                document.querySelectorAll('.btn-minus').forEach(button => {
+                    button.addEventListener('click', function () {
+                        const parentElement = this.closest('.d-flex.align-items-center.mb-4.pt-2');
+                        const quantityInput = parentElement.querySelector('.quantity-input');
+                        let quantity = parseInt(quantityInput.value);
+                        if (quantity > 1) {
+                            quantity--;
+                            quantityInput.value = quantity;
+                        }
+                    });
+                });
+            }
+        
+            function setupAddToCartButtons() {
+                document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                    button.addEventListener('click', function (e) {
+                        e.preventDefault();
+        
+                        const configurationId = this.getAttribute('data-configuration-id');
+                        const productId = this.getAttribute('data-product-id');
+                        const parentElement = this.closest('.wishlist-item');
+                        const quantityInput = parentElement.querySelector('.quantity-input');
+                        const quantity = parseInt(quantityInput.value);
+        
+                        console.log('Configuration ID:', configurationId);  // Debugging
+                        console.log('Product ID:', productId);  // Debugging
+                        console.log('Quantity:', quantity);  // Debugging
+        
+                        if (!configurationId || !productId) {
+                            alert('Product ID and Configuration ID are required');
+                            return;
+                        }
+        
+                        // Check if quantity exceeds available stock including cart quantity
+                        fetch(`/check_cart_quantity/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                configuration_id: configurationId,
+                                product_id: productId,
+                                quantity: quantity
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(errorData => {
+                                    throw new Error(errorData.error);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Now make the add to cart request
+                                fetch("/add_to_cart/", {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRFToken': '{{ csrf_token }}'
+                                    },
+                                    body: JSON.stringify({
+                                        configuration_id: configurationId,
+                                        product_id: productId,
+                                        quantity: quantity
+                                    })
+                                })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        return response.json().then(errorData => {
+                                            throw new Error(errorData.error);
+                                        });
+                                    }
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    if (data.success) {
+                                        alert('Product added to cart successfully!');
+                                    } else {
+                                        alert(data.error);
+                                    }
+                                })
+                                .catch(error => {
+                                    alert('Error: ' + error.message);
+                                });
+                            } else {
+                                alert(data.error);
+                            }
+                        })
+                        .catch(error => {
+                            alert('Error: ' + error.message);
+                        });
+                    });
+                });
+            }
+        
+            function removeFromWishlist(itemId) {
+                // Show SweetAlert2 confirmation dialog
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "Do you really want to remove this item from your wishlist?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, remove it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Proceed with removing the item from the wishlist
+                        fetch(`/remove_from_wishlist/${itemId}/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}',
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Remove the item from the DOM
+                                const itemElement = document.querySelector(`.wishlist-item[data-item-id="${itemId}"]`);
+                                if (itemElement) {
+                                    itemElement.remove();
+                                }
+                                // Check if the wishlist is now empty
+                                if (document.querySelectorAll('.wishlist-item').length === 0) {
+                                    const wishlistGrid = document.querySelector('.wishlist-grid');
+                                    wishlistGrid.innerHTML = '<p class="empty-wishlist">Your wishlist is empty. Start adding some products!</p>';
+                                }
+                                Swal.fire(
+                                    'Removed!',
+                                    'The item has been removed from your wishlist.',
+                                    'success'
+                                );
+                            } else {
+                                Swal.fire(
+                                    'Failed!',
+                                    data.error || 'Failed to remove item from wishlist.',
+                                    'error'
+                                );
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            Swal.fire(
+                                'Error!',
+                                'An error occurred while removing the item from the wishlist.',
+                                'error'
+                            );
+                        });
+                    }
+                });
+            }
     
-        function removeFromWishlist(itemId) {
-            fetch(`/remove_from_wishlist/${itemId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.reload();
-                } else {
-                    alert(data.error);
+            // Setup event delegation for remove buttons
+            document.querySelector('.wishlist-grid').addEventListener('click', function(e) {
+                const removeButton = e.target.closest('.btn-danger');
+                if (removeButton) {
+                    e.preventDefault();
+                    const itemId = removeButton.getAttribute('data-item-id');
+                    if (itemId) {
+                        removeFromWishlist(itemId);
+                    } else {
+                        console.error('No item ID found on remove button');
+                    }
                 }
             });
-        }
-    
-        // Initialize quantity buttons and add to cart functionality
-        setupQuantityButtons();
-        setupAddToCartButtons();
-    });
+        
+            // Initialize quantity buttons and add to cart functionality
+            setupQuantityButtons();
+            setupAddToCartButtons();
+        });
     </script>
-    
-</body>
-</html>
+    </body>
+    </html>

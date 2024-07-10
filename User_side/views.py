@@ -1049,6 +1049,22 @@ def add_to_wishlist(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
     
+@require_POST
+@login_required
+def remove_from_wishlist(request, item_id):
+    try:
+        logger.info(f"Attempting to remove item {item_id} for user {request.user}")
+        item = WishlistItem.objects.get(id=item_id,  wishlist__user=request.user)
+        item.delete()
+        logger.info(f"Successfully removed item {item_id}")
+        return JsonResponse({'success': True})
+    except WishlistItem.DoesNotExist:
+        logger.warning(f"Item {item_id} not found in wishlist for user {request.user}")
+        return JsonResponse({'success': False, 'error': 'Item not found in wishlist'}, status=404)
+    except Exception as e:
+        logger.error(f"Error removing item {item_id}: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
 from decimal import Decimal
 import logging
 from django.core.exceptions import ObjectDoesNotExist
