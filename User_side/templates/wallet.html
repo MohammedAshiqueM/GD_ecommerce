@@ -10,7 +10,7 @@
         background-color: #f4f7fa;
     }
     .wallet-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #F5E7B2 0%, #E0A75E 100%);
         color: white;
         border-radius: 15px;
         padding: 30px;
@@ -19,7 +19,7 @@
     }
     .wallet-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        box-shadow: 0 15px 30px #ffe893;
     }
     .balance-icon {
         font-size: 2.5rem;
@@ -38,7 +38,7 @@
     }
     .transaction-item:hover {
         transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 5px 15px #ffe893;
     }
     .transaction-icon {
         font-size: 1.5rem;
@@ -83,7 +83,7 @@
             <div class="card">
                 <div class="card-body">
                     <h3 class="card-title mb-4">Transactions</h3>
-                    <div class="filter-section">
+                    <!-- <div class="filter-section">
                         <input type="text" class="form-control mb-2" id="transactionSearch" placeholder="Search transactions...">
                         <div class="input-group">
                             <input type="date" class="form-control" id="startDate">
@@ -92,7 +92,7 @@
                                 <button class="btn btn-outline-secondary" type="button" id="filterDate">Filter</button>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                     <div class="transaction-list">
                         {% for transaction in transactions %}
                         <div class="transaction-item">
@@ -152,7 +152,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<!-- <script>
     $(document).ready(function() {
         $("#transactionSearch").on("keyup", function() {
             var value = $(this).val().toLowerCase();
@@ -175,5 +175,5 @@
             });
         });
     });
-</script>
+</script> -->
 {% endblock %}

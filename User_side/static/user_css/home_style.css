@@ -2370,7 +2370,7 @@
   }
   
   .btn-primary:hover {
-    /* color: #e39b53!important; */
+    color: #F5E7B2!important;
     background-color: #184153;
     border-color: #e39b53;
   }
@@ -6094,13 +6094,13 @@
   }
   
   .bg-primary {
-    background-color: #e39b53 !important;
+    background-color: #E0A75E !important;
   }
   
-  a.bg-primary:hover, a.bg-primary:focus,
+  a.bg-primary:hover,
   button.bg-primary:hover,
   button.bg-primary:focus {
-    background-color: #e39b53 !important;
+    background-color: #F5E7B2 !important;
   }
   
   .bg-secondary {
@@ -9614,7 +9614,7 @@
   }
   
   .cat-item:hover {
-    background: #e39b53;
+    background: #ffe893;
   }
   
   .cat-item img {

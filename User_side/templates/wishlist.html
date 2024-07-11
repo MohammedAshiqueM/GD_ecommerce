@@ -43,6 +43,7 @@
         }
         .wishlist-item:hover {
             transform: translateY(-5px);
+            box-shadow: 0 15px 30px #ffe893;
         }
         .wishlist-item img {
             width: 100%;
@@ -51,7 +52,7 @@
         }
         .wishlist-item-info {
         padding: 15px;
-        background-color: #fdf8e4;
+        background: linear-gradient(135deg, #F5E7B2 0%, #E0A75E 100%);
         display: flex;
         flex-direction: column;
         height: 100%;
@@ -91,6 +92,12 @@
         align-items: center;
         width: 100px;
         margin-right: 10px;
+        margin-bottom: 10px;
+    }
+
+    .btn-primary:hover{
+        background-color: #E0A75E!important;
+        color: #184153!important;
     }
 
     .quantity-input {
@@ -126,6 +133,10 @@
         padding: 8px 12px;
     }
 
+    .btn-danger:hover{
+        background-color: #fff;
+        color: #e74c3c;
+    }
     .add-to-cart-btn {
         flex-grow: 1;
         margin-right: 10px;
