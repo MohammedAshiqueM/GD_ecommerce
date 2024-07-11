@@ -45,7 +45,9 @@ from Admin_side.models import (
     Coupon,
     CouponUsage,
     Wishlist,
-    WishlistItem
+    WishlistItem,
+    Wallet,
+    Transaction
 )
 
 
@@ -707,7 +709,7 @@ def razorpay_checkout(request):
             
             order_currency = 'INR'
             order_receipt = 'order_rcptid_11'
-            notes = {'Shipping address': 'Bommanahalli, Bangalore'}
+            notes = {'Shipping address': 'TVM, Kerala'}
 
             razorpay_order = client.order.create(
                 {
@@ -1148,7 +1150,13 @@ def my_orders(request):
     )
     return render(request, "myOrders.html", {'orders': orders, 'categories': categories})
 
+import logging
+
+# Get an instance of a logger
+logger = logging.getLogger(__name__)
+
 @csrf_exempt
+@login_required
 def cancel_order(request, order_id):
     try:
         order = get_object_or_404(Order, id=order_id, user=request.user)
@@ -1157,17 +1165,31 @@ def cancel_order(request, order_id):
             cancel_status, created = OrderStatus.objects.get_or_create(status='Cancelled')
             with transaction.atomic():
                 for order_line in order.orderline_set.all():
-                    product_config = get_product_configuration(order_line)
+                    product_config = order_line.product_configuration
 
                     if product_config:
                         product_config.qty_in_stock += order_line.qty
                         product_config.save()
                     else:
                         raise Exception(f"Product configuration not found for order line {order_line.id}")
+                
+                # Check if the payment method is not COD
+                if order.payment_method.payment_type.value != "Cash on Delivery":
+                    wallet, created = Wallet.objects.get_or_create(user=request.user)
+                    refund_amount = Decimal(order.order_total)
+                    wallet.add_funds(refund_amount)
 
-            order.order_status = cancel_status
-            order.save()
-            return JsonResponse({'message': 'Order cancelled successfully.'})
+                    Transaction.objects.create(
+                        wallet=wallet,
+                        amount=refund_amount,
+                        transaction_type='Refund',
+                        order=order
+                    )
+                    
+                order.order_status = cancel_status
+                order.save()
+
+            return JsonResponse({'message': 'Order cancelled and refunded successfully.' if order.payment_method.payment_type.value != "Cash on Delivery" else 'Order cancelled successfully.'})
         else:
             return JsonResponse({'message': 'Order cannot be cancelled.'}, status=400)
 
@@ -1175,7 +1197,8 @@ def cancel_order(request, order_id):
         return JsonResponse({'message': 'Order not found.'}, status=404)
 
     except Exception as e:
-        return JsonResponse({'message': str(e)}, status=500)
+        logger.error(f"Error cancelling order {order_id} for user {request.user.id}: {e}")
+        return JsonResponse({'message': f'Error: {str(e)}'}, status=500)
 
 def get_product_configuration(order_line):
     """
@@ -1190,8 +1213,71 @@ def get_product_configuration(order_line):
     except Exception as e:
         raise Exception(f"Error retrieving product configuration: {str(e)}")
 
-
+@login_required
+def wallet(request):
+    wallet, created = Wallet.objects.get_or_create(user=request.user)
+    transactions = Transaction.objects.filter(wallet=wallet).order_by('-timestamp')
     
+    context = {
+        'wallet': wallet,
+        'transactions': transactions,
+    }
+    return render(request, 'wallet.html', context)
+    
+
+@login_required
+def wallet_purchase(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    wallet = get_object_or_404(Wallet, user=request.user)
+    
+    if wallet.balance < order.order_total:
+        return JsonResponse({'success': False, 'message': 'Insufficient funds in wallet'})
+    
+    with transaction.atomic():
+        success = wallet.deduct_funds(order.order_total)
+        if success:
+            Transaction.objects.create(
+                wallet=wallet,
+                amount=order.order_total,
+                transaction_type='PURCHASE',
+                order=order
+            )
+            order.payment_status = 'PAID'  # Assuming you have a payment_status field in Order model
+            order.save()
+            return JsonResponse({'success': True, 'message': 'Purchase successful', 'new_balance': str(wallet.balance)})
+        else:
+            return JsonResponse({'success': False, 'message': 'Failed to process payment'})
+
+@login_required
+def refund_to_wallet(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    wallet, created = Wallet.objects.get_or_create(user=request.user)
+    
+    if order.payment_status != 'PAID':
+        return JsonResponse({'success': False, 'message': 'Order is not eligible for refund'})
+    
+    with transaction.atomic():
+        wallet.add_funds(order.order_total)
+        Transaction.objects.create(
+            wallet=wallet,
+            amount=order.order_total,
+            transaction_type='REFUND',
+            order=order
+        )
+        order.payment_status = 'REFUNDED'
+        order.save()
+        return JsonResponse({'success': True, 'message': 'Refund processed successfully', 'new_balance': str(wallet.balance)})
+
+@login_required
+def wallet_transaction_history(request):
+    wallet = get_object_or_404(Wallet, user=request.user)
+    transactions = Transaction.objects.filter(wallet=wallet).order_by('-timestamp')
+    
+    context = {
+        'wallet': wallet,
+        'transactions': transactions,
+    }
+    return render(request, 'wallet_transaction_history.html', context)
 ########################## function for logout ############################
 def logout(request):
     auth_logout(request)

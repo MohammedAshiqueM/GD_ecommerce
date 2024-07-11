@@ -25,7 +25,9 @@ from .models import (
     Coupon,
     CouponUsage,
     Wishlist,
-    WishlistItem
+    WishlistItem,
+    Wallet,
+    Transaction      
 )
 
 admin.site.register(
@@ -52,6 +54,8 @@ admin.site.register(
         Coupon,
         CouponUsage,
         Wishlist,
-        WishlistItem
+        WishlistItem,
+        Wallet,
+        Transaction        
     ]
 )

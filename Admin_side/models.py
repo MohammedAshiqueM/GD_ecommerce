@@ -170,6 +170,25 @@ class Order(models.Model):
         self.save()
         return total
     
+    def cancel_and_refund(self):
+        if self.order_status.status != 'Cancelled':  # Assuming you have an OrderStatus model
+            wallet, _ = Wallet.objects.get_or_create(user=self.user)
+            refund_amount = self.order_total  # Or calculate based on your business logic
+            wallet.add_funds(refund_amount)
+            
+            Transaction.objects.create(
+                wallet=wallet,
+                amount=refund_amount,
+                transaction_type='Refund',
+                order=self
+            )
+
+            self.order_status = OrderStatus.objects.get(status='Cancelled')
+            self.save()
+
+            return True
+        return False
+    
     
 class OrderLine(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
@@ -204,3 +223,40 @@ class WishlistItem(models.Model):
 
     class Meta:
         unique_together = ('wishlist', 'product_configuration')
+        
+class Wallet(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Wallet"
+    
+    def add_funds(self, amount):
+        self.balance += amount
+        self.save()
+
+    def deduct_funds(self, amount):
+        if self.balance >= amount:
+            self.balance -= amount
+            self.save()
+            return True
+        return False    
+    
+class Transaction(models.Model):
+    TRANSACTION_TYPES = (
+        ('ADD', 'Add Funds'),
+        ('WITHDRAW', 'Withdraw Funds'),#this two fields are created for later updation with ADD and WITHDRAW funds later
+        ('PURCHASE', 'Purchase'),
+        ('REFUND', 'Refund'),
+    )
+    
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    order = models.ForeignKey('Order', on_delete=models.SET_NULL, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.wallet.user.username} - {self.transaction_type} - {self.amount}"
