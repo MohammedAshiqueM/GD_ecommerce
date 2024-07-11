@@ -32,6 +32,7 @@
     {% url 'cart' as cart_url %}
     {% url 'checkout' as checkout_url %}
     {% url 'contact' as contact_url %}
+    {% url 'wallet' as wallet %}
 </head>
 <body>
     <!-- Topbar Start -->
@@ -163,17 +164,18 @@
                             </div>
                         </div>
                         <a href="{{ contact_url }}" class="nav-item nav-link {% if request.path == contact_url %}active{% endif %}">Contact</a>
+                        <a href="{{ wallet }}" class="nav-item nav-link {% if request.path == contact_url %}active{% endif %}">Wallet</a>
                     </div>
                         <div class="navbar-nav ml-auto py-0 d-none d-lg-block">
                             <a href="{% url 'wishlist' %}" class="btn px-0">
                                 <i class="fas fa-heart text-primary"></i>
-                                <span class="badge text-secondary border border-secondary rounded-circle"
-                                    style="padding-bottom: 2px;">0</span>
+                                <!-- <span class="badge text-secondary border border-secondary rounded-circle"
+                                    style="padding-bottom: 2px;">0</span> -->
                             </a>
                             <a href="{% url 'cart' %}" class="btn px-0 ml-3">
                                 <i class="fas fa-shopping-cart text-primary"></i>
-                                <span class="badge text-secondary border border-secondary rounded-circle"
-                                    style="padding-bottom: 2px;">0</span>
+                                <!-- <span class="badge text-secondary border border-secondary rounded-circle"
+                                    style="padding-bottom: 2px;">0</span> -->
                             </a>
                         </div>
                     </div>
