@@ -1,73 +1,179 @@
 {% include 'common.html' %}
 {% load static %}
+
 {% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
 <style>
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f4f7fa;
+    }
     .wallet-card {
-        background: linear-gradient(45deg, #3a7bd5, #00d2ff);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+        padding: 30px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .wallet-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+    }
+    .balance-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
     }
     .transaction-list {
-        max-height: 400px;
-        overflow-y: auto;
+        padding: 10px;
     }
     .transaction-item {
-        border-left: 4px solid;
-        margin-bottom: 10px;
+        background-color: white;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
     }
-    .transaction-item.add { border-color: #28a745; }
-    .transaction-item.withdraw { border-color: #dc3545; }
-    .transaction-item.purchase { border-color: #ffc107; }
-    .transaction-item.refund { border-color: #17a2b8; }
+    .transaction-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .transaction-icon {
+        font-size: 1.5rem;
+        margin-right: 10px;
+    }
+    .purchase { color: #28a745; }
+    .refund { color: #17a2b8; }
+    .card-title {
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+    .filter-section {
+        margin-bottom: 20px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Breadcrumb Start -->
+<div class="container-fluid">
+    <div class="row px-xl-5">
+        <div class="col-12">
+            <nav class="breadcrumb bg-light mb-30">
+                <a class="breadcrumb-item text-dark" href="{% url 'userHome' %}">Home</a>
+                <span class="breadcrumb-item active">Wallet</span>
+            </nav>
+        </div>
+    </div>
+</div>
+<!-- Breadcrumb End -->
+
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-4">
             <div class="wallet-card mb-4">
+                <i class="fas fa-wallet balance-icon"></i>
                 <h2 class="mb-3">My Wallet</h2>
                 <h3 class="mb-4">Balance: ${{ wallet.balance }}</h3>
             </div>
         </div>
         <div class="col-md-8">
-            <h3>Recent Transactions</h3>
-            <div class="transaction-list">
-                {% for transaction in transactions %}
-                <div class="transaction-item {{ transaction.transaction_type|lower }}">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            {% if transaction.transaction_type == 'PURCHASE' %}
-                                Purchase
-                            {% elif transaction.transaction_type == 'REFUND' %}
-                                Refund
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Transactions</h3>
+                    <div class="filter-section">
+                        <input type="text" class="form-control mb-2" id="transactionSearch" placeholder="Search transactions...">
+                        <div class="input-group">
+                            <input type="date" class="form-control" id="startDate">
+                            <input type="date" class="form-control" id="endDate">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" id="filterDate">Filter</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="transaction-list">
+                        {% for transaction in transactions %}
+                        <div class="transaction-item">
+                            <div class="d-flex align-items-center">
+                                {% if transaction.transaction_type == 'PURCHASE' %}
+                                    <i class="fas fa-shopping-cart transaction-icon purchase"></i>
+                                {% elif transaction.transaction_type == 'Refund' %}
+                                    <i class="fas fa-undo transaction-icon refund"></i>
+                                {% endif %}
+                                <div>
+                                    <h5 class="card-title mb-1">
+                                        {% if transaction.transaction_type == 'PURCHASE' %}
+                                            Purchase
+                                        {% elif transaction.transaction_type == 'Refund' %}
+                                            Refund
+                                        {% endif %}
+                                    </h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">{{ transaction.timestamp|date:"F d, Y H:i" }}</h6>
+                                </div>
+                            </div>
+                            {% if transaction.order %}
+                            <p class="card-text mt-2">Order cancelled</p>
+                            <div class="order-details mt-3">
+                                <p><strong>Order ID:</strong> #{{ transaction.order.id }}</p>
+                                <p><strong>Total:</strong> ${{ transaction.order.order_total }}</p>
+                                <p><strong>Shipping Address:</strong> {{ transaction.order.shipping_address }}</p>
+                                <p><strong>Products:</strong></p>
+                                <ul class="list-unstyled">
+                                    {% for order_line in transaction.order.orderline_set.all %}
+                                    <li class="mb-3">
+                                        <p class="mb-1"><strong>Product:</strong> {{ order_line.product_configuration.product.name }}</p>
+                                        <p class="mb-1"><strong>Category:</strong> {{ order_line.product_configuration.product.category.name }}</p>
+                                        <p class="mb-1"><strong>Subcategory:</strong> {{ order_line.product_configuration.product.subcategory.name }}</p>
+                                        <p class="mb-1"><strong>Variations:</strong> 
+                                            {% for variation_option in order_line.product_configuration.variation_options.all %}
+                                                {{ variation_option.variation.name }}: {{ variation_option.value }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                        </p>
+                                        <p class="mb-1"><strong>Quantity:</strong> {{ order_line.qty }}</p>
+                                        <p class="mb-1"><strong>Price:</strong> ${{ order_line.price }}</p>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
                             {% endif %}
-                        </h5>
-                        <h6 class="card-subtitle mb-2 text-muted">{{ transaction.timestamp|date:"F d, Y H:i" }}</h6>
-                        <p class="card-text">Amount: ${{ transaction.amount }}</p>
-                        {% if transaction.order %}
-                        <p class="card-text">Order: #{{ transaction.order.id }}</p>
-                        {% endif %}
+                            <p class="card-text mt-2">Amount: ${{ transaction.amount }} returned</p>
+                        </div>
+                        {% empty %}
+                        <p>No transactions yet.</p>
+                        {% endfor %}
                     </div>
                 </div>
-                {% empty %}
-                <p>No transactions yet.</p>
-                {% endfor %}
             </div>
         </div>
     </div>
 </div>
-
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
     $(document).ready(function() {
-        // You can add any additional JavaScript here
+        $("#transactionSearch").on("keyup", function() {
+            var value = $(this).val().toLowerCase();
+            $(".transaction-item").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+
+        $("#filterDate").click(function() {
+            var startDate = new Date($("#startDate").val());
+            var endDate = new Date($("#endDate").val());
+
+            $(".transaction-item").each(function() {
+                var transactionDate = new Date($(this).find(".card-subtitle").text());
+                if (transactionDate >= startDate && transactionDate <= endDate) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
     });
 </script>
 {% endblock %}
