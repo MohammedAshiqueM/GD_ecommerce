@@ -507,13 +507,18 @@
                                     console.log('Fetch response received:', response);
                                     return response.json();
                                 })
-                                .then(data => {
+                               .then(data => {
                                     console.log('Parsed response data:', data);
                                     if (data.status === 'success') {
                                         window.location.href = '/order_success/';
                                     } else {
                                         console.error('Error creating order:', data.message);
-                                        alert('Error creating order: ' + data.message);
+                                        swal({
+                                            title: "Error",
+                                            text: "Insufficient stock ",
+                                            icon: "error",
+                                            button: "OK",
+                                        });
                                     }
                                 })
                                 .catch(error => {
