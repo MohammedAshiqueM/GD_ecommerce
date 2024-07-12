@@ -850,9 +850,32 @@ def place_order(request):
                     account_number=razorpay_payment_id,
                     is_default=False
                 )
-            # Create or get COD payment method
             elif payment_method_value == 'cod':
                 payment_method = create_cod_payment_method(user)
+            elif payment_method_value == 'Wallet':
+                # Check if user has sufficient balance in wallet
+                try:
+                    wallet = Wallet.objects.get(user=user)
+                except Wallet.DoesNotExist:
+                    return JsonResponse({'status': 'error', 'message': 'Wallet not found for this user.'})
+
+                order_total = calculate_order_total(user, coupon_code)
+                expiry_date = datetime.now().date() + timedelta(days=365)
+                if wallet.balance >= order_total:
+                    # Deduct amount from wallet
+                    wallet.balance -= order_total
+                    wallet.save()
+                    
+                    # Create PaymentMethod for wallet
+                    payment_method = PaymentMethod.objects.create(
+                        user=user,
+                        payment_type=PaymentType.objects.get(value="Wallet"),
+                        provider="Wallet",
+                        expiry_date=expiry_date,  # dynamically calculated expiry date
+                        is_default=False
+                    )
+                else:
+                    return JsonResponse({'status': 'error', 'message': 'Insufficient wallet balance.'})
             else:
                 try:
                     payment_method = PaymentMethod.objects.get(id=payment_method_value)
@@ -883,8 +906,6 @@ def place_order(request):
                 try:
                     coupon = Coupon.objects.get(code=coupon_code)
                     if coupon.is_valid(order_total, request.user):
-                        # Check if the user has already used the coupon
-
                         # Apply coupon discount
                         discount_value = Decimal(coupon.discount_value)
                         if coupon.discount_type == 'percentage':
@@ -893,12 +914,6 @@ def place_order(request):
                             print(discount_value)
                         order_total = Decimal(order_total) - discount_value
                         logger.info(f"Coupon applied. Discount: {discount_value}, New total: {order_total}")
-                    # else:
-                    #     user_coupon_usage = CouponUsage.objects.filter(coupon=coupon, user=user).count()
-                    #     # if user_coupon_usage >= coupon.usage_limit:
-                    #     #     return JsonResponse({'status': 'error', 'message': 'You have already used this coupon the maximum number of times.'})
-                    #     # logger.warning(f"Invalid coupon attempted: {coupon_code}")
-                    #     return JsonResponse({'status': 'error', 'message': 'This coupon is not valid.'})
                 except Coupon.DoesNotExist:
                     logger.warning(f"Non-existent coupon code attempted: {coupon_code}")
                     return JsonResponse({'status': 'error', 'message': 'Invalid coupon code.'})
@@ -977,6 +992,27 @@ def place_order(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+def calculate_order_total(user, coupon_code):
+    cart = Cart.objects.get(user=user)
+    cart_items = CartItem.objects.filter(cart=cart)
+    subtotal = sum(Decimal(str(item.qty)) * Decimal(str(item.product_configuration.price)) for item in cart_items)
+    shipping_cost = Decimal('10')
+
+    total = subtotal + shipping_cost
+
+    if coupon_code:
+        try:
+            coupon = Coupon.objects.get(code=coupon_code)
+            if coupon.is_valid(Decimal(str(total)), user):
+                discount = Decimal(str(coupon.discount_value))
+                if coupon.discount_type == 'percentage':
+                    discount = (discount / Decimal('100')) * Decimal(str(total))
+                total -= discount
+        except Coupon.DoesNotExist:
+            pass
+
+    return total
 
 def verify_razorpay_payment(payment_id, order_id, signature):
     client = RazorpayClient(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
