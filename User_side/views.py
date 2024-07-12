@@ -874,6 +874,8 @@ def place_order(request):
                         expiry_date=expiry_date,  # dynamically calculated expiry date
                         is_default=False
                     )
+
+
                 else:
                     return JsonResponse({'status': 'error', 'message': 'Insufficient wallet balance.'})
             else:
@@ -965,7 +967,14 @@ def place_order(request):
                 order_status=order_status,
                 discount_amount=discount_value
             )
-
+            
+            if payment_method_value == 'Wallet' and order:
+                Transaction.objects.create(
+                    wallet=wallet,
+                    amount=order_total,
+                    transaction_type='PURCHASE',
+                    order=order  # You'll need to move this part after the order creation
+                )
             # Create order lines and update stock
             for item in cart_items:
                 product_config = item.product_configuration
@@ -1254,9 +1263,15 @@ def wallet(request):
     wallet, created = Wallet.objects.get_or_create(user=request.user)
     transactions = Transaction.objects.filter(wallet=wallet).order_by('-timestamp')
     
+    # Separate debits and credits
+    debits = transactions.filter(transaction_type='PURCHASE')
+    credits = transactions.filter(transaction_type='REFUND')
+    
     context = {
         'wallet': wallet,
         'transactions': transactions,
+        'debits': debits,
+        'credits': credits,
     }
     return render(request, 'wallet.html', context)
     
@@ -1272,18 +1287,22 @@ def wallet_purchase(request, order_id):
     with transaction.atomic():
         success = wallet.deduct_funds(order.order_total)
         if success:
-            Transaction.objects.create(
+            transaction = Transaction.objects.create(
                 wallet=wallet,
                 amount=order.order_total,
                 transaction_type='PURCHASE',
                 order=order
             )
-            order.payment_status = 'PAID'  # Assuming you have a payment_status field in Order model
+            # order.payment_status = 'PAID'
             order.save()
-            return JsonResponse({'success': True, 'message': 'Purchase successful', 'new_balance': str(wallet.balance)})
+            return JsonResponse({
+                'success': True, 
+                'message': 'Purchase successful', 
+                'new_balance': str(wallet.balance),
+                'transaction_id': transaction.id
+            })
         else:
             return JsonResponse({'success': False, 'message': 'Failed to process payment'})
-
 @login_required
 def refund_to_wallet(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)

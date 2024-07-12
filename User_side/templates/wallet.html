@@ -53,6 +53,20 @@
     .filter-section {
         margin-bottom: 20px;
     }
+    .filter-btn {
+        margin-right: 10px;
+        margin-bottom: 20px;
+    }
+    .transaction-section {
+        margin-bottom: 30px;
+    }
+    .order-link {
+        color: #007bff;
+        text-decoration: none;
+    }
+    .order-link:hover {
+        text-decoration: underline;
+    }
 </style>
 {% endblock %}
 
@@ -83,97 +97,135 @@
             <div class="card">
                 <div class="card-body">
                     <h3 class="card-title mb-4">Transactions</h3>
-                    <!-- <div class="filter-section">
-                        <input type="text" class="form-control mb-2" id="transactionSearch" placeholder="Search transactions...">
-                        <div class="input-group">
-                            <input type="date" class="form-control" id="startDate">
-                            <input type="date" class="form-control" id="endDate">
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-secondary" type="button" id="filterDate">Filter</button>
-                            </div>
-                        </div>
-                    </div> -->
-                    <div class="transaction-list">
-                        {% for transaction in transactions %}
-                        <div class="transaction-item">
-                            <div class="d-flex align-items-center">
+                    
+                    <!-- Add filter buttons -->
+                    <div class="filter-section">
+                        <button class="btn btn-outline-primary filter-btn active" data-filter="all">All</button>
+                        <button class="btn btn-outline-primary filter-btn" data-filter="purchase">Purchases</button>
+                        <button class="btn btn-outline-primary filter-btn" data-filter="refund">Refunds</button>
+                    </div>
+
+                    <!-- Debits (Purchases) Section -->
+                    <div class="transaction-section purchase-section">
+                        <h4>Debits (Purchases)</h4>
+                        <div class="transaction-list">
+                            {% for transaction in transactions %}
                                 {% if transaction.transaction_type == 'PURCHASE' %}
-                                    <i class="fas fa-shopping-cart transaction-icon purchase"></i>
-                                {% elif transaction.transaction_type == 'Refund' %}
-                                    <i class="fas fa-undo transaction-icon refund"></i>
-                                {% endif %}
-                                <div>
-                                    <h5 class="card-title mb-1">
-                                        {% if transaction.transaction_type == 'PURCHASE' %}
-                                            Purchase
-                                        {% elif transaction.transaction_type == 'Refund' %}
-                                            Refund
+                                    <div class="transaction-item">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-shopping-cart transaction-icon purchase"></i>
+                                            <div>
+                                                <h5 class="card-title mb-1">Purchase</h5>
+                                                <h6 class="card-subtitle mb-2 text-muted">{{ transaction.timestamp|date:"F d, Y H:i" }}</h6>
+                                            </div>
+                                        </div>
+                                        {% if transaction.order %}
+                                        <div class="order-details mt-3">
+                                            <p><strong>Order ID:</strong> #{{ transaction.order.id }}</p>
+                                            <p><strong>Total:</strong> ${{ transaction.order.order_total }}</p>
+                                            <p><strong>Shipping Address:</strong> {{ transaction.order.shipping_address }}</p>
+                                            <p><strong>Products:</strong></p>
+                                            <ul class="list-unstyled">
+                                                {% for order_line in transaction.order.orderline_set.all %}
+                                                <li class="mb-3">
+                                                    <p class="mb-1"><strong>Product:</strong> {{ order_line.product_configuration.product.name }}</p>
+                                                    <p class="mb-1"><strong>Category:</strong> {{ order_line.product_configuration.product.category.name }}</p>
+                                                    <p class="mb-1"><strong>Subcategory:</strong> {{ order_line.product_configuration.product.subcategory.name }}</p>
+                                                    <p class="mb-1"><strong>Variations:</strong> 
+                                                        {% for variation_option in order_line.product_configuration.variation_options.all %}
+                                                            {{ variation_option.variation.name }}: {{ variation_option.value }}{% if not forloop.last %}, {% endif %}
+                                                        {% endfor %}
+                                                    </p>
+                                                    <p class="mb-1"><strong>Quantity:</strong> {{ order_line.qty }}</p>
+                                                    <p class="mb-1"><strong>Price:</strong> ${{ order_line.price }}</p>
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
                                         {% endif %}
-                                    </h5>
-                                    <h6 class="card-subtitle mb-2 text-muted">{{ transaction.timestamp|date:"F d, Y H:i" }}</h6>
-                                </div>
-                            </div>
-                            {% if transaction.order %}
-                            <p class="card-text mt-2">Order cancelled</p>
-                            <div class="order-details mt-3">
-                                <p><strong>Order ID:</strong> #{{ transaction.order.id }}</p>
-                                <p><strong>Total:</strong> ${{ transaction.order.order_total }}</p>
-                                <p><strong>Shipping Address:</strong> {{ transaction.order.shipping_address }}</p>
-                                <p><strong>Products:</strong></p>
-                                <ul class="list-unstyled">
-                                    {% for order_line in transaction.order.orderline_set.all %}
-                                    <li class="mb-3">
-                                        <p class="mb-1"><strong>Product:</strong> {{ order_line.product_configuration.product.name }}</p>
-                                        <p class="mb-1"><strong>Category:</strong> {{ order_line.product_configuration.product.category.name }}</p>
-                                        <p class="mb-1"><strong>Subcategory:</strong> {{ order_line.product_configuration.product.subcategory.name }}</p>
-                                        <p class="mb-1"><strong>Variations:</strong> 
-                                            {% for variation_option in order_line.product_configuration.variation_options.all %}
-                                                {{ variation_option.variation.name }}: {{ variation_option.value }}{% if not forloop.last %}, {% endif %}
-                                            {% endfor %}
-                                        </p>
-                                        <p class="mb-1"><strong>Quantity:</strong> {{ order_line.qty }}</p>
-                                        <p class="mb-1"><strong>Price:</strong> ${{ order_line.price }}</p>
-                                    </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            {% endif %}
-                            <p class="card-text mt-2">Amount: ${{ transaction.amount }} returned</p>
+                                        <p class="card-text mt-2">Amount Debited: -${{ transaction.amount }}</p>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
                         </div>
-                        {% empty %}
-                        <p>No transactions yet.</p>
-                        {% endfor %}
+                    </div>
+
+                    <!-- Credits (Refunds) Section -->
+                    <div class="transaction-section refund-section">
+                        <h4>Credits (Refunds)</h4>
+                        <div class="transaction-list">
+                            {% for transaction in transactions %}
+                                {% if transaction.transaction_type == 'Refund' %}
+                                    <div class="transaction-item">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-undo transaction-icon refund"></i>
+                                            <div>
+                                                <h5 class="card-title mb-1">Credit (Refund)</h5>
+                                                <h6 class="card-subtitle mb-2 text-muted">{{ transaction.timestamp|date:"F d, Y H:i" }}</h6>
+                                            </div>
+                                        </div>
+                                        {% if transaction.order %}
+                                        <div class="order-details mt-3">
+                                            <p><strong>Order ID:</strong> #{{ transaction.order.id }}</p>
+                                            <p><strong>Total:</strong> ${{ transaction.order.order_total }}</p>
+                                            <p><strong>Shipping Address:</strong> {{ transaction.order.shipping_address }}</p>
+                                            <p><strong>Products:</strong></p>
+                                            <ul class="list-unstyled">
+                                                {% for order_line in transaction.order.orderline_set.all %}
+                                                <li class="mb-3">
+                                                    <p class="mb-1"><strong>Product:</strong> {{ order_line.product_configuration.product.name }}</p>
+                                                    <p class="mb-1"><strong>Category:</strong> {{ order_line.product_configuration.product.category.name }}</p>
+                                                    <p class="mb-1"><strong>Subcategory:</strong> {{ order_line.product_configuration.product.subcategory.name }}</p>
+                                                    <p class="mb-1"><strong>Variations:</strong> 
+                                                        {% for variation_option in order_line.product_configuration.variation_options.all %}
+                                                            {{ variation_option.variation.name }}: {{ variation_option.value }}{% if not forloop.last %}, {% endif %}
+                                                        {% endfor %}
+                                                    </p>
+                                                    <p class="mb-1"><strong>Quantity:</strong> {{ order_line.qty }}</p>
+                                                    <p class="mb-1"><strong>Price:</strong> ${{ order_line.price }}</p>
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                        {% endif %}
+                                        <p class="card-text mt-2">Amount Credited: +${{ transaction.amount }}</p>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-<!-- <script>
-    $(document).ready(function() {
-        $("#transactionSearch").on("keyup", function() {
-            var value = $(this).val().toLowerCase();
-            $(".transaction-item").filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-            });
-        });
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const purchaseSection = document.querySelector('.purchase-section');
+        const refundSection = document.querySelector('.refund-section');
 
-        $("#filterDate").click(function() {
-            var startDate = new Date($("#startDate").val());
-            var endDate = new Date($("#endDate").val());
-
-            $(".transaction-item").each(function() {
-                var transactionDate = new Date($(this).find(".card-subtitle").text());
-                if (transactionDate >= startDate && transactionDate <= endDate) {
-                    $(this).show();
-                } else {
-                    $(this).hide();
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const filter = this.getAttribute('data-filter');
+                
+                if (filter === 'all') {
+                    purchaseSection.style.display = 'block';
+                    refundSection.style.display = 'block';
+                } else if (filter === 'purchase') {
+                    purchaseSection.style.display = 'block';
+                    refundSection.style.display = 'none';
+                } else if (filter === 'refund') {
+                    purchaseSection.style.display = 'none';
+                    refundSection.style.display = 'block';
                 }
+
+                // Update active button state
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
             });
         });
     });
-</script> -->
+</script>
 {% endblock %}
