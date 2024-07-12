@@ -725,13 +725,16 @@
                             }
                         });
                     } else {
-                            console.error('Error:', data.error);
-                            swal({
-                                title: "Error",
-                                text: "Insuffisient amount in wallet",
-                                icon: "error",
-                                button: "OK",
-                            });
+                        console.error('Error placing order:', data.message);
+                        // Display error message to the user
+                        var errorMessage = data.messages.join('\n');  // Join all error messages into a single string
+                        swal({
+                            title: "Error",
+                            text: errorMessage,
+                            icon: "error",
+                            buttons: true,
+                            dangerMode: true,
+                        });
                     }
                 }
             })
