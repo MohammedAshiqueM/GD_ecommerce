@@ -15,7 +15,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 from django.forms import CheckboxInput
 from itertools import product as iter_product
-from .forms import CouponForm
+from .forms import CouponForm,OfferForm
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
 import json
@@ -40,7 +40,11 @@ from .models import (
     Promotion,
     PromotionCategory,
     ProductImage,
-    Coupon
+    Coupon,
+    Offer,
+    CategoryOffer,
+    SubcategoryOffer,
+    ProductOffer
 )
 
 
@@ -744,6 +748,32 @@ def update_stock(request):
                 except (ProductConfiguration.DoesNotExist, ValueError):
                     pass
     return redirect('stock_management')
+
+def offers(request):
+    return render(request,"offers.html")
+
+def create_offer(request):
+    if request.method == 'POST':
+        form = OfferForm(request.POST)
+        if form.is_valid():
+            offer = form.save()
+            apply_to = form.cleaned_data['apply_to']
+            
+            if apply_to == 'product':
+                product = form.cleaned_data['product']
+                ProductOffer.objects.create(product=product, offer=offer)
+            elif apply_to == 'category':
+                category = form.cleaned_data['category']
+                CategoryOffer.objects.create(category=category, offer=offer)
+            elif apply_to == 'subcategory':
+                subcategory = form.cleaned_data['subcategory']
+                SubcategoryOffer.objects.create(subcategory=subcategory, offer=offer)
+            
+            return redirect('offers')  # Redirect to a list of offers
+    else:
+        form = OfferForm()
+    
+    return render(request, 'createOffers.html', {'form': form})
 
 def adminLogout(request):
     auth_logout(request)

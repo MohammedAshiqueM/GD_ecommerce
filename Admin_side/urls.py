@@ -32,5 +32,7 @@ urlpatterns = [
     path('stock_management/', views.stock_management, name='stock_management'),
     path('update_stock/', views.update_stock, name='update_stock'),
     path('toggle-coupon-status/', views.toggle_coupon_status, name='toggle_coupon_status'),
+    path('createOffer/', views.create_offer, name='createOffer'),
+    path('offers/', views.offers, name='offers'),
     path('adminLogout/', views.adminLogout, name='adminLogout'),
 ]

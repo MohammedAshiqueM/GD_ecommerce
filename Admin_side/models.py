@@ -3,6 +3,10 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 import django.utils.timezone as timezone
+from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal
+
+
 
 class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -54,8 +58,27 @@ class Product(models.Model):
     is_featured = models.BooleanField(default=False)  # Add this field if needed
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     
-    def has_combination_with_variation(self, variation_id):
-        return self.configurations.filter(variation_options__variation_id=variation_id).exists()
+    def __str__(self):
+        return f"{self.name}"
+    
+    
+class Offer(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    discount_type = models.CharField(max_length=20, choices=[
+        ('PERCENTAGE', 'Percentage'),
+        ('FIXED', 'Fixed Amount'),
+    ])
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    min_product_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
 
 class Variation(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -80,6 +103,54 @@ class ProductConfiguration(models.Model):
         options_str = ', '.join(option.value for option in self.variation_options.all())
         return f"{self.product.name} - {options_str}"
 
+    def get_applicable_offers(self):
+        now = timezone.now()
+        product_offers = self.offers.filter(
+            offer__is_active=True,
+            offer__start_date__lte=now,
+            offer__end_date__gte=now,
+            offer__min_product_price__lte=self.price
+        )
+        category_offers = self.product.category.offers.filter(
+            offer__is_active=True,
+            offer__start_date__lte=now,
+            offer__end_date__gte=now,
+            offer__min_product_price__lte=self.price
+        )
+        subcategory_offers = self.product.subcategory.offers.filter(
+            offer__is_active=True,
+            offer__start_date__lte=now,
+            offer__end_date__gte=now,
+            offer__min_product_price__lte=self.price
+        )
+
+        all_offers = list(product_offers) + list(category_offers) + list(subcategory_offers)
+        return sorted(all_offers, key=lambda x: (x.offer.discount_type == 'PERCENTAGE', x.offer.discount_value), reverse=True)
+
+    def get_discounted_price(self):
+        applicable_offers = self.get_applicable_offers()
+        
+        if not applicable_offers:
+            return Decimal(self.price)
+
+        best_offer = applicable_offers[0]
+        if best_offer.offer.discount_type == 'FIXED':
+            discount = best_offer.offer.discount_value
+        else:  # PERCENTAGE
+            discount = Decimal(self.price) * (best_offer.offer.discount_value / 100)
+
+        return max(Decimal(self.price) - Decimal(discount), Decimal('0.00'))
+    
+class ProductOffer(models.Model):
+    proproduct_configurationduct = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE, related_name='offers',null=True)
+    offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
+
+    # class Meta:
+    #     unique_together = ('product_configuration', 'offer')
+    
+    # def has_combination_with_variation(self, variation_id):
+    #     return self.configurations.filter(variation_options__variation_id=variation_id).exists()
+    
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -156,19 +227,20 @@ class Order(models.Model):
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     def calculate_total(self):
-        total = sum(item.get_total_price() for item in self.orderline_set.all())
+        total = sum(Decimal(item.get_total_price()) for item in self.orderline_set.all())
         if self.coupon and self.coupon.is_valid(total):
             if self.coupon.discount_type == 'percentage':
-                discount = total * (self.coupon.discount_value / 100)
+                discount = total * (Decimal(self.coupon.discount_value) / Decimal(100))
             else:
-                discount = self.coupon.discount_value
+                discount = Decimal(self.coupon.discount_value)
             self.discount_amount = min(discount, total)  # Ensure discount does not exceed total
             total -= self.discount_amount
         else:
-            self.discount_amount = 0
+            self.discount_amount = Decimal('0.00')
         self.order_total = total
         self.save()
         return total
+
     
     def cancel_and_refund(self):
         if self.order_status.status != 'Cancelled':  # Assuming you have an OrderStatus model
@@ -195,6 +267,7 @@ class OrderLine(models.Model):
     product_configuration = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE, null=True, blank=True)
     qty = models.IntegerField()
     price = models.FloatField()
+    discounted_price = models.DecimalField(max_digits=10, decimal_places=2,null=True)
 
 class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -260,3 +333,21 @@ class Transaction(models.Model):
     
     def __str__(self):
         return f"{self.wallet.user.username} - {self.transaction_type} - {self.amount}"
+    
+
+    
+
+
+class CategoryOffer(models.Model):
+    category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='offers')
+    offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('category', 'offer')
+
+class SubcategoryOffer(models.Model):
+    subcategory = models.ForeignKey('Subcategory', on_delete=models.CASCADE, related_name='offers')
+    offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('subcategory', 'offer')

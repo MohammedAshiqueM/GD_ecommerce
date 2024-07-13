@@ -27,7 +27,11 @@ from .models import (
     Wishlist,
     WishlistItem,
     Wallet,
-    Transaction      
+    Transaction,
+    Offer,
+    ProductOffer,
+    CategoryOffer,
+    SubcategoryOffer      
 )
 
 admin.site.register(
@@ -56,6 +60,10 @@ admin.site.register(
         Wishlist,
         WishlistItem,
         Wallet,
-        Transaction        
+        Transaction,
+        Offer,
+        ProductOffer,
+        CategoryOffer,
+        SubcategoryOffer        
     ]
 )

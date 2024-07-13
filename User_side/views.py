@@ -874,8 +874,6 @@ def place_order(request):
                         expiry_date=expiry_date,  # dynamically calculated expiry date
                         is_default=False
                     )
-
-
                 else:
                     return JsonResponse({'status': 'error', 'message': 'Insufficient wallet balance.'})
             else:
@@ -897,24 +895,41 @@ def place_order(request):
             # Calculate order total
             cart = Cart.objects.get(user=user)
             cart_items = CartItem.objects.filter(cart=cart)
-            order_total = sum(item.qty * item.product_configuration.price for item in cart_items) + 10  # Add fixed shipping cost
-
-            # Check product configurations and quantities
+            order_total = Decimal('0.00')
             error_messages = []
             confirmation_required = False
-            discount_value = Decimal(0)  # Initialize discount_value
+            discount_value = Decimal('0.00')
+
+            for item in cart_items:
+                product_config = item.product_configuration
+                requested_qty = item.qty
+
+                # Check product stock
+                if product_config.qty_in_stock == 0:
+                    variation_options = ', '.join(option.value for option in product_config.variation_options.all())
+                    error_messages.append(f'Out of stock for {product_config.product.name} ({variation_options}).')
+                elif product_config.qty_in_stock < requested_qty:
+                    variation_options = ', '.join(option.value for option in product_config.variation_options.all())
+                    error_messages.append(f'Insufficient stock for {product_config.product.name} ({variation_options}). Requested: {requested_qty}, Available: {product_config.qty_in_stock}')
+                    confirmation_required = True
+                
+                # Calculate discounted price
+                discounted_price = Decimal(product_config.get_discounted_price())
+                item_total = discounted_price * Decimal(requested_qty)
+                order_total += item_total
+            
+            # Add fixed shipping cost
+            shipping_cost = Decimal('10.00')
+            order_total += shipping_cost
 
             if coupon_code:
                 try:
                     coupon = Coupon.objects.get(code=coupon_code)
                     if coupon.is_valid(order_total, request.user):
-                        # Apply coupon discount
                         discount_value = Decimal(coupon.discount_value)
                         if coupon.discount_type == 'percentage':
-                            print(discount_value)
-                            discount_value = (discount_value / Decimal('100')) * Decimal(order_total)
-                            print(discount_value)
-                        order_total = Decimal(order_total) - discount_value
+                            discount_value = (discount_value / Decimal('100')) * order_total
+                        order_total -= discount_value
                         logger.info(f"Coupon applied. Discount: {discount_value}, New total: {order_total}")
                 except Coupon.DoesNotExist:
                     logger.warning(f"Non-existent coupon code attempted: {coupon_code}")
@@ -923,23 +938,6 @@ def place_order(request):
                     logger.error(f"Error processing coupon {coupon_code}: {str(e)}")
                     return JsonResponse({'status': 'error', 'message': f'Error processing coupon: {str(e)}'})
 
-            with transaction.atomic():
-                for item in cart_items:
-                    product_config = item.product_configuration
-                    requested_qty = item.qty
-
-                    if product_config.qty_in_stock == 0:
-                        variation_options = ', '.join(option.value for option in product_config.variation_options.all())
-                        error_messages.append(
-                            f'Out of stock for {product_config.product.name} ({variation_options}).'
-                        )
-                    elif product_config.qty_in_stock < requested_qty:
-                        variation_options = ', '.join(option.value for option in product_config.variation_options.all())
-                        error_messages.append(
-                            f'Insufficient stock for {product_config.product.name} ({variation_options}). Requested: {requested_qty}, Available: {product_config.qty_in_stock}'
-                        )
-                        confirmation_required = True
-
             if error_messages:
                 if any("Out of stock" in msg for msg in error_messages):
                     return JsonResponse({'status': 'error', 'messages': error_messages})
@@ -947,53 +945,53 @@ def place_order(request):
                     if confirmation_required and not confirmation:
                         return JsonResponse({'status': 'error', 'messages': error_messages, 'confirmation_required': True})
                     else:
-                        # Adjust quantities based on available stock
                         for item in cart_items:
                             product_config = item.product_configuration
                             if product_config.qty_in_stock < item.qty:
                                 item.qty = product_config.qty_in_stock
                                 item.save()
 
-            # Create or get the default order status
-            order_status, created = OrderStatus.objects.get_or_create(status='Pending')
+            with transaction.atomic():
+                # Create or get the default order status
+                order_status, created = OrderStatus.objects.get_or_create(status='Pending')
 
-            # Create order
-            order = Order.objects.create(
-                user=user,
-                payment_method=payment_method,
-                shipping_address=shipping_address,
-                shipping_method=ShippingMethod.objects.first(),  # Replace with actual logic if needed
-                order_total=order_total,
-                order_status=order_status,
-                discount_amount=discount_value
-            )
-            
-            if payment_method_value == 'Wallet' and order:
-                Transaction.objects.create(
-                    wallet=wallet,
-                    amount=order_total,
-                    transaction_type='PURCHASE',
-                    order=order  # You'll need to move this part after the order creation
+                # Create order
+                order = Order.objects.create(
+                    user=user,
+                    payment_method=payment_method,
+                    shipping_address=shipping_address,
+                    shipping_method=ShippingMethod.objects.first(),
+                    order_total=order_total,
+                    order_status=order_status,
+                    discount_amount=discount_value
                 )
-            # Create order lines and update stock
-            for item in cart_items:
-                product_config = item.product_configuration
-                if product_config.qty_in_stock < item.qty:
-                    item.qty = product_config.qty_in_stock  # Adjust to available stock
+                
+                if payment_method_value == 'Wallet' and order:
+                    Transaction.objects.create(
+                        wallet=wallet,
+                        amount=order_total,
+                        transaction_type='PURCHASE',
+                        order=order
+                    )
 
-                OrderLine.objects.create(
-                    order=order,
-                    product_configuration=product_config,
-                    qty=item.qty,
-                    price=product_config.price
-                )
+                # Create order lines and update stock
+                for item in cart_items:
+                    product_config = item.product_configuration
+                    if product_config.qty_in_stock < item.qty:
+                        item.qty = product_config.qty_in_stock  # Adjust to available stock
 
-                # Update stock
-                product_config.qty_in_stock -= item.qty
-                product_config.save()
+                    OrderLine.objects.create(
+                        order=order,
+                        product_configuration=product_config,
+                        qty=item.qty,
+                        price=Decimal(product_config.get_discounted_price())
+                    )
 
-            # Optionally, clear the cart after placing the order
-            cart_items.delete()
+                    # Update stock
+                    product_config.qty_in_stock -= item.qty
+                    product_config.save()
+
+                cart_items.delete()
 
             return JsonResponse({'status': 'success', 'message': 'Order placed successfully.'})
 

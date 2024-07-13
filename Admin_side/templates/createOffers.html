@@ -1,0 +1,89 @@
+{% include 'common_block.html' %}
+<style>
+    .error {
+        color: red;
+        font-size: 0.9em;
+    }
+    input,select {
+        color: black;
+        opacity: .6;
+        width: 250px;
+        height: 40px;
+        font-size: 20px !important;
+        border-radius: 5px;
+    }
+    label {
+            justify-content: space-between;
+            align-items: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    textarea{
+        color: black;
+        opacity: .6;
+        width: 430px;
+        height: 115px;
+        font-size: 20px !important;
+        border-radius: 5px;
+    }
+</style>
+
+
+    <h2>Create Offer</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+        {% if field.name != 'apply_to' and field.name != 'category' and field.name != 'subcategory' and field.name != 'product' %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                {{ field.errors }}
+            </div>
+        {% endif %}
+    {% endfor %}
+    
+    <div class="form-group">
+        <label>Apply to:</label>
+        {{ form.apply_to }}
+    </div>
+
+    <div id="category-select" style="display: none;">
+        {{ form.category.label_tag }}
+        {{ form.category }}
+    </div>
+
+    <div id="subcategory-select" style="display: none;">
+        {{ form.subcategory.label_tag }}
+        {{ form.subcategory }}
+    </div>
+
+    <div id="product-select" style="display: none;">
+        {{ form.product.label_tag }}
+        {{ form.product }}
+    </div>
+
+    <button type="submit">Create Offer</button>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var applyToInputs = document.querySelectorAll('input[name="apply_to"]');
+        var categorySelect = document.getElementById('category-select');
+        var subcategorySelect = document.getElementById('subcategory-select');
+        var productSelect = document.getElementById('product-select');
+
+        function updateVisibility() {
+            var selectedValue = document.querySelector('input[name="apply_to"]:checked').value;
+            categorySelect.style.display = selectedValue === 'category' ? 'block' : 'none';
+            subcategorySelect.style.display = selectedValue === 'subcategory' ? 'block' : 'none';
+            productSelect.style.display = selectedValue === 'product' ? 'block' : 'none';
+        }
+
+        applyToInputs.forEach(function(input) {
+            input.addEventListener('change', updateVisibility);
+        });
+
+        updateVisibility();  // Call once to set initial state
+    });
+</script>
