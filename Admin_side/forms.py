@@ -1,5 +1,5 @@
 from django import forms
-from .models import Coupon,Offer,Category,SubCategory,Product
+from .models import Coupon,Offer,Category,SubCategory,Product,ProductConfiguration
 
 class CouponForm(forms.ModelForm):
     class Meta:
@@ -38,37 +38,21 @@ class CouponForm(forms.ModelForm):
     
     
 class OfferForm(forms.ModelForm):
-    APPLY_CHOICES = [
-        ('category', 'Category'),
-        ('subcategory', 'Subcategory'),
-        ('product', 'Product'),
-    ]
-    apply_to = forms.ChoiceField(choices=APPLY_CHOICES, widget=forms.RadioSelect)
-    
+    apply_to = forms.ChoiceField(choices=[('category', 'Category'), ('subcategory', 'Subcategory'), ('product', 'Product')], widget=forms.RadioSelect)
     category = forms.ModelChoiceField(queryset=Category.objects.all(), required=False)
     subcategory = forms.ModelChoiceField(queryset=SubCategory.objects.all(), required=False)
     product = forms.ModelChoiceField(queryset=Product.objects.all(), required=False)
+    product_configuration = forms.ModelChoiceField(queryset=ProductConfiguration.objects.all(), required=False)
+    start_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    end_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['product_configuration'].choices = [
+            (config.id, f"{config.product.name} - {', '.join([f'{vo.variation.name}: {vo.value}' for vo in config.variation_options.all()])} - Price: {config.price}")
+            for config in ProductConfiguration.objects.select_related('product').prefetch_related('variation_options__variation').all()
+        ]
 
     class Meta:
         model = Offer
-        fields = ['name', 'description', 'discount_type', 'discount_value', 'min_product_price', 'start_date', 'end_date', 'is_active', 'apply_to']
-        widgets = {
-            'start_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-        }
-
-    def clean(self):
-        cleaned_data = super().clean()
-        apply_to = cleaned_data.get('apply_to')
-        category = cleaned_data.get('category')
-        subcategory = cleaned_data.get('subcategory')
-        product = cleaned_data.get('product')
-
-        if apply_to == 'category' and not category:
-            raise forms.ValidationError("Please select a category.")
-        elif apply_to == 'subcategory' and not subcategory:
-            raise forms.ValidationError("Please select a subcategory.")
-        elif apply_to == 'product' and not product:
-            raise forms.ValidationError("Please select a product.")
-
-        return cleaned_data
+        fields = ['name', 'description', 'discount_type', 'discount_value', 'min_product_price', 'start_date', 'end_date', 'is_active', 'apply_to', 'product_configuration']   
+    # ['name', 'description', 'discount_type', 'discount_value', 'min_product_price', 'start_date', 'end_date', 'is_active', 'apply_to']

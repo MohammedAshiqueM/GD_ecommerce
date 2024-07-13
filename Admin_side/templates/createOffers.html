@@ -5,7 +5,7 @@
         font-size: 0.9em;
     }
     input,select {
-        color: black;
+        color: black !important;
         opacity: .6;
         width: 250px;
         height: 40px;
@@ -28,13 +28,17 @@
     }
 </style>
 
+{% include 'common_block.html' %}
+<style>
+    /* ... (keep your existing styles) ... */
+</style>
 
-    <h2>Create Offer</h2>
+<h2>Create Offer</h2>
 <form method="post">
     {% csrf_token %}
     {{ form.non_field_errors }}
     {% for field in form %}
-        {% if field.name != 'apply_to' and field.name != 'category' and field.name != 'subcategory' and field.name != 'product' %}
+        {% if field.name != 'apply_to' and field.name != 'category' and field.name != 'subcategory' and field.name != 'product' and field.name != 'product_configuration' %}
             <div class="form-group">
                 {{ field.label_tag }}
                 {{ field }}
@@ -42,7 +46,7 @@
             </div>
         {% endif %}
     {% endfor %}
-    
+
     <div class="form-group">
         <label>Apply to:</label>
         {{ form.apply_to }}
@@ -63,6 +67,14 @@
         {{ form.product }}
     </div>
 
+<div id="product-configuration-select" style="display: none;">
+    {{ form.product_configuration.label_tag }}
+    <select name="product_configuration" id="{{ form.product_configuration.id_for_label }}">
+        <option value="">Select a configuration</option>
+    </select>
+    {{ form.product_configuration.errors }}
+</div>
+
     <button type="submit">Create Offer</button>
 </form>
 
@@ -72,12 +84,16 @@
         var categorySelect = document.getElementById('category-select');
         var subcategorySelect = document.getElementById('subcategory-select');
         var productSelect = document.getElementById('product-select');
+        var productConfigurationSelect = document.getElementById('product-configuration-select');
 
         function updateVisibility() {
-            var selectedValue = document.querySelector('input[name="apply_to"]:checked').value;
-            categorySelect.style.display = selectedValue === 'category' ? 'block' : 'none';
-            subcategorySelect.style.display = selectedValue === 'subcategory' ? 'block' : 'none';
-            productSelect.style.display = selectedValue === 'product' ? 'block' : 'none';
+            var selectedRadio = document.querySelector('input[name="apply_to"]:checked');
+            var selectedValue = selectedRadio ? selectedRadio.value : '';
+            
+            if (categorySelect) categorySelect.style.display = selectedValue === 'category' ? 'block' : 'none';
+            if (subcategorySelect) subcategorySelect.style.display = selectedValue === 'subcategory' ? 'block' : 'none';
+            if (productSelect) productSelect.style.display = selectedValue === 'product' ? 'block' : 'none';
+            if (productConfigurationSelect) productConfigurationSelect.style.display = selectedValue === 'product' ? 'block' : 'none';
         }
 
         applyToInputs.forEach(function(input) {
@@ -85,5 +101,38 @@
         });
 
         updateVisibility();  // Call once to set initial state
+
+        // Add event listener for product selection
+        var productInput = document.querySelector('select[name="product"]');
+        var configurationSelect = document.querySelector('select[name="product_configuration"]');
+        
+        if (productInput && configurationSelect) {
+            productInput.addEventListener('change', function() {
+                fetchProductConfigurations(this.value);
+            });
+        }
     });
+
+    function fetchProductConfigurations(productId) {
+        var configurationSelect = document.querySelector('select[name="product_configuration"]');
+        if (!configurationSelect) return;
+
+        configurationSelect.innerHTML = '<option value="">Loading configurations...</option>';
+
+        fetch(`/administration/get-product-configurations/${productId}/`)
+            .then(response => response.json())
+            .then(data => {
+                configurationSelect.innerHTML = '<option value="">Select a configuration</option>';
+                data.configurations.forEach(config => {
+                    var option = document.createElement('option');
+                    option.value = config.id;
+                    option.textContent = config.name;
+                    configurationSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                configurationSelect.innerHTML = '<option value="">Error loading configurations</option>';
+            });
+    }
 </script>

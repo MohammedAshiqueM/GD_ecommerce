@@ -761,8 +761,8 @@ def create_offer(request):
             apply_to = form.cleaned_data['apply_to']
             
             if apply_to == 'product':
-                product = form.cleaned_data['product']
-                ProductOffer.objects.create(product=product, offer=offer)
+                product_configuration = form.cleaned_data['product_configuration']
+                ProductOffer.objects.create(proproduct_configuration=product_configuration, offer=offer)
             elif apply_to == 'category':
                 category = form.cleaned_data['category']
                 CategoryOffer.objects.create(category=category, offer=offer)
@@ -775,6 +775,16 @@ def create_offer(request):
         form = OfferForm()
     
     return render(request, 'createOffers.html', {'form': form})
+
+def get_product_configurations(request, product_id):
+    configurations = ProductConfiguration.objects.filter(product_id=product_id).values('id', 'variation_options__variation__name', 'variation_options__value')
+    
+    config_list = []
+    for config in configurations:
+        config_name = ", ".join([f"{option['variation_options__variation__name']}: {option['variation_options__value']}" for option in configurations if option['id'] == config['id']])
+        config_list.append({'id': config['id'], 'name': config_name})
+    
+    return JsonResponse({'configurations': config_list})
 
 @require_POST
 @csrf_protect

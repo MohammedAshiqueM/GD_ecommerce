@@ -35,5 +35,6 @@ urlpatterns = [
     path('createOffer/', views.create_offer, name='createOffer'),
     path('toggle-offer-status/', views.toggle_offer_status, name='toggle_offer_status'),
     path('offers/', views.offers, name='offers'),
+    path('get-product-configurations/<int:product_id>/', views.get_product_configurations, name='get_product_configurations'),
     path('adminLogout/', views.adminLogout, name='adminLogout'),
 ]

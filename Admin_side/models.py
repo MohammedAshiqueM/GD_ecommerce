@@ -142,7 +142,7 @@ class ProductConfiguration(models.Model):
         return max(Decimal(self.price) - Decimal(discount), Decimal('0.00'))
     
 class ProductOffer(models.Model):
-    proproduct_configurationduct = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE, related_name='offers',null=True)
+    proproduct_configuration = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE, related_name='offers',null=True)
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
 
     # class Meta:
