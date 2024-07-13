@@ -33,6 +33,7 @@ urlpatterns = [
     path('update_stock/', views.update_stock, name='update_stock'),
     path('toggle-coupon-status/', views.toggle_coupon_status, name='toggle_coupon_status'),
     path('createOffer/', views.create_offer, name='createOffer'),
+    path('toggle-offer-status/', views.toggle_offer_status, name='toggle_offer_status'),
     path('offers/', views.offers, name='offers'),
     path('adminLogout/', views.adminLogout, name='adminLogout'),
 ]

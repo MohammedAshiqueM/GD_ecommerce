@@ -750,7 +750,8 @@ def update_stock(request):
     return redirect('stock_management')
 
 def offers(request):
-    return render(request,"offers.html")
+    data = Offer.objects.all()
+    return render(request,"offers.html",{"data":data})
 
 def create_offer(request):
     if request.method == 'POST':
@@ -774,6 +775,23 @@ def create_offer(request):
         form = OfferForm()
     
     return render(request, 'createOffers.html', {'form': form})
+
+@require_POST
+@csrf_protect
+def toggle_offer_status(request):
+    data = json.loads(request.body)
+    getoffer = data.get('id')
+    active = data.get('active')
+
+    try:
+        offer = Offer.objects.get(id=getoffer)
+        offer.is_active = active
+        offer.save()
+        return JsonResponse({'success': True})
+    except Coupon.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Coupon not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 def adminLogout(request):
     auth_logout(request)

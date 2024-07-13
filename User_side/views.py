@@ -984,7 +984,9 @@ def place_order(request):
                         order=order,
                         product_configuration=product_config,
                         qty=item.qty,
-                        price=Decimal(product_config.get_discounted_price())
+                        price=product_config.price,                        
+                        discounted_price=Decimal(product_config.get_discounted_price())
+                        
                     )
 
                     # Update stock
@@ -1191,6 +1193,12 @@ def my_orders(request):
         'orderline_set__product_configuration__product__images',
         'orderline_set__product_configuration__variation_options'
     )
+    
+    for order in orders:
+        for line in order.orderline_set.all():
+            line.price = Decimal(line.price) if line.price is not None else Decimal(0)
+            line.discounted_price = Decimal(line.discounted_price) if line.discounted_price is not None else Decimal(line.price)
+            line.discount_amount = line.price - line.discounted_price
     return render(request, "myOrders.html", {'orders': orders, 'categories': categories})
 
 import logging

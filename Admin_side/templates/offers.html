@@ -1,0 +1,110 @@
+{% include 'common_block.html' %}
+    <div class="projects">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="heading">Product Details</h3>
+                <a href="{% url 'addCoupon' %}"><button>Add Coupon</button></a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table width="100%">
+                        <thead>
+                            <tr>
+                                <td>Name</td>
+                                <td>Discription</td>
+                                <td>Discount type</td>
+                                <td>Discount value</td>
+                                <td>Minimum purcase amount for discount</td>
+                                <td>Starting date</td>
+                                <td>Ending Date</td>
+                                <td>Active</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in data %}
+                            <tr>
+                                <td>{{i.name}}</td>
+                                <td>{{i.description}}</td>
+                                <td>{{i.discount_type}}</td>
+                                <td>{{i.discount_value}}</td>
+                                <td>{{i.min_product_price}}</td>
+                                <td>{{i.start_date}}</td>
+                                <td>{{i.end_date}}</td>
+                                <td>
+                                    {% if i.is_active %}
+                                    <button class="unblock_btn" onclick="toggleOfferStatus('{{ i.id }}', false)">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                    {% else %}
+                                    <button class="block_btn" onclick="toggleOfferStatus('{{ i.id }}', true)">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+function toggleOfferStatus(id, setActive) {
+    const csrftoken = getCookie('csrftoken');
+
+    fetch('/administration/toggle-offer-status/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            id: id,
+            active: setActive
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Find the button by its parent td and the coupon code
+            const td = document.querySelector(`td:has(button[onclick*="'${id}'"])`);
+            if (td) {
+                const button = td.querySelector('button');
+                if (button) {
+                    if (setActive) {
+                        button.className = 'unblock_btn';
+                        button.innerHTML = '<i class="fa-solid fa-check"></i>';
+                        button.setAttribute('onclick', `toggleOfferStatus('${id}', false)`);
+                    } else {
+                        button.className = 'block_btn';
+                        button.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                        button.setAttribute('onclick', `toggleOfferStatus('${id}', true)`);
+                    }
+                }
+            }
+        } else {
+            alert('Failed to update coupon status. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+}
+// Function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
