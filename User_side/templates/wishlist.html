@@ -157,7 +157,7 @@
                     {% endif %}
                     <div class="wishlist-item-info">
                         <h3 class="wishlist-item-title">{{ item.product_configuration.product.name }}</h3>
-                        <p class="wishlist-item-price">${{ item.product_configuration.price }}</p>
+                        <p class="wishlist-item-price">₹{{ item.product_configuration.price }}</p>
                         {% for option in item.product_configuration.variation_options.all %}
                         {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}

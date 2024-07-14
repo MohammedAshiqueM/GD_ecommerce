@@ -79,11 +79,11 @@
             <!-- Display average price or min/max price -->
             <div class="d-flex align-items-center justify-content-center mt-2">
                 {% if sort == 'price_low_high' %}
-                    <h5>${{ product.min_price }}</h5>
+                    <h5>₹{{ product.min_price }}</h5>
                 {% elif sort == 'price_high_low' %}
-                    <h5>${{ product.max_price }}</h5>
+                    <h5>₹{{ product.max_price }}</h5>
                 {% else %}
-                    <h5>${{ product_avg_prices|get_item:product.id|default:'N/A' }}</h5>
+                    <h5>₹{{ product_avg_prices|get_item:product.id|default:'N/A' }}</h5>
                 {% endif %}
                 <h6 class="text-muted ml-2"><del></del></h6>
             </div>

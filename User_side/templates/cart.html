@@ -42,7 +42,7 @@
                             {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </td>
-                        <td class="align-middle item-price">${{ item.product_configuration.price }}</td>
+                        <td class="align-middle item-price">₹{{ item.product_configuration.price }}</td>
                         <td class="align-middle">
                             <div class="input-group quantity mx-auto" style="width: 100px;">
                                 <div class="input-group-btn">
@@ -58,7 +58,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="align-middle item-total">${{ item.qty|mul:item.product_configuration.price }}</td>
+                        <td class="align-middle item-total">₹{{ item.qty|mul:item.product_configuration.price }}</td>
                         <td class="align-middle">
                             <button class="btn btn-sm btn-danger btn-remove" data-id="{{ item.id }}">
                                 <i class="fa fa-times"></i>
@@ -78,17 +78,17 @@
                 <div class="border-bottom pb-2">
                     <div class="d-flex justify-content-between mb-3">
                         <h6>Subtotal</h6>
-                        <h6 class="cart-subtotal">${{ cart_items|calc_subtotal }}</h6>
+                        <h6 class="cart-subtotal">₹{{ cart_items|calc_subtotal }}</h6>
                     </div>
                     <div class="d-flex justify-content-between">
                         <h6 class="font-weight-medium">Shipping</h6>
-                        <h6 class="font-weight-medium">$10</h6>
+                        <h6 class="font-weight-medium">₹10</h6>
                     </div>
                 </div>
                 <div class="pt-2">
                     <div class="d-flex justify-content-between mt-2">
                         <h5>Total</h5>
-                        <h5 class="cart-total">${{ cart_items|calc_total }}</h5>
+                        <h5 class="cart-total">₹{{ cart_items|calc_total }}</h5>
                     </div>
                     <a href="{% url 'checkout' %}"><button class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</button></a>
                 </div>
@@ -230,14 +230,14 @@
             const row = document.querySelector(`tr[data-id="${itemId}"]`);
             if (row) {
                 row.querySelector('.quantity input').value = data.quantity;
-                row.querySelector('.item-price').textContent = `$${data.price}`;
-                row.querySelector('.item-total').textContent = `$${data.total}`;
+                row.querySelector('.item-price').textContent = `₹${data.price}`;
+                row.querySelector('.item-total').textContent = `₹${data.total}`;
             }
         }
 
         function updateCartSummary(data) {
-            document.querySelector('.cart-subtotal').textContent = `$${data.subtotal}`;
-            document.querySelector('.cart-total').textContent = `$${data.total_cart}`;
+            document.querySelector('.cart-subtotal').textContent = `₹${data.subtotal}`;
+            document.querySelector('.cart-total').textContent = `₹${data.total_cart}`;
         }
 
         function showError(message) {

@@ -159,12 +159,11 @@
                         {% endfor %}
                     </p>
                     {% endif %}
-                    <p>Price: ${{ line.price }}</p>
+                    <p>Price: ₹{{ line.price }}</p>
                     {% if line.discount_amount != 0 %}
                     <p>Offer discount: {{ line.discount_amount }}</p>
                     {% endif %}                    
                     <p>After discount: {{ line.discounted_price }}</p>
-                    <p>Shipping Charge: $10</p>
                     <p>Quantity: {{ line.qty }}</p>
                     <p>Payment Method: {{ order.payment_method.payment_type }} </p>   {% comment %} ending in {{ order.payment_method.account_number|slice:"-4" }} //this is for after creating the other payment methods{% endcomment %}
                     <p>Shipping Address: {{ order.shipping_address.address_line1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.region }}, {{ order.shipping_address.country }}</p>
@@ -177,12 +176,13 @@
         <div class="order-summary">
             <span class='status {{ order.order_status.status }}'>{% if order.order_status.status == 'Cancelled' %}Cancelled{% else %}{{ order.order_status.status }}{% endif %}</span>
             <div class="total-amount">
+                <p>Shipping Charge: ₹10</p>
                 
             
                 {% if order.discount_amount %}
                 <p>Card discount: {{ order.discount_amount }}</p>
                 {% endif %}
-                Total: ${{ order.order_total }}
+                Total: ₹{{ order.order_total }}
             </div>
             <div class="actions">
                 {% if order.order_status.status == 'Pending' %}

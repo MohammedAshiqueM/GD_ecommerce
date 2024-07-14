@@ -80,13 +80,13 @@
                 <div class="d-inline-flex align-items-center d-block d-lg-none">
                     <a href="" class="btn px-0 ml-2">
                         <i class="fas fa-heart text-dark"></i>
-                        <span class="badge text-dark border border-dark rounded-circle"
-                            style="padding-bottom: 2px;">0</span>
+                        <!-- <span class="badge text-dark border border-dark rounded-circle"
+                            style="padding-bottom: 2px;">0</span> -->
                     </a>
                     <a href="" class="btn px-0 ml-2">
                         <i class="fas fa-shopping-cart text-dark"></i>
-                        <span class="badge text-dark border border-dark rounded-circle"
-                            style="padding-bottom: 2px;">0</span>
+                        <!-- <span class="badge text-dark border border-dark rounded-circle"
+                            style="padding-bottom: 2px;">0</span> -->
                     </a>
                 </div>
             </div>
@@ -164,7 +164,7 @@
                             </div>
                         </div>
                         <a href="{{ contact_url }}" class="nav-item nav-link {% if request.path == contact_url %}active{% endif %}">Contact</a>
-                        <a href="{{ wallet }}" class="nav-item nav-link {% if request.path == contact_url %}active{% endif %}">Wallet</a>
+                        <a href="{{ wallet }}" class="nav-item nav-link {% if request.path == wallet %}active{% endif %}">Wallet</a>
                     </div>
                         <div class="navbar-nav ml-auto py-0 d-none d-lg-block">
                             <a href="{% url 'wishlist' %}" class="btn px-0">

@@ -100,12 +100,12 @@
                 {% if coupon.discount_type == 'percentage' %}
                     {{ coupon.discount_value }}% Discount
                 {% else %}
-                    ${{ coupon.discount_value }} Discount
+                    ₹{{ coupon.discount_value }} Discount
                 {% endif %}
             </h3>
             <p>{{ coupon.details }}</p>
             <p class="coupon-details">Coupon code : {{ coupon.code }}</p>
-            <p class="coupon-details">Minimum purchase amount: ${{ coupon.min_purchase_amount }}</p>
+            <p class="coupon-details">Minimum purchase amount: ₹{{ coupon.min_purchase_amount }}</p>
             <p>From : {{ coupon.valid_from }}</p>
             <p>To : {{ coupon.valid_to }}</p>
             {% if coupon.is_expired %}

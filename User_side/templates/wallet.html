@@ -90,7 +90,7 @@
             <div class="wallet-card mb-4">
                 <i class="fas fa-wallet balance-icon"></i>
                 <h2 class="mb-3">My Wallet</h2>
-                <h3 class="mb-4">Balance: ${{ wallet.balance }}</h3>
+                <h3 class="mb-4">Balance: ₹{{ wallet.balance }}</h3>
             </div>
         </div>
         <div class="col-md-8">
@@ -122,7 +122,7 @@
                                         {% if transaction.order %}
                                         <div class="order-details mt-3">
                                             <p><strong>Order ID:</strong> #{{ transaction.order.id }}</p>
-                                            <p><strong>Total:</strong> ${{ transaction.order.order_total }}</p>
+                                            <p><strong>Total:</strong> ₹{{ transaction.order.order_total }}</p>
                                             <p><strong>Shipping Address:</strong> {{ transaction.order.shipping_address }}</p>
                                             <p><strong>Products:</strong></p>
                                             <ul class="list-unstyled">
@@ -137,13 +137,13 @@
                                                         {% endfor %}
                                                     </p>
                                                     <p class="mb-1"><strong>Quantity:</strong> {{ order_line.qty }}</p>
-                                                    <p class="mb-1"><strong>Price:</strong> ${{ order_line.price }}</p>
+                                                    <p class="mb-1"><strong>Price:</strong> ₹{{ order_line.price }}</p>
                                                 </li>
                                                 {% endfor %}
                                             </ul>
                                         </div>
                                         {% endif %}
-                                        <p class="card-text mt-2">Amount Debited: -${{ transaction.amount }}</p>
+                                        <p class="card-text mt-2">Amount Debited: -₹{{ transaction.amount }}</p>
                                     </div>
                                 {% endif %}
                             {% endfor %}
@@ -167,7 +167,7 @@
                                         {% if transaction.order %}
                                         <div class="order-details mt-3">
                                             <p><strong>Order ID:</strong> #{{ transaction.order.id }}</p>
-                                            <p><strong>Total:</strong> ${{ transaction.order.order_total }}</p>
+                                            <p><strong>Total:</strong> ₹{{ transaction.order.order_total }}</p>
                                             <p><strong>Shipping Address:</strong> {{ transaction.order.shipping_address }}</p>
                                             <p><strong>Products:</strong></p>
                                             <ul class="list-unstyled">
@@ -182,13 +182,13 @@
                                                         {% endfor %}
                                                     </p>
                                                     <p class="mb-1"><strong>Quantity:</strong> {{ order_line.qty }}</p>
-                                                    <p class="mb-1"><strong>Price:</strong> ${{ order_line.price }}</p>
+                                                    <p class="mb-1"><strong>Price:</strong> ₹{{ order_line.price }}</p>
                                                 </li>
                                                 {% endfor %}
                                             </ul>
                                         </div>
                                         {% endif %}
-                                        <p class="card-text mt-2">Amount Credited: +${{ transaction.amount }}</p>
+                                        <p class="card-text mt-2">Amount Credited: +₹{{ transaction.amount }}</p>
                                     </div>
                                 {% endif %}
                             {% endfor %}

@@ -432,8 +432,8 @@ left: 50%;
                 <div class="text-center py-4">
                     <a class="h6 text-decoration-none text-truncate" href="">{{ i.name }}</a>
                     <div class="d-flex align-items-center justify-content-center mt-2">
-                        <h5>${{ i.price }}</h5>
-                        <h6 class="text-muted ml-2"><del>${{ i.price }}</del></h6>
+                        <h5>₹{{ i.price }}</h5>
+                        <h6 class="text-muted ml-2"><del>₹{{ i.price }}</del></h6>
                     </div>
                     <div class="d-flex align-items-center justify-content-center mb-1">
                         <small class="fa fa-star text-primary mr-1"></small>
@@ -605,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const variationDetails = getSelectedVariationDetails();
 
         if (matchingConfig) {
-            document.getElementById('product-price').textContent = '$' + matchingConfig.price;
+            document.getElementById('product-price').textContent = '₹' + matchingConfig.price;
             document.getElementById('stock-info').textContent = `${variationDetails} (${matchingConfig.qty_in_stock} stock remains)`;
         } else {
             document.getElementById('product-price').textContent = 'N/A';
