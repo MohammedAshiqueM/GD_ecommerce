@@ -140,25 +140,33 @@
         </div>
     </div>
 
-    <div class="sales-card">
-        <h2>Product Sales</h2>
-        <table class="sales-table">
-            <tr>
-                <th>Product</th>
-                <th>Quantity Sold</th>
-                <th>Total Sales</th>
-                <th>Current Stock</th>
-            </tr>
-            {% for product in product_sales %}
-            <tr>
-                <td>{{ product.product_configuration__product__name }}</td>
-                <td>{{ product.total_quantity }}</td>
-                <td>₹{{ product.total_sales }}</td>
-                <td>{{ product.product_configuration.qty_in_stock }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
+<div class="sales-card">
+    <h2>Product Sales</h2>
+    <table class="sales-table">
+        <tr>
+            <th>Product</th>
+            <th>Configuration</th>
+            <th>Price</th>
+            <th>Quantity Sold</th>
+            <th>Total Sales</th>
+            <th>Current Stock</th>
+        </tr>
+        {% for product in product_sales %}
+        <tr>
+            <td>{{ product.product_configuration__product__name }}</td>
+            <td>
+                {% for option in product.variation_options %}
+                    {{ option.variation__name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </td>
+            <td>₹{{ product.price }}</td>
+            <td>{{ product.total_quantity }}</td>
+            <td>₹{{ product.total_sales }}</td>
+            <td>{{ product.current_stock }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 
     <div class="sales-card">
         <h2>Orders</h2>

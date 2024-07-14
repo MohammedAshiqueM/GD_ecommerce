@@ -19,7 +19,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
 import json
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count,F,Avg
 from django.utils import timezone
 from datetime import timedelta
 from openpyxl import Workbook
@@ -864,6 +864,13 @@ def sales_report(request):
             total_quantity=Sum('qty'),
             total_sales=Sum('price')
         ).order_by('-total_quantity')
+        
+        for item in product_sales:
+            config = ProductConfiguration.objects.get(id=item['product_configuration__id'])
+            item['current_stock'] = config.qty_in_stock
+            item['price'] = config.price
+            item['variation_options'] = list(config.variation_options.all().values('variation__name', 'value'))
+
 
         report = SalesReport.objects.create(
             user=request.user,
@@ -891,10 +898,11 @@ def export_excel(request, report_id):
     orders = Order.objects.filter(order_date__gte=report.start_date, order_date__lt=report.end_date)
     product_sales = OrderLine.objects.filter(order__in=orders).values(
         'product_configuration__product__name',
-        'product_configuration__id'
+        'product_configuration__id',
     ).annotate(
         total_quantity=Sum('qty'),
-        total_sales=Sum('price')
+        total_sales=Sum(F('price') * F('qty')),
+        avg_sold_price=Avg('price')
     ).order_by('-total_quantity')
 
     wb = Workbook()
@@ -910,15 +918,18 @@ def export_excel(request, report_id):
 
     # Add product sales
     ws.append(["Product Sales"])
-    headers = ['Product', 'Quantity Sold', 'Total Sales', 'Current Stock']
+    headers = ['Product', 'Configuration', 'Avg Sold Price', 'Quantity Sold', 'Total Sales', 'Current Stock']
     ws.append(headers)
 
     for product in product_sales:
         config = ProductConfiguration.objects.get(id=product['product_configuration__id'])
+        configuration = ", ".join([f"{opt.variation.name}: {opt.value}" for opt in config.variation_options.all()])
         ws.append([
             product['product_configuration__product__name'],
+            configuration,
+            round(product['avg_sold_price'], 2),
             product['total_quantity'],
-            product['total_sales'],
+            round(product['total_sales'], 2),
             config.qty_in_stock
         ])
 
@@ -952,10 +963,11 @@ def export_pdf(request, report_id):
     orders = Order.objects.filter(order_date__gte=report.start_date, order_date__lt=report.end_date)
     product_sales = OrderLine.objects.filter(order__in=orders).values(
         'product_configuration__product__name',
-        'product_configuration__id'
+        'product_configuration__id',
     ).annotate(
         total_quantity=Sum('qty'),
-        total_sales=Sum('price')
+        total_sales=Sum(F('price') * F('qty')),
+        avg_sold_price=Avg('price')
     ).order_by('-total_quantity')
 
     buffer = BytesIO()
@@ -992,13 +1004,16 @@ def export_pdf(request, report_id):
     elements.append(Paragraph("Product Sales", styles['Heading2']))
 
     # Product sales data
-    product_data = [["Product", "Quantity Sold", "Total Sales", "Current Stock"]]
+    product_data = [["Product", "Configuration", "Avg Sold Price", "Quantity Sold", "Total Sales", "Current Stock"]]
     for product in product_sales:
         config = ProductConfiguration.objects.get(id=product['product_configuration__id'])
+        configuration = ", ".join([f"{opt.variation.name}: {opt.value}" for opt in config.variation_options.all()])
         product_data.append([
             product['product_configuration__product__name'],
+            configuration,
+            f"${round(product['avg_sold_price'], 2)}",
             str(product['total_quantity']),
-            f"${product['total_sales']}",
+            f"${round(product['total_sales'], 2)}",
             str(config.qty_in_stock)
         ])
 
@@ -1028,7 +1043,6 @@ def export_pdf(request, report_id):
     # present the option to save the file.
     buffer.seek(0)
     return FileResponse(buffer, as_attachment=True, filename=f'sales_report_{report.start_date.date()}_{report.end_date.date()}.pdf')
-
 
 def adminLogout(request):
     auth_logout(request)
