@@ -1,68 +1,187 @@
-<form method="post" id="sales-report-form">
-    {% csrf_token %}
-    <select name="report_type" id="report-type">
-        <option value="daily">Daily</option>
-        <option value="weekly">Weekly</option>
-        <option value="monthly">Monthly</option>
-        <option value="yearly">Yearly</option>
-        <option value="custom">Custom Date Range</option>
-    </select>
-    <div id="custom-date-range" style="display: none;">
-        <label for="start-date">Start Date:</label>
-        <input type="date" name="start_date" id="start-date">
-        
-        <label for="end-date">End Date:</label>
-        <input type="date" name="end_date" id="end-date">
+{% include 'common_block.html' %}
+
+<style>
+    .sales-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+    }
+    .sales-card {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .sales-form select, .sales-form input[type="date"] {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .sales-form button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .sales-form button:hover {
+        background-color: #0056b3;
+    }
+    .sales-summary {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    .summary-item {
+        flex-basis: 22%;
+        background-color: #e9ecef;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .summary-item h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #495057;
+    }
+    .summary-item p {
+        margin: 10px 0 0;
+        font-size: 18px;
+        font-weight: bold;
+        color: #007bff;
+    }
+    .export-buttons {
+        text-align: center;
+        margin: 20px 0;
+    }
+    .export-buttons a {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 0 10px;
+        background-color: #28a745;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+    .export-buttons a:last-child {
+        background-color: #dc3545;
+    }
+    .sales-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .sales-table th, .sales-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+    }
+    .sales-table th {
+        background-color: #007bff;
+        color: white;
+    }
+    .sales-table tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+</style>
+
+<div class="sales-container">
+    <div class="sales-card">
+        <h2>Generate Sales Report</h2>
+        <form method="post" id="sales-report-form" class="sales-form">
+            {% csrf_token %}
+            <select name="report_type" id="report-type">
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="custom">Custom Date Range</option>
+            </select>
+            <div id="custom-date-range" style="display: none;">
+                <label for="start-date">Start Date:</label>
+                <input type="date" name="start_date" id="start-date">
+                
+                <label for="end-date">End Date:</label>
+                <input type="date" name="end_date" id="end-date">
+            </div>
+            <button type="submit">Generate Report</button>
+        </form>
     </div>
-    <button type="submit">Generate Report</button>
-</form>
 
-<h1>Sales Report</h1>
-<p>Period: {{ report.start_date }} to {{ report.end_date }}</p>
-<p>Total Sales: ₹{{ report.total_sales }}</p>
-<p>Total Orders: {{ report.total_orders }}</p>
-<p>Total Discount: ₹{{ report.total_discount }}</p>
+    {% if report %}
+    <div class="sales-card">
+        <h1>Sales Report</h1>
+        <div class="sales-summary">
+            <div class="summary-item">
+                <h3>Period</h3>
+                <p>{{ report.start_date|date:"M d, Y" }} to {{ report.end_date|date:"M d, Y" }}</p>
+            </div>
+            <div class="summary-item">
+                <h3>Total Sales</h3>
+                <p>₹{{ report.total_sales }}</p>
+            </div>
+            <div class="summary-item">
+                <h3>Total Orders</h3>
+                <p>{{ report.total_orders }}</p>
+            </div>
+            <div class="summary-item">
+                <h3>Total Discount</h3>
+                <p>₹{{ report.total_discount }}</p>
+            </div>
+        </div>
+        <div class="export-buttons">
+            <a href="{% url 'export_excel' report.id %}">Export to Excel</a>
+            <a href="{% url 'export_pdf' report.id %}">Export to PDF</a>
+        </div>
+    </div>
 
-{% if report %}
-    <a href="{% url 'export_excel' report.id %}" class="btn btn-primary">Export to Excel</a>
-    <a href="{% url 'export_pdf' report.id %}" class="btn btn-secondary">Export to PDF</a>
-{% endif %}
+    <div class="sales-card">
+        <h2>Product Sales</h2>
+        <table class="sales-table">
+            <tr>
+                <th>Product</th>
+                <th>Quantity Sold</th>
+                <th>Total Sales</th>
+                <th>Current Stock</th>
+            </tr>
+            {% for product in product_sales %}
+            <tr>
+                <td>{{ product.product_configuration__product__name }}</td>
+                <td>{{ product.total_quantity }}</td>
+                <td>₹{{ product.total_sales }}</td>
+                <td>{{ product.product_configuration.qty_in_stock }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 
-<h2>Product Sales</h2>
-<table>
-    <tr>
-        <th>Product</th>
-        <th>Quantity Sold</th>
-        <th>Total Sales</th>
-        <th>Current Stock</th>
-    </tr>
-    {% for product in product_sales %}
-    <tr>
-        <td>{{ product.product_configuration__product__name }}</td>
-        <td>{{ product.total_quantity }}</td>
-        <td>₹{{ product.total_sales }}</td>
-        <td>{{ product.product_configuration.qty_in_stock }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <div class="sales-card">
+        <h2>Orders</h2>
+        <table class="sales-table">
+            <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Discount</th>
+            </tr>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.order_date|date:"M d, Y" }}</td>
+                <td>₹{{ order.order_total }}</td>
+                <td>₹{{ order.discount_amount }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+</div>
 
-<h2>Orders</h2>
-<table>
-    <tr>
-        <th>Order ID</th>
-        <th>Date</th>
-        <th>Total</th>
-        <th>Discount</th>
-    </tr>
-    {% for order in orders %}
-    <tr>
-        <td>{{ order.id }}</td>
-        <td>{{ order.order_date }}</td>
-        <td>₹{{ order.order_total }}</td>
-        <td>₹{{ order.discount_amount }}</td>
-    </tr>
-    {% endfor %}
-</table>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const reportType = document.getElementById('report-type');
