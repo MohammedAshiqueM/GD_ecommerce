@@ -943,6 +943,19 @@ def export_excel(request, report_id):
     for order in orders:
         ws.append([order.id, order.order_date, order.order_total, order.discount_amount])
 
+    # Adjust column widths
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter  # Get the column name
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
+        
     # Create http response
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = f'attachment; filename=sales_report_{report.start_date.date()}_{report.end_date.date()}.xlsx'
@@ -950,13 +963,13 @@ def export_excel(request, report_id):
     wb.save(response)
     return response
 
-from django.http import HttpResponse
-from openpyxl import Workbook
+from django.http import FileResponse
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
+from django.db.models import Sum, F, Avg
 
 def export_pdf(request, report_id):
     report = SalesReport.objects.get(id=report_id)
@@ -971,7 +984,7 @@ def export_pdf(request, report_id):
     ).order_by('-total_quantity')
 
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter))
     elements = []
 
     styles = getSampleStyleSheet()
@@ -979,9 +992,9 @@ def export_pdf(request, report_id):
 
     # Summary data
     summary_data = [
-        ["Total Sales", f"${report.total_sales}"],
+        ["Total Sales", f"{report.total_sales}"],
         ["Total Orders", str(report.total_orders)],
-        ["Total Discount", f"${report.total_discount}"]
+        ["Total Discount", f"{report.total_discount}"]
     ]
     summary_table = Table(summary_data)
     summary_table.setStyle(TableStyle([
@@ -1001,6 +1014,7 @@ def export_pdf(request, report_id):
         ('GRID', (0, 0), (-1, -1), 1, colors.black)
     ]))
     elements.append(summary_table)
+    elements.append(Spacer(1, 20))
     elements.append(Paragraph("Product Sales", styles['Heading2']))
 
     # Product sales data
@@ -1011,9 +1025,9 @@ def export_pdf(request, report_id):
         product_data.append([
             product['product_configuration__product__name'],
             configuration,
-            f"${round(product['avg_sold_price'], 2)}",
+            f"{round(product['avg_sold_price'], 2)}",
             str(product['total_quantity']),
-            f"${round(product['total_sales'], 2)}",
+            f"{round(product['total_sales'], 2)}",
             str(config.qty_in_stock)
         ])
 
@@ -1036,6 +1050,38 @@ def export_pdf(request, report_id):
     ]))
     elements.append(product_table)
 
+    elements.append(Spacer(1, 20))
+    elements.append(Paragraph("Order Details", styles['Heading2']))
+
+    # Order details data
+    order_data = [["Order ID", "Date", "Total", "Discount"]]
+    for order in orders:
+        order_data.append([
+            str(order.id),
+            order.order_date.strftime('%Y-%m-%d'),
+            f"{order.order_total}",
+            f"{order.discount_amount}"
+        ])
+
+    order_table = Table(order_data)
+    order_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(order_table)
+
     # Build the PDF
     doc.build(elements)
 
@@ -1043,7 +1089,6 @@ def export_pdf(request, report_id):
     # present the option to save the file.
     buffer.seek(0)
     return FileResponse(buffer, as_attachment=True, filename=f'sales_report_{report.start_date.date()}_{report.end_date.date()}.pdf')
-
 def adminLogout(request):
     auth_logout(request)
     return redirect("adminLogin")
