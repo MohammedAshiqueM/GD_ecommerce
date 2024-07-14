@@ -100,40 +100,47 @@
             </form>
             <div id="coupon-message"></div>
             <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Order Total</span></h5>
-            <div class="bg-light p-30 mb-5">
-                <div class="border-bottom">
-                    <h6 class="mb-3">Products</h6>
-                    {% for item in cart_items %}
-                        <div class="d-flex justify-content-between">
-                            <p>{{ item.product_configuration.product.name }}</p>
-                            {% if item.product_configuration.variation %}
-                                <p>{{ item.product_configuration.variation.get_variation_display }}</p>
-                            {% endif %}
-                            <p>${{ item.product_configuration.price }} x {{ item.qty }}</p>
-                            <p>${{ item.qty|mul:item.product_configuration.price }}</p>
-                        </div>
-                    {% endfor %}
-                </div>
-                
-                <div class="pt-2">
-                    <div class="d-flex justify-content-between mt-2">
-                        <h6>Subtotal</h6>
-                        <h6>$<span id="subtotal">{{ cart_items|calc_subtotal }}</span></h6>
-                    </div>
-                    <div class="d-flex justify-content-between mt-2">
-                        <h6>Shipping</h6>
-                        <h6>$10</h6>
-                    </div>
-                    <div id="discount-row" class="d-flex justify-content-between mt-2" style="display: none;">
-                        <h6>Discount</h6>
-                        <h6>-$<span id="discount-amount">0</span></h6>
-                    </div>
-                    <div class="d-flex justify-content-between mt-2">
-                        <h5>Total</h5>
-                        <h5>$<span id="total-amount">{{ cart_items|calc_total }}</span></h5>
-                    </div>
-                </div>
+<div class="bg-light p-30 mb-5">
+    <div class="border-bottom">
+        <h6 class="mb-3">Products</h6>
+        {% for item in cart_items %}
+            <div class="d-flex justify-content-between">
+                <p>{{ item.product_configuration.product.name }}</p>
+                {% if item.product_configuration.variation %}
+                    <p>{{ item.product_configuration.variation.get_variation_display }}</p>
+                {% endif %}
+                <p>${{ item.product_configuration.price }} x {{ item.qty }}</p>
+                <p>${{ item.qty|mul:item.product_configuration.price }}</p>
             </div>
+        {% endfor %}
+    </div>
+
+    <div class="pt-2">
+        <div class="d-flex justify-content-between mt-2">
+            <h6>Subtotal</h6>
+            <h6>$<span id="subtotal">{{ cart_items|calc_subtotal }}</span></h6>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+            <h6>Shipping</h6>
+            <h6>$10</h6>
+        </div>
+        {% if total_discount %}
+        <div class="d-flex justify-content-between mt-2">
+            <h6>Offer discount</h6>
+            <h6>-$<span id="offer-discount">{{ total_discount }}</span></h6>
+        </div>
+        {% endif %}
+        <div id="discount-row" class="d-flex justify-content-between mt-2" style="display: none;">
+            <h6>Coupon discount</h6>
+            <h6>-$<span id="discount-amount">0</span></h6>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+            <h5>Total</h5>
+            <h5>$<span id="total-amount">{{ final_total }}</span></h5>
+        </div>
+    </div>
+</div>
+
             
             <div class="mb-5">
                 <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Payment</span></h5>
@@ -452,7 +459,7 @@
     
         function initiateRazorpayCheckout(selectedAddressId) {
             console.log('initiateRazorpayCheckout function called');
-            const amount = '{{ cart_items|calc_total|floatformat:2 }}';
+            const amount = '{{ final_total }}';
             const couponCode = document.getElementById('coupon-code').value; 
             console.log('Amount:', amount);
             console.log('Razorpay Key:', "{{ razorpay_key }}");

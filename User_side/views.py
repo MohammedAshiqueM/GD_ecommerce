@@ -733,11 +733,18 @@ def razorpay_checkout(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
+from django.conf import settings
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from decimal import Decimal
+
 @login_required
 def checkOut(request):
     categories = Category.objects.all()
+    user = request.user
+
     if request.method == 'POST':
-        # Retrieve the payment method
         payment_method = request.POST.get('payment')
         try:
             if payment_method == 'directcheck':
@@ -751,35 +758,39 @@ def checkOut(request):
         except PaymentMethod.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Payment method not found.'})
 
-        # Get the default address
-        addresses = Address.objects.filter(user=request.user)
+        addresses = Address.objects.filter(user=user)
         default_address = addresses.filter(is_default=True).first() or addresses.first()
         if not default_address:
             return JsonResponse({'status': 'error', 'message': 'No address found for user.'})
 
-        # Retrieve the cart and its items
-        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart, created = Cart.objects.get_or_create(user=user)
         cart_items = CartItem.objects.filter(cart=cart)
 
-        # Calculate order total
-        order_total = sum(item.qty * item.product_configuration.price for item in cart_items) + 10  # +10 for shipping
-
-
+        order_total = sum(Decimal(item.qty) * Decimal(item.product_configuration.price) for item in cart_items)
+        shipping_cost = Decimal('10.00')
+        total_discount = Decimal('0.00')
         
-        # Create order status
+        for item in cart_items:
+            if item.product_configuration.get_discounted_price:
+                discount_price = Decimal(item.product_configuration.get_discounted_price())
+                original_price = Decimal(item.product_configuration.price)
+                discount = original_price - discount_price
+                total_discount += discount * Decimal(item.qty)
+
+        order_total -= total_discount
+        order_total += shipping_cost
+
         order_status, created = OrderStatus.objects.get_or_create(status='Pending')
 
-        # Create the order
         order = Order.objects.create(
-            user=request.user,
+            user=user,
             payment_method=payment_method_instance,
             shipping_address=default_address,
-            shipping_method=ShippingMethod.objects.get(name='Standard'),  # Replace with actual logic if needed
+            shipping_method=ShippingMethod.objects.get(name='Standard'),
             order_total=order_total,
             order_status=order_status
         )
 
-        # Create order lines
         for item in cart_items:
             OrderLine.objects.create(
                 order=order,
@@ -788,30 +799,41 @@ def checkOut(request):
                 price=item.product_configuration.price
             )
 
-        # Clear the cart
         cart_items.delete()
-
         return redirect('order_success')
 
-    addresses = Address.objects.filter(user=request.user)
+    addresses = Address.objects.filter(user=user)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
-    if not default_address:
-        show_modal = True
-    else:
-        show_modal = False
+    show_modal = not default_address
 
-    # Retrieve the cart and its items
-    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart, created = Cart.objects.get_or_create(user=user)
     cart_items = CartItem.objects.filter(cart=cart)
+
+    order_total = sum(Decimal(item.qty) * Decimal(item.product_configuration.price) for item in cart_items)
+    shipping_cost = Decimal('10.00')
+    total_discount = Decimal('0.00')
+    
+    for item in cart_items:
+        if item.product_configuration.get_discounted_price:
+            discount_price = Decimal(item.product_configuration.get_discounted_price())
+            original_price = Decimal(item.product_configuration.price)
+            discount = original_price - discount_price
+            total_discount += discount * Decimal(item.qty)
+
+    discounted_total = order_total - total_discount
+    final_total = discounted_total + shipping_cost
 
     context = {
         "addresses": addresses,
         "default_address": default_address,
         "cart_items": cart_items,
-        "categories":categories,
+        "categories": categories,
         "edit": True,
         'show_modal': show_modal,
-        'razorpay_key':settings.RAZORPAY_KEY
+        'razorpay_key': settings.RAZORPAY_KEY,
+        'total_discount': total_discount,
+        'discounted_total': discounted_total,
+        'final_total': final_total
     }
     return render(request, "checkOut.html", context)
 
