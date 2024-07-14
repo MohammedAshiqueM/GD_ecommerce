@@ -36,5 +36,8 @@ urlpatterns = [
     path('toggle-offer-status/', views.toggle_offer_status, name='toggle_offer_status'),
     path('offers/', views.offers, name='offers'),
     path('get-product-configurations/<int:product_id>/', views.get_product_configurations, name='get_product_configurations'),
+    path('sales-report/', views.sales_report, name='sales_report'),
+    path('export-excel/<int:report_id>/', views.export_excel, name='export_excel'),
+    path('export-pdf/<int:report_id>/', views.export_pdf, name='export_pdf'),
     path('adminLogout/', views.adminLogout, name='adminLogout'),
 ]

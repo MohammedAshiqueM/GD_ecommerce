@@ -6,7 +6,6 @@ from django.http import HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.db.models import Q
-from django.http import JsonResponse
 from django.views.generic import ListView
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponse
@@ -19,6 +18,11 @@ from .forms import CouponForm,OfferForm
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
 import json
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Sum, Count
+from django.utils import timezone
+from datetime import timedelta
+from openpyxl import Workbook
 from .models import (
     User,
     Address,
@@ -44,7 +48,8 @@ from .models import (
     Offer,
     CategoryOffer,
     SubcategoryOffer,
-    ProductOffer
+    ProductOffer,
+    SalesReport
 )
 
 
@@ -802,6 +807,228 @@ def toggle_offer_status(request):
         return JsonResponse({'success': False, 'error': 'Coupon not found'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Sum, Count
+from django.utils import timezone
+from datetime import timedelta
+from .models import SalesReport, Order, OrderLine, ProductConfiguration
+from django.http import HttpResponse, FileResponse
+from openpyxl import Workbook
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from io import BytesIO
+
+# @staff_member_required
+def sales_report(request):
+    if request.method == 'POST':
+        report_type = request.POST.get('report_type')
+        # start_date = request.POST.get('start_date')
+        # end_date = request.POST.get('end_date')
+
+        if report_type == 'custom':
+            start_date = request.POST.get('start_date')
+            end_date = request.POST.get('end_date')
+            # Convert string dates to datetime objects
+            start_date = timezone.datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = timezone.datetime.strptime(end_date, '%Y-%m-%d').date() + timedelta(days=1)
+        elif report_type == 'daily':
+            start_date = timezone.now().date()
+            end_date = start_date + timedelta(days=1)
+        elif report_type == 'weekly':
+            start_date = timezone.now().date() - timedelta(days=7)
+            end_date = timezone.now().date() + timedelta(days=1)
+        elif report_type == 'monthly':
+            start_date = timezone.now().date().replace(day=1)
+            end_date = (start_date + timedelta(days=32)).replace(day=1)
+        elif report_type == 'yearly':
+            start_date = timezone.now().date().replace(month=1, day=1)
+            end_date = start_date.replace(year=start_date.year + 1)
+        else:
+            # Handle invalid report type
+            return render(request, 'salesReport.html', {'error': 'Invalid report type'})
+
+        orders = Order.objects.filter(order_date__gte=start_date, order_date__lt=end_date)
+        total_sales = orders.aggregate(Sum('order_total'))['order_total__sum'] or 0
+        total_orders = orders.count()
+        total_discount = orders.aggregate(Sum('discount_amount'))['discount_amount__sum'] or 0
+        
+        product_sales = OrderLine.objects.filter(order__in=orders).values(
+            'product_configuration__product__name',
+            'product_configuration__id'
+        ).annotate(
+            total_quantity=Sum('qty'),
+            total_sales=Sum('price')
+        ).order_by('-total_quantity')
+
+        report = SalesReport.objects.create(
+            user=request.user,
+            start_date=start_date,
+            end_date=end_date,
+            total_sales=total_sales,
+            total_orders=total_orders,
+            total_discount=total_discount
+        )
+
+        context = {
+            'report': report,
+            'orders': orders,
+            'product_sales': product_sales,
+
+        }
+        return render(request, 'salesReport.html', context)
+
+    return render(request, 'salesReport.html')
+
+
+
+def export_excel(request, report_id):
+    report = SalesReport.objects.get(id=report_id)
+    orders = Order.objects.filter(order_date__gte=report.start_date, order_date__lt=report.end_date)
+    product_sales = OrderLine.objects.filter(order__in=orders).values(
+        'product_configuration__product__name',
+        'product_configuration__id'
+    ).annotate(
+        total_quantity=Sum('qty'),
+        total_sales=Sum('price')
+    ).order_by('-total_quantity')
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sales Report"
+
+    # Add summary
+    ws.append(["Sales Report", f"{report.start_date.date()} to {report.end_date.date()}"])
+    ws.append(["Total Sales", report.total_sales])
+    ws.append(["Total Orders", report.total_orders])
+    ws.append(["Total Discount", report.total_discount])
+    ws.append([])
+
+    # Add product sales
+    ws.append(["Product Sales"])
+    headers = ['Product', 'Quantity Sold', 'Total Sales', 'Current Stock']
+    ws.append(headers)
+
+    for product in product_sales:
+        config = ProductConfiguration.objects.get(id=product['product_configuration__id'])
+        ws.append([
+            product['product_configuration__product__name'],
+            product['total_quantity'],
+            product['total_sales'],
+            config.qty_in_stock
+        ])
+
+    ws.append([])
+
+    # Add order details
+    ws.append(["Order Details"])
+    headers = ['Order ID', 'Date', 'Total', 'Discount']
+    ws.append(headers)
+
+    for order in orders:
+        ws.append([order.id, order.order_date, order.order_total, order.discount_amount])
+
+    # Create http response
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename=sales_report_{report.start_date.date()}_{report.end_date.date()}.xlsx'
+
+    wb.save(response)
+    return response
+
+from django.http import HttpResponse
+from openpyxl import Workbook
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from io import BytesIO
+
+def export_pdf(request, report_id):
+    report = SalesReport.objects.get(id=report_id)
+    orders = Order.objects.filter(order_date__gte=report.start_date, order_date__lt=report.end_date)
+    product_sales = OrderLine.objects.filter(order__in=orders).values(
+        'product_configuration__product__name',
+        'product_configuration__id'
+    ).annotate(
+        total_quantity=Sum('qty'),
+        total_sales=Sum('price')
+    ).order_by('-total_quantity')
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+
+    styles = getSampleStyleSheet()
+    elements.append(Paragraph(f"Sales Report: {report.start_date.date()} to {report.end_date.date()}", styles['Title']))
+
+    # Summary data
+    summary_data = [
+        ["Total Sales", f"${report.total_sales}"],
+        ["Total Orders", str(report.total_orders)],
+        ["Total Discount", f"${report.total_discount}"]
+    ]
+    summary_table = Table(summary_data)
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 12),
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(summary_table)
+    elements.append(Paragraph("Product Sales", styles['Heading2']))
+
+    # Product sales data
+    product_data = [["Product", "Quantity Sold", "Total Sales", "Current Stock"]]
+    for product in product_sales:
+        config = ProductConfiguration.objects.get(id=product['product_configuration__id'])
+        product_data.append([
+            product['product_configuration__product__name'],
+            str(product['total_quantity']),
+            f"${product['total_sales']}",
+            str(config.qty_in_stock)
+        ])
+
+    product_table = Table(product_data)
+    product_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(product_table)
+
+    # Build the PDF
+    doc.build(elements)
+
+    # FileResponse sets the Content-Disposition header so that browsers
+    # present the option to save the file.
+    buffer.seek(0)
+    return FileResponse(buffer, as_attachment=True, filename=f'sales_report_{report.start_date.date()}_{report.end_date.date()}.pdf')
+
 
 def adminLogout(request):
     auth_logout(request)

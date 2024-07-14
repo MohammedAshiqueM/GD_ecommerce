@@ -1,0 +1,84 @@
+<form method="post" id="sales-report-form">
+    {% csrf_token %}
+    <select name="report_type" id="report-type">
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="monthly">Monthly</option>
+        <option value="yearly">Yearly</option>
+        <option value="custom">Custom Date Range</option>
+    </select>
+    <div id="custom-date-range" style="display: none;">
+        <label for="start-date">Start Date:</label>
+        <input type="date" name="start_date" id="start-date">
+        
+        <label for="end-date">End Date:</label>
+        <input type="date" name="end_date" id="end-date">
+    </div>
+    <button type="submit">Generate Report</button>
+</form>
+
+<h1>Sales Report</h1>
+<p>Period: {{ report.start_date }} to {{ report.end_date }}</p>
+<p>Total Sales: ₹{{ report.total_sales }}</p>
+<p>Total Orders: {{ report.total_orders }}</p>
+<p>Total Discount: ₹{{ report.total_discount }}</p>
+
+{% if report %}
+    <a href="{% url 'export_excel' report.id %}" class="btn btn-primary">Export to Excel</a>
+    <a href="{% url 'export_pdf' report.id %}" class="btn btn-secondary">Export to PDF</a>
+{% endif %}
+
+<h2>Product Sales</h2>
+<table>
+    <tr>
+        <th>Product</th>
+        <th>Quantity Sold</th>
+        <th>Total Sales</th>
+        <th>Current Stock</th>
+    </tr>
+    {% for product in product_sales %}
+    <tr>
+        <td>{{ product.product_configuration__product__name }}</td>
+        <td>{{ product.total_quantity }}</td>
+        <td>₹{{ product.total_sales }}</td>
+        <td>{{ product.product_configuration.qty_in_stock }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2>Orders</h2>
+<table>
+    <tr>
+        <th>Order ID</th>
+        <th>Date</th>
+        <th>Total</th>
+        <th>Discount</th>
+    </tr>
+    {% for order in orders %}
+    <tr>
+        <td>{{ order.id }}</td>
+        <td>{{ order.order_date }}</td>
+        <td>₹{{ order.order_total }}</td>
+        <td>₹{{ order.discount_amount }}</td>
+    </tr>
+    {% endfor %}
+</table>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reportType = document.getElementById('report-type');
+    const customDateRange = document.getElementById('custom-date-range');
+
+    reportType.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customDateRange.style.display = 'block';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+    });
+
+    // Initialize the form state
+    if (reportType.value === 'custom') {
+        customDateRange.style.display = 'block';
+    }
+});
+</script>

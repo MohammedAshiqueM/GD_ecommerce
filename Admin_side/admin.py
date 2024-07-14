@@ -31,7 +31,8 @@ from .models import (
     Offer,
     ProductOffer,
     CategoryOffer,
-    SubcategoryOffer      
+    SubcategoryOffer,
+    SalesReport      
 )
 
 admin.site.register(
@@ -64,6 +65,7 @@ admin.site.register(
         Offer,
         ProductOffer,
         CategoryOffer,
-        SubcategoryOffer        
+        SubcategoryOffer,
+        SalesReport      
     ]
 )
