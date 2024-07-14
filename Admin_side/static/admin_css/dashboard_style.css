@@ -750,43 +750,70 @@ b {
 	-webkit-background-clip: text;
 	background-clip: text;
 }
+:root {
+    --customer-num: 0;
+    --project-num: 0;
+    --order-num: 0;
+    --income-num: 0;
+}
+
+#customer {
+    animation: customer 2s linear forwards;
+}
+
+#project {
+    animation: project 2s linear forwards;
+}
+
+#order {
+    animation: order 2s linear forwards;
+}
+
+#income {
+    animation: income 2s linear forwards;
+}
+
 #customer:hover,
 #income:hover,
 #project:hover,
 #order:hover {
-	animation-play-state: paused;
+    animation-play-state: paused;
 }
+
 @keyframes income {
-	from {
-		--num: 0;
-	}
-	to {
-		--num: 600;
-	}
+    from {
+        --num: 0;
+    }
+    to {
+        --num: var(--income-num);
+    }
 }
+
 @keyframes customer {
-	from {
-		--num: 0;
-	}
-	to {
-		--num: 1334;
-	}
+    from {
+        --num: 0;
+    }
+    to {
+        --num: var(--customer-num);
+    }
 }
+
 @keyframes project {
-	from {
-		--num: 0;
-	}
-	to {
-		--num: 6969;
-	}
+    from {
+        --num: 0;
+    }
+    to {
+        --num: var(--project-num);
+    }
 }
+
 @keyframes order {
-	from {
-		--num: 0;
-	}
-	to {
-		--num: 5124;
-	}
+    from {
+        --num: 0;
+    }
+    to {
+        --num: var(--order-num);
+    }
 }
 /* =========COUNTER=========== */
 

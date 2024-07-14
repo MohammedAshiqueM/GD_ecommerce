@@ -21,7 +21,7 @@ import json
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Sum, Count,F,Avg
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta,datetime
 from openpyxl import Workbook
 from .models import (
     User,
@@ -93,7 +93,23 @@ def dashboard(request):
     else:
         data = Product.objects.all()
         user = User.objects.all()
-        context = {"data": data,"user":user}
+        user_count = User.objects.count()
+        order_count = Order.objects.count()
+        product_count = Product.objects.count()
+    
+    # Calculate income for the last week
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=7)
+    total_income = OrderLine.objects.filter(order__order_date__range=(start_date, end_date)).aggregate(total_income=Sum('price'))['total_income'] or 0
+
+    context = {
+        "data": data,
+        "user": user,
+        "user_count": user_count,
+        "order_count": order_count,
+        "product_count": product_count,
+        "total_income": total_income
+    }
     
     return render(request, "dashboard.html",context)
 
