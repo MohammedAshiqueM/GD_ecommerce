@@ -1361,6 +1361,11 @@ def wallet_transaction_history(request):
         'transactions': transactions,
     }
     return render(request, 'wallet_transaction_history.html', context)
+
+def order_invoice(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    return render(request, 'orderInvoice.html', {'order': order})
+
 ########################## function for logout ############################
 def logout(request):
     auth_logout(request)

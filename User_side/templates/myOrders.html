@@ -188,7 +188,7 @@
                 {% if order.order_status.status == 'Pending' %}
                 <button onclick="confirmCancel('{{ order.id }}')">Cancel</button>
                 {% endif %}
-                <button>View Invoice</button>
+                <a href="{% url 'order_invoice' order.id %}" ><button >View Invoice</button></a>
             </div>
         </div>
     </div>

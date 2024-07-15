@@ -1,0 +1,177 @@
+{% load cart_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice for Order #{{ order.id }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+        }
+        .invoice {
+            width: 90%;
+            max-width: 800px;
+            margin: 40px auto;
+            background-color: #fff;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 40px;
+        }
+        .invoice-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+        }
+        .invoice-header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 36px;
+        }
+        .invoice-header p {
+            color: #7f8c8d;
+            margin: 5px 0;
+        }
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .invoice-details > div {
+            flex-basis: 48%;
+        }
+        .invoice-details h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .invoice-items {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .invoice-items th, .invoice-items td {
+            padding: 12px;
+            text-align: left;
+        }
+        .invoice-items th {
+            background-color: #3498db;
+            color: #fff;
+            font-weight: normal;
+        }
+        .invoice-items tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .invoice-footer {
+            text-align: right;
+            font-size: 18px;
+        }
+        .invoice-footer p {
+            margin: 5px 0;
+        }
+        .total {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .print-button {
+            display: block;
+            width: 200px;
+            margin: 30px auto 0;
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .print-button:hover {
+            background-color: #2980b9;
+        }
+        @media print {
+            body {
+                background-color: #fff;
+            }
+            .invoice {
+                box-shadow: none;
+                padding: 0;
+            }
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+    <script>
+        function printInvoice() {
+            window.print();
+        }
+    </script>
+</head>
+<body>
+    <div class="invoice">
+        <div class="invoice-header">
+            <h1>Invoice</h1>
+            <p>Order #{{ order.id }}</p>
+            <p>Placed on {{ order.order_date }}</p>
+        </div>
+        <div class="invoice-details">
+            <div>
+                <h3>Payment Details</h3>
+                <p>Method: {{ order.payment_method.payment_type }}</p>
+                <p>Status: {{ order.order_status.status }}</p>
+            </div>
+            <div>
+                <h3>Shipping Address</h3>
+                <p>{{ order.shipping_address.address_line1 }},<br>
+                   {{ order.shipping_address.city }}, {{ order.shipping_address.region }},<br>
+                   {{ order.shipping_address.country }}</p>
+            </div>
+        </div>
+        <table class="invoice-items">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Options</th>
+                    <th>Price</th>
+                    <th>Qty</th>
+                    <th>Discount</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in order.orderline_set.all %}
+                <tr>
+                    <td>{{ line.product_configuration.product.name }}</td>
+                    <td>
+                        {% if line.product_configuration.variation_options.exists %}
+                        {% for option in line.product_configuration.variation_options.all %}
+                        {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    </td>
+                    <td>₹{{ line.price|floatformat:2 }}</td>
+                    <td>{{ line.qty }}</td>
+                    <td>₹{% calculate_discount line.price line.discounted_price line.qty %}</td>
+                    <td>₹{{ line.discounted_price|multiply:line.qty|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="invoice-footer">
+            <p>Shipping Charge: ₹10</p>
+            {% if order.discount_amount %}
+            <p>Card Discount: ₹{{ order.discount_amount|floatformat:2 }}</p>
+            {% endif %}
+            <p class="total">Total: ₹{{ order.order_total|floatformat:2 }}</p>
+        </div>
+        <button class="print-button" onclick="printInvoice()">Print Invoice</button>
+    </div>
+</body>
+</html>
