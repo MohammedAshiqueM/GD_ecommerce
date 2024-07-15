@@ -10,7 +10,7 @@
         
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #f4f4f4;
+            background-color: #f4f7fa!important;
             color: #333;
             line-height: 1.6;
         }
@@ -33,6 +33,7 @@
             color: #2c3e50;
             margin: 0;
             font-size: 36px;
+            
         }
         .invoice-header p {
             color: #7f8c8d;
@@ -60,7 +61,7 @@
             text-align: left;
         }
         .invoice-items th {
-            background-color: #3498db;
+            background-color: #b4b4b4;
             color: #fff;
             font-weight: normal;
         }
@@ -84,7 +85,7 @@
             width: 200px;
             margin: 30px auto 0;
             padding: 12px 20px;
-            background-color: #3498db;
+            background-color: #E0A75E;
             color: #fff;
             border: none;
             border-radius: 5px;
@@ -93,7 +94,8 @@
             transition: background-color 0.3s ease;
         }
         .print-button:hover {
-            background-color: #2980b9;
+            background-color: #F5E7B2;
+            color:#98611b
         }
         @media print {
             body {
@@ -106,6 +108,9 @@
             .print-button {
                 display: none;
             }
+            .no-print {
+            display: none;
+            }
         }
     </style>
     <script>
@@ -114,6 +119,20 @@
         }
     </script>
 </head>
+    {% include 'common.html' %}
+    <!-- Breadcrumb Start -->
+    <div class="container-fluid no-print">
+        <div class="row px-xl-5">
+            <div class="col-12">
+                <nav class="breadcrumb bg-light mb-30">
+                    <a class="breadcrumb-item text-dark" href="{% url 'userHome' %}">Home</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'my_orders' %}">My Orders</a>
+                    <span class="breadcrumb-item active">Contact</span>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <!-- Breadcrumb End -->
 <body>
     <div class="invoice">
         <div class="invoice-header">
