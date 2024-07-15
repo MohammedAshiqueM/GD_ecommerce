@@ -302,6 +302,9 @@ def productDetails(request, pk):
     }
     return render(request, "productDetails.html", context)
 
+from django.db.models import Min, Max, Avg
+from decimal import Decimal
+
 def shop(request):
     products = Product.objects.filter(is_active=True)
     categories = Category.objects.all()
@@ -320,19 +323,24 @@ def shop(request):
     elif sort == 'z_a':
         products = products.order_by('-name')
     
-    product_avg_prices = {}
     for product in products:
-        avg_price = product.configurations.aggregate(Avg('price'))['price__avg']
-        product_avg_prices[product.id] = avg_price
+        configs = product.configurations.all()
+        product.avg_price = configs.aggregate(Avg('price'))['price__avg']
+        product.best_discounted_price = min((config.get_discounted_price() for config in configs), default=Decimal(product.avg_price or 0))
+
+        if sort == 'price_low_high':
+            product.display_price = product.min_price
+        elif sort == 'price_high_low':
+            product.display_price = product.max_price
+        else:
+            product.display_price = product.avg_price
     
     context = {
         "products": products,
-        "product_avg_prices": product_avg_prices,
         "sort": sort,
         "categories": categories,
     }
     return render(request, "shop.html", context)
-
 def categoryProduct(request,pk):
     products = Product.objects.filter(category_id=pk)
     sort = request.GET.get('sort', 'default')
@@ -364,6 +372,8 @@ def categoryProduct(request,pk):
     return render(request,"categoryProduct.html",context)
 
 
+from django.db.models import Min, Max, Avg
+from decimal import Decimal
 
 def subcategoryProduct(request, pk):
     products = Product.objects.filter(subcategory_id=pk)
@@ -383,20 +393,25 @@ def subcategoryProduct(request, pk):
     elif sort == 'z_a':
         products = products.order_by('-name')
     
-    product_avg_prices = {}
     for product in products:
-        avg_price = product.configurations.aggregate(Avg('price'))['price__avg']
-        product_avg_prices[product.id] = avg_price
-        
+        configs = product.configurations.all()
+        product.avg_price = configs.aggregate(Avg('price'))['price__avg']
+        product.best_discounted_price = min((config.get_discounted_price() for config in configs), default=Decimal(product.avg_price or 0))
+
+        if sort == 'price_low_high':
+            product.display_price = product.min_price
+        elif sort == 'price_high_low':
+            product.display_price = product.max_price
+        else:
+            product.display_price = product.avg_price
+    
     context = {
-        "products":products,
-        "product_avg_prices": product_avg_prices,
+        "products": products,
         "sort": sort,
-        "categories":categories
-        }
+        "categories": categories
+    }
 
     return render(request, "subcategoryProduct.html", context)
-
 
 def profile(request, pk):
     user = get_object_or_404(User, pk=pk)
