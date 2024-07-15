@@ -253,10 +253,26 @@ def common(request):
 @login_required(login_url='userLogin')
 @never_cache
 def userHome(request):
-    # if request.user.is_authenticated:
     categories = Category.objects.all()
-    context = {"categories":categories}
-    return render(request, "home.html",context)
+    featured_products = Product.objects.filter(is_featured=True)
+    recent_products = Product.objects.order_by('-created_at')[:10]
+    
+    for product in featured_products:
+        configs = ProductConfiguration.objects.filter(product=product)
+        product.avg_price = configs.aggregate(Avg('price'))['price__avg']
+        product.best_discounted_price = min((config.get_discounted_price() for config in configs), default=product.avg_price)
+
+    for product in recent_products:
+        configs = ProductConfiguration.objects.filter(product=product)
+        product.avg_price = configs.aggregate(Avg('price'))['price__avg']
+        product.best_discounted_price = min((config.get_discounted_price() for config in configs), default=product.avg_price)
+
+    context = {
+        "categories": categories,
+        "featured_products": featured_products,
+        "recent_products": recent_products,
+    }
+    return render(request, "home.html", context)
 
 
 def productDetails(request, pk):

@@ -37,3 +37,11 @@ def calculate_discount(price, discounted_price, qty):
     price = Decimal(price)  # Convert price to Decimal
     discounted_price = Decimal(discounted_price)  # Ensure discounted_price is also a Decimal
     return (price - discounted_price) * qty
+
+@register.filter
+def format_price(value):
+    """Format the value to two decimal places."""
+    try:
+        return f"{Decimal(value):.2f}"
+    except (ValueError, TypeError):
+        return value
