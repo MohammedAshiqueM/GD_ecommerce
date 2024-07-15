@@ -6,6 +6,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretty-checkbox/3.0.3/pretty-checkbox.min.css" integrity="sha512-kz4Ae66pquz4nVE5ytJyKfPDkQyHSggaDtT1v8oLfOd8bB+ZgZXNLaxex99MNu4fdCsWmi58mhLtfGk5RgfcOw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        .check{
+            width: 77px;
+            height: 25px;
+        }
+    </style>
 </head>
 
 <body>
@@ -26,6 +33,7 @@
                                 <td>Category</td>
                                 <td>Subcategory</td>
                                 <td>SKU</td>
+                                <td>Featured</td> <!-- New column header for is_featured -->
                                 <td>View</td>
                                 <td>Block/Unblock</td>
                             </tr>
@@ -34,7 +42,7 @@
                             {% for i in data %}
                             <tr>
                                 <td>
-                                    {% if i.images.all  %}
+                                    {% if i.images.all %}
                                     <img src="{{ i.images.first.image.url }}" alt="{{i.name}}" width="100">
                                     {% else %}
                                     NO IMAGE
@@ -44,16 +52,23 @@
                                 <td>{{i.category}}</td>
                                 <td>{{i.subcategory}}</td>
                                 <td>{{i.SKU}}</td>
+                                <td>
+                                    <!-- <div class="pretty p-switch p-fill"> -->
+                                        <input class="check" type="checkbox" {% if i.is_featured %}checked{% endif %}
+                                            onchange="toggleFeatured(`{{ i.id }}`)">
+                                        <!-- <div class="state">
+                                            <label></label>
+                                        </div> -->
+                                    <!-- </div> -->
+                                </td> <!-- New checkbox cell for is_featured -->
                                 <td><a href="{% url 'productAbout' i.id %}"><button class="block_btn"
                                             style="background-color: #573972;">View</button></a></td>
                                 <td>
                                     {% if i.is_active %}
                                     <button class="block_btn" onclick="blockproduct(`{{ i.id }}`)">Block</button>
                                     {% else %}
-                                    <button class="unblock_btn"
-                                        onclick="unblockproduct(`{{ i.id }}`)">Unblock</button>
+                                    <button class="unblock_btn" onclick="unblockproduct(`{{ i.id }}`)">Unblock</button>
                                     {% endif %}
-                                </td>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -64,28 +79,29 @@
         </div>
     </div>
     <script>
-        function unblockproduct(categoryId) {
-            fetch(`/administration/unblockProduct/${categoryId}/`, {
-                method: 'GET',
+        function toggleFeatured(productId) {
+            fetch(`/administration/toggleFeatured/${productId}/`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
-                }
+                },
+                body: JSON.stringify({
+                    is_featured: document.querySelector(`input[onchange="toggleFeatured(\`${productId}\`)"]`).checked
+                })
             })
                 .then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    } else {
-                        console.error('Failed to unblock category');
+                    if (!response.ok) {
+                        console.error('Failed to toggle featured status');
                     }
                 })
                 .catch(error => {
-                    console.error('Error unblocking category:', error);
+                    console.error('Error toggling featured status:', error);
                 });
         }
 
-        function blockproduct(subcategoryId) {
-            fetch(`/administration/blockProduct/${subcategoryId}/`, {
+        function unblockproduct(productId) {
+            fetch(`/administration/unblockProduct/${productId}/`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -96,16 +112,16 @@
                     if (response.ok) {
                         location.reload();
                     } else {
-                        console.error('Failed to block subcategory');
+                        console.error('Failed to unblock product');
                     }
                 })
                 .catch(error => {
-                    console.error('Error blocking subcategory:', error);
+                    console.error('Error unblocking product:', error);
                 });
         }
 
-        function unblockSubcategory(productId) {
-            fetch(`/administration/unblockSubcategory/${productId}/`, {
+        function blockproduct(productId) {
+            fetch(`/administration/blockProduct/${productId}/`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -116,11 +132,11 @@
                     if (response.ok) {
                         location.reload();
                     } else {
-                        console.error('Failed to unblock subcategory');
+                        console.error('Failed to block product');
                     }
                 })
                 .catch(error => {
-                    console.error('Error unblocking subcategory:', error);
+                    console.error('Error blocking product:', error);
                 });
         }
 

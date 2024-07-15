@@ -546,6 +546,15 @@ def unblockProduct(request, pk):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
     
+# @csrf_exempt
+def toggle_featured(request, product_id):
+    if request.method == 'POST':
+        product = get_object_or_404(Product, id=product_id)
+        data = json.loads(request.body)
+        product.is_featured = data.get('is_featured', False)
+        product.save()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
 
 def editProduct(request, pk):
     product = get_object_or_404(Product, id=pk)

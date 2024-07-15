@@ -23,6 +23,7 @@ urlpatterns = [
     path('productConfiguration/<pk>', views.productConfiguration, name='productConfiguration'),
     path('blockProduct/<int:pk>/', views.blockProduct, name='blockProduct'),
     path('unblockProduct/<int:pk>/', views.unblockProduct, name='unblockProduct'),
+    path('toggleFeatured/<int:product_id>/', views.toggle_featured, name='toggle_featured'),
     path('get_subcategories/<int:category_id>/', views.get_subcategories, name='get_subcategories'),
     path('editProduct/<pk>/', views.editProduct, name='editProduct'),
     path('orders/', views.orders, name='orders'),
