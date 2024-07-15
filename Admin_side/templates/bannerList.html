@@ -1,50 +1,70 @@
-<!-- templates/admin/banner_list.html -->
-
+{% include 'common_block.html' %}
 {% block content %}
-    <h2>Banners</h2>
-    
-    <h3>Carousel Banners</h3>
-    <a href="{% url 'add_carousel_banner' %}" class="addlink">Add Carousel Banner</a>
-    <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Position</th>
-                <th>Active</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for banner in carousel_banners %}
-                <tr>
-                    <td>{{ banner.title }}</td>
-                    <td>{{ banner.get_position_display }}</td>
-                    <td>{{ banner.is_active|yesno }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 
-    <h3>Offer Banners</h3>
-    <a href="{% url 'add_offer_banner' %}" class="addlink">Add Offer Banner</a>
-    <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Position</th>
-                <th>Active</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for banner in offer_banners %}
-                <tr>
-                    <td>{{ banner.title }}</td>
-                    <td>{{ banner.get_position_display }}</td>
-                    <td>{{ banner.is_active|yesno }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% endblock %}
+<!-- Carousel Banners -->
+<div class="table-responsive">
+    <div class="projects">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="heading">Carousel Banners</h3>
+                <a href="{% url 'add_carousel_banner' %}" class="addlink"><button>Add Carousel Banner</button></a>
+            </div>
+            <div class="card-body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Position</th>
+                                <th>Active</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for banner in carousel_banners %}
+                                <tr>
+                                    <td>{{ banner.title }}</td>
+                                    <td>{{ banner.get_position_display }}</td>
+                                    <td>{{ banner.is_active|yesno }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div><br>
+
+    <!-- Offer Banners -->
+        <div class="projects">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="heading">Offer Banners</h3>
+                <a href="{% url 'add_offer_banner' %}" class="addlink"><button>Add Offer Banner</button></a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Position</th>
+                                <th>Active</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for banner in offer_banners %}
+                                <tr>
+                                    <td>{{ banner.title }}</td>
+                                    <td>{{ banner.get_position_display }}</td>
+                                    <td>{{ banner.is_active|yesno }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
 
 <!-- templates/admin/add_banner.html -->
 {% comment %} {% extends "admin/base_site.html" %}

@@ -1,20 +1,56 @@
     {% load cart_extras %}
     {% include 'common.html' %}
+    <style>
+        .text-white,.carousel-caption {
+            color: #ffeea8 !important;
+        }
+    </style>
     <!-- Carousel Start -->
-<div class="carousel-inner">
-    {% for banner in carousel_banners %}
-        <div class="carousel-item {% if forloop.first %}active{% endif %}" style="height: 430px;">
-            <img class="position-absolute w-100 h-100" src="{{ banner.image.url }}" style="object-fit: cover;">
-            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
-                <div class="p-3" style="max-width: 700px;">
-                    <h1 class="display-4 text-white mb-3 animate__animated animate__fadeInDown">{{ banner.title }}</h1>
-                    <p class="mx-md-5 px-5 animate__animated animate__bounceIn">{{ banner.subtitle }}</p>
-                    <a class="btn btn-outline-light py-2 px-4 mt-3 animate__animated animate__fadeInUp" href="{{ banner.button_link }}">{{ banner.button_text }}</a>
+<!-- Carousel Start -->
+<div class="container-fluid mb-3">
+    <div class="row px-xl-5">
+        <div class="col-lg-8">
+            <div id="header-carousel" class="carousel slide carousel-fade mb-30 mb-lg-0" data-ride="carousel">
+                <ol class="carousel-indicators">
+                    {% for banner in carousel_banners %}
+                        <li data-target="#header-carousel" data-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>
+                    {% endfor %}
+                </ol>
+                <div class="carousel-inner">
+                    {% for banner in carousel_banners %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}" style="height: 430px;">
+                            <img class="position-absolute w-100 h-100" src="{{ banner.image.url }}" style="object-fit: cover;">
+                            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
+                                <div class="p-3" style="max-width: 700px;">
+                                    <h1 class="display-4 text-white mb-3 animate__animated animate__fadeInDown">{{ banner.title }}</h1>
+                                    <p class="mx-md-5 px-5 animate__animated animate__bounceIn">{{ banner.subtitle }}</p>
+                                    {% comment %}
+                                    <a class="btn btn-outline-light py-2 px-4 mt-3 animate__animated animate__fadeInUp" href="{{ banner.button_link }}">{{ banner.button_text }}</a>
+                                    {% endcomment %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
-    {% endfor %}
+        <div class="col-lg-4">
+            {% for offer in offer_banners %}
+                <div class="product-offer mb-30" style="height: 200px;">
+                    <img class="img-fluid" src="{{ offer.image.url }}" alt="">
+                    <div class="offer-text">
+                        <h6 class="text-white text-uppercase">{{ offer.subtitle }}</h6>
+                        <h3 class="text-white mb-3">{{ offer.title }}</h3>
+                        {% comment %}
+                        <a href="{{ offer.button_link }}" class="btn btn-primary">{{ offer.button_text }}</a>
+                        {% endcomment %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 </div>
+<!-- Carousel End -->
     <!-- Carousel End -->
 
 
@@ -120,19 +156,21 @@
 
 
     <!-- Offer Start -->
-<div class="carousel-inner">
-    {% for banner in carousel_banners %}
-        <div class="carousel-item {% if forloop.first %}active{% endif %}" style="height: 430px;">
-            <img class="position-absolute w-100 h-100" src="{{ banner.image.url }}" style="object-fit: cover;">
-            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
-                <div class="p-3" style="max-width: 700px;">
-                    <h1 class="display-4 text-white mb-3 animate__animated animate__fadeInDown">{{ banner.title }}</h1>
-                    <p class="mx-md-5 px-5 animate__animated animate__bounceIn">{{ banner.subtitle }}</p>
-                    <a class="btn btn-outline-light py-2 px-4 mt-3 animate__animated animate__fadeInUp" href="{{ banner.button_link }}">{{ banner.button_text }}</a>
+<div class="container-fluid pt-5 pb-3">
+    <div class="row px-xl-5">
+        {% for banner in offer_banners %}
+            <div class="col-md-6">
+                <div class="product-offer mb-30" style="height: 300px;">
+                    <img class="img-fluid" src="{{ banner.image.url }}" alt="{{ banner.title }}">
+                    <div class="offer-text">
+                        <h6 class="text-white text-uppercase">{{ banner.subtitle }}</h6>
+                        <h3 class="text-white mb-3">{{ banner.title }}</h3>
+                        {% comment %} <a href="{{ banner.button_link }}" class="btn btn-primary">{{ banner.button_text }}</a> {% endcomment %}
+                    </div>
                 </div>
             </div>
-        </div>
-    {% endfor %}
+        {% endfor %}
+    </div>
 </div>
     <!-- Offer End -->
 
