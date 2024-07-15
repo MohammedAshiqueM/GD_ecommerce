@@ -363,3 +363,48 @@ class SalesReport(models.Model):
 
     def __str__(self):
         return f"Sales Report {self.start_date} to {self.end_date}"
+    
+class CarouselBanner(models.Model):
+    POSITIONS = (
+        (1, 'First'),
+        (2, 'Second'),
+        (3, 'Third'),
+    )
+
+    title = models.CharField(max_length=200)
+    subtitle = models.CharField(max_length=200, blank=True, null=True)
+    image = models.ImageField(upload_to='banners/carousel/')
+    position = models.IntegerField(choices=POSITIONS, unique=True)
+    # button_text = models.CharField(max_length=50, default='Shop Now')
+    # button_link = models.URLField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Carousel Banner - Position {self.position}"
+
+    class Meta:
+        ordering = ['position']
+
+class OfferBanner(models.Model):
+    POSITIONS = (
+        (1, 'Top'),
+        (2, 'Bottom'),
+    )
+
+    title = models.CharField(max_length=200)
+    subtitle = models.CharField(max_length=200, blank=True, null=True)
+    image = models.ImageField(upload_to='banners/offer/')
+    position = models.IntegerField(choices=POSITIONS, unique=True)
+    # button_text = models.CharField(max_length=50, default='Shop Now')
+    # button_link = models.URLField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Offer Banner - {self.get_position_display()}"
+
+    class Meta:
+        ordering = ['position']
+
+    def clean(self):
+        if OfferBanner.objects.exclude(pk=self.pk).count() >= 2:
+            raise ValidationError("You can only have two Offer Banners.")

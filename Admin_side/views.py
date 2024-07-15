@@ -14,7 +14,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 from django.forms import CheckboxInput
 from itertools import product as iter_product
-from .forms import CouponForm,OfferForm
+from .forms import CouponForm,OfferForm,CarouselBannerForm,OfferBannerForm
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
 import json
@@ -49,7 +49,9 @@ from .models import (
     CategoryOffer,
     SubcategoryOffer,
     ProductOffer,
-    SalesReport
+    SalesReport,
+    CarouselBanner,
+    OfferBanner
 )
 
 
@@ -1114,6 +1116,39 @@ def export_pdf(request, report_id):
     # present the option to save the file.
     buffer.seek(0)
     return FileResponse(buffer, as_attachment=True, filename=f'sales_report_{report.start_date.date()}_{report.end_date.date()}.pdf')
+
+
+def banner_list(request):
+    carousel_banners = CarouselBanner.objects.all()
+    offer_banners = OfferBanner.objects.all()
+    return render(request, 'bannerList.html', {
+        'carousel_banners': carousel_banners,
+        'offer_banners': offer_banners
+    })
+
+def add_carousel_banner(request):
+    if request.method == 'POST':
+        form = CarouselBannerForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Carousel Banner added successfully.')
+            return redirect('banner_list')
+    else:
+        form = CarouselBannerForm()
+    return render(request, 'addCarouselBanner.html', {'form': form, 'banner_type': 'Carousel'})
+
+def add_offer_banner(request):
+    if request.method == 'POST':
+        form = OfferBannerForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Offer Banner added successfully.')
+            return redirect('banner_list')
+    else:
+        form = OfferBannerForm()
+    return render(request, 'addOfferBanner.html', {'form': form, 'banner_type': 'Offer'})
+
+
 def adminLogout(request):
     auth_logout(request)
     return redirect("adminLogin")

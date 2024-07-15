@@ -47,7 +47,9 @@ from Admin_side.models import (
     Wishlist,
     WishlistItem,
     Wallet,
-    Transaction
+    Transaction,
+    CarouselBanner,
+    OfferBanner
 )
 
 
@@ -256,7 +258,8 @@ def userHome(request):
     categories = Category.objects.all()
     featured_products = Product.objects.filter(is_featured=True)
     recent_products = Product.objects.order_by('-created_at')[:10]
-    
+    carousel_banners = CarouselBanner.objects.filter(is_active=True)
+    offer_banners = OfferBanner.objects.filter(is_active=True)
     for product in featured_products:
         configs = ProductConfiguration.objects.filter(product=product)
         product.avg_price = configs.aggregate(Avg('price'))['price__avg']
@@ -271,6 +274,8 @@ def userHome(request):
         "categories": categories,
         "featured_products": featured_products,
         "recent_products": recent_products,
+        'carousel_banners': carousel_banners,
+        'offer_banners': offer_banners,        
     }
     return render(request, "home.html", context)
 

@@ -32,7 +32,9 @@ from .models import (
     ProductOffer,
     CategoryOffer,
     SubcategoryOffer,
-    SalesReport      
+    SalesReport,
+    CarouselBanner,
+    OfferBanner   
 )
 
 admin.site.register(
@@ -66,6 +68,8 @@ admin.site.register(
         ProductOffer,
         CategoryOffer,
         SubcategoryOffer,
-        SalesReport      
+        SalesReport,
+        CarouselBanner,
+        OfferBanner               
     ]
 )

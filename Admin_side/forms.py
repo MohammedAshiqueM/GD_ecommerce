@@ -1,5 +1,5 @@
 from django import forms
-from .models import Coupon,Offer,Category,SubCategory,Product,ProductConfiguration
+from .models import Coupon,Offer,Category,SubCategory,Product,ProductConfiguration,CarouselBanner,OfferBanner
 
 class CouponForm(forms.ModelForm):
     class Meta:
@@ -56,3 +56,19 @@ class OfferForm(forms.ModelForm):
         model = Offer
         fields = ['name', 'description', 'discount_type', 'discount_value', 'min_product_price', 'start_date', 'end_date', 'is_active', 'apply_to', 'product_configuration']   
     # ['name', 'description', 'discount_type', 'discount_value', 'min_product_price', 'start_date', 'end_date', 'is_active', 'apply_to']
+    
+class CarouselBannerForm(forms.ModelForm):
+    class Meta:
+        model = CarouselBanner
+        fields = ['title', 'subtitle', 'image', 'position', 'is_active']
+
+class OfferBannerForm(forms.ModelForm):
+    class Meta:
+        model = OfferBanner
+        fields = ['title', 'subtitle', 'image', 'position','is_active']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if OfferBanner.objects.exclude(pk=self.instance.pk).count() >= 2:
+            raise forms.ValidationError("You can only have two Offer Banners.")
+        return cleaned_data

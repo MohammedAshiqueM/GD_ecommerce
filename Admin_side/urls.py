@@ -40,5 +40,8 @@ urlpatterns = [
     path('sales-report/', views.sales_report, name='sales_report'),
     path('export-excel/<int:report_id>/', views.export_excel, name='export_excel'),
     path('export-pdf/<int:report_id>/', views.export_pdf, name='export_pdf'),
+    path('banners/', views.banner_list, name='banner_list'),
+    path('banners/add-carousel/', views.add_carousel_banner, name='add_carousel_banner'),
+    path('banners/add-offer/', views.add_offer_banner, name='add_offer_banner'),
     path('adminLogout/', views.adminLogout, name='adminLogout'),
 ]
