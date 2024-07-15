@@ -287,9 +287,34 @@ def productDetails(request, pk):
     return render(request, "productDetails.html", context)
 
 def shop(request):
-    product = Product.objects.filter(is_active=True)
+    products = Product.objects.filter(is_active=True)
     categories = Category.objects.all()
-    context = {"product": product,"categories":categories}
+    sort = request.GET.get('sort', 'default')
+    
+    if sort == 'price_low_high':
+        products = products.annotate(min_price=Min('configurations__price')).order_by('min_price')
+    elif sort == 'price_high_low':
+        products = products.annotate(max_price=Max('configurations__price')).order_by('-max_price')
+    elif sort == 'featured':
+        products = products.order_by('-is_featured')
+    elif sort == 'new_arrivals':
+        products = products.order_by('-created_at')
+    elif sort == 'a_z':
+        products = products.order_by('name')
+    elif sort == 'z_a':
+        products = products.order_by('-name')
+    
+    product_avg_prices = {}
+    for product in products:
+        avg_price = product.configurations.aggregate(Avg('price'))['price__avg']
+        product_avg_prices[product.id] = avg_price
+    
+    context = {
+        "products": products,
+        "product_avg_prices": product_avg_prices,
+        "sort": sort,
+        "categories": categories,
+    }
     return render(request, "shop.html", context)
 
 def categoryProduct(request,pk):
