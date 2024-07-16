@@ -282,7 +282,7 @@ def userHome(request):
 
 def productDetails(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    related = Product.objects.filter(
+    related_products = Product.objects.filter(
         Q(subcategory=product.subcategory), 
         is_active=True
     ).exclude(id=product.id)
@@ -297,13 +297,24 @@ def productDetails(request, pk):
             'options': option_ids
         })
     
+    # Calculate average price and best discounted price for the main product
+    product_configs = ProductConfiguration.objects.filter(product=product)
+    product.avg_price = product_configs.aggregate(Avg('price'))['price__avg']
+    product.best_discounted_price = min((config.get_discounted_price() for config in product_configs), default=product.avg_price)
+
+    # Calculate average price and best discounted price for related products
+    for related_product in related_products:
+        related_configs = ProductConfiguration.objects.filter(product=related_product)
+        related_product.avg_price = related_configs.aggregate(Avg('price'))['price__avg']
+        related_product.best_discounted_price = min((config.get_discounted_price() for config in related_configs), default=related_product.avg_price)
+
     if not product.is_active:
         return redirect("userHome")
-    
+
     context = {
-        "product": product,
-        "related": related,
-        'configurations': configurations
+        'product': product,
+        'related_products': related_products,
+        'configurations': configurations,
     }
     return render(request, "productDetails.html", context)
 
