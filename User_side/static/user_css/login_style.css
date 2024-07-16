@@ -166,9 +166,10 @@ body {
 
 /* Other Links Styles */
 .container .other-links div {
-    padding-left: 15px;
+    /* padding-left: 6px; */
     cursor: pointer;
     font-size: 12px;
+    padding-top: 5px;
 }
 
 .container .other-links div:hover {

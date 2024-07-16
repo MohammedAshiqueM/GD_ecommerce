@@ -30,6 +30,7 @@
             background-color: white;
             background-repeat: no-repeat;
             background-position: 12px 11px;
+            margin-top: 10px;
 
             &:hover {
                 box-shadow: 0 -1px 0 rgba(0, 0, 0, .04), 0 2px 4px rgba(0, 0, 0, .25);
@@ -63,7 +64,9 @@
             overflow-y: hidden;
             
         }
-        
+        a{
+            text-decoration: none;
+        }
     </style>
 </head>
 
@@ -99,7 +102,7 @@
     </div>
     <div class="login-with">
         <div class="title">Login with</div>
-        <div class="social">
+        <!-- <div class="social">
             <ul class="icons">
                 <li class="icon facebook">
                     <div class="link" data-close="login-page" data-open="facebook-page"><i class="fa fa-facebook"
@@ -116,7 +119,7 @@
                     </div>
                 </li>
             </ul>
-        </div>
+        </div> -->
     </div>
     <button type="button" class="login-with-google-btn">
         <a href="{% provider_login_url 'google' %}">Login with Google</a>
