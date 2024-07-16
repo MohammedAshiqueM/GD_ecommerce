@@ -61,6 +61,8 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.name}"
     
+    def has_combination_with_variation(self, variation_id):
+        return self.configurations.filter(variation_options__variation_id=variation_id).exists()
     
 class Offer(models.Model):
     name = models.CharField(max_length=255)
