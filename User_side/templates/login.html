@@ -94,6 +94,10 @@
 .fa-lock{
     color: green !important
 }
+.btn{
+    background-color: #a9aaab!important;
+    color:black
+}
     </style>
 </head>
 
@@ -202,13 +206,17 @@
                 <div class="form-group">
                     <lable class="form-label">Password</lable>
                     <input type="password" class="form-control" id="sign-up-password-input" name="signupPassword" />
-                    <input type="checkbox" id="sign-up-show-password-checkbox" />
+                    <span id="sign-up-password-toggle" class="password-toggle">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
                 </div>
                 <div class="form-group">
                     <lable class="form-label">Password again</lable>
                     <input type="password" class="form-control" id="confirm-password-input"
                         name="signupConfirmationPassword" />
-                    <input type="checkbox" id="confirm-show-password-checkbox" />
+                        <span id="confirm-password-toggle" class="password-toggle">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
                 </div>
                 <div class="form-group">
                     <lable class="form-label">E-mail</lable>
@@ -249,20 +257,28 @@
 </div>
     <script src="{% static 'user_js/login_script.js' %}"></script>
     <script>
-        document.getElementById('password-toggle').addEventListener('click', function() {
-    var passwordInput = document.getElementById('sign-in-password-input');
-    var icon = this.querySelector('i');
+        function togglePasswordVisibility(inputId, toggleId) {
+            const passwordInput = document.getElementById(inputId);
+            const toggleElement = document.getElementById(toggleId);
+            const icon = toggleElement.querySelector('i');
     
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        icon.classList.remove('fa-lock');
-        icon.classList.add('fa-lock-open');
-    } else {
-        passwordInput.type = 'password';
-        icon.classList.remove('fa-lock-open');
-        icon.classList.add('fa-lock');
-    }
-});
+            toggleElement.addEventListener('click', function() {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-lock');
+                    icon.classList.add('fa-lock-open');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-lock-open');
+                    icon.classList.add('fa-lock');
+                }
+            });
+        }
+    
+        // Initialize toggle functionality for all password fields
+        togglePasswordVisibility('sign-in-password-input', 'password-toggle');
+        togglePasswordVisibility('sign-up-password-input', 'sign-up-password-toggle');
+        togglePasswordVisibility('confirm-password-input', 'confirm-password-toggle');
     </script>
 </body>
 
