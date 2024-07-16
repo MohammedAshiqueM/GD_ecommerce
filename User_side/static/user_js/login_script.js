@@ -115,22 +115,22 @@ class onFocus {
 
 const run = new onFocus();
 
-document.addEventListener('DOMContentLoaded', function () {
-    console.log('Setting up password input toggles');
-    const passwordInputs = [
-        { inputId: 'sign-in-password-input', checkboxId: 'sign-in-show-password-checkbox' },
-        { inputId: 'sign-up-password-input', checkboxId: 'sign-up-show-password-checkbox' },
-        { inputId: 'confirm-password-input', checkboxId: 'confirm-show-password-checkbox' }
-    ];
+// document.addEventListener('DOMContentLoaded', function () {
+//     console.log('Setting up password input toggles');
+//     const passwordInputs = [
+//         { inputId: 'sign-in-password-input', checkboxId: 'sign-in-show-password-checkbox' },
+//         { inputId: 'sign-up-password-input', checkboxId: 'sign-up-show-password-checkbox' },
+//         { inputId: 'confirm-password-input', checkboxId: 'confirm-show-password-checkbox' }
+//     ];
 
-    passwordInputs.forEach(({ inputId, checkboxId }) => {
-        const passwordInput = document.getElementById(inputId);
-        const showPasswordCheckbox = document.getElementById(checkboxId);
+//     passwordInputs.forEach(({ inputId, checkboxId }) => {
+//         const passwordInput = document.getElementById(inputId);
+//         const showPasswordCheckbox = document.getElementById(checkboxId);
 
-        if (passwordInput && showPasswordCheckbox) {
-            showPasswordCheckbox.addEventListener('change', function () {
-                passwordInput.type = this.checked ? 'text' : 'password';
-            });
-        }
-    });
-});
+//         if (passwordInput && showPasswordCheckbox) {
+//             showPasswordCheckbox.addEventListener('change', function () {
+//                 passwordInput.type = this.checked ? 'text' : 'password';
+//             });
+//         }
+//     });
+// });

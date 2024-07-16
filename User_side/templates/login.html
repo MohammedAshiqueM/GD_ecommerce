@@ -67,6 +67,33 @@
         a{
             text-decoration: none;
         }
+        .password-container {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.form-control {
+    padding-right: 40px; /* Make space for the icon */
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 16px; /* Adjust as needed */
+    color: #555; /* Adjust color as needed */
+    z-index: 10; /* Ensure it's above the input */
+}
+
+.password-toggle:hover {
+    color: #333; /* Adjust hover color as needed */
+}
+.fa-lock{
+    color: green !important
+}
     </style>
 </head>
 
@@ -87,7 +114,9 @@
                 <div class="form-group">
                     <lable class="form-label">Password</lable>
                     <input type="password" class="form-control" id="sign-in-password-input" name="loginPassword" />
-                    <input type="checkbox" id="sign-in-show-password-checkbox" />
+                    <span id="password-toggle" class="password-toggle">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
                 </div>
                 {% if messages %}
                 {% for msg in messages %}
@@ -219,6 +248,22 @@
 
 </div>
     <script src="{% static 'user_js/login_script.js' %}"></script>
+    <script>
+        document.getElementById('password-toggle').addEventListener('click', function() {
+    var passwordInput = document.getElementById('sign-in-password-input');
+    var icon = this.querySelector('i');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.classList.remove('fa-lock');
+        icon.classList.add('fa-lock-open');
+    } else {
+        passwordInput.type = 'password';
+        icon.classList.remove('fa-lock-open');
+        icon.classList.add('fa-lock');
+    }
+});
+    </script>
 </body>
 
 </html>
