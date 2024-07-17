@@ -5,62 +5,189 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Variations for {{ product.name }}</title>
     <style>
+        :root {
+    --main-color: linear-gradient(45deg, #c40051, #ff0066);
+    --dark-BG: #001623;
+    --content-BG: #022d47;
+    --off-white: #f1f5f9;
+    --new-BG: rgba(255, 255, 255, 0.1);
+    --new-content: rgba(255, 255, 255, 0.2);
+}
+
+        * {
+            padding: 0;
+            margin: 0;
+            font-family: "Rajdhani", sans-serif;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 400ms;
+        }
+
+        body {
+            background: url(../admin_img/dark_dash.jpeg);
+            background-size: cover;
+            background-repeat: no-repeat;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            padding-top: 20px;
+        }
+
+        h3 {
+            color: #fff;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
         input, select {
-            color: #000 !important;
-            opacity: .6;
-            width: 250px;
-            height: 50px;
-            font-size: 28px !important;
-            border-radius: 5px;
-        }
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    font-size: 16px;
+    border: 1px solid var(--new-content);
+    border-radius: 4px;
+    background-color: var(--new-BG);
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
         label {
-            justify-content: space-between;
-            align-items: center;
-            font-size: 24px;
+            display: block;
+            margin-top: 10px;
             font-weight: bold;
+            color: #fff;
         }
+
         .alert {
-            background-color: #FFFF00;
-            color: #000000;
+            background-color: var(--new-BG);
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
-        .variation-group, .option-group {
-            margin-bottom: 1rem;
+
+.variation-group, .option-group {
+    background-color: var(--new-content);
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+        button {
+            background: var(--main-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
         }
-        .removeButton[disabled] {
-            background-color: #cccccc;
-            color: #777777;
-            cursor: not-allowed;
+
+        button:hover {
+            opacity: 0.8;
         }
+
+        .removeButton {
+            background: linear-gradient(45deg, #ff9000, #ffd400);
+        }
+
+        #addVariation, button[type="submit"] {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+        }
+        .main-content{
+            margin-left:0!important;
+            margin-top:10px!important;
+        }
+        main{
+            width:100%!important
+        }
+.option-group input {
+    flex-grow: 1;
+}
+
+button {
+    background: var(--main-color);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    margin: 5px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.3s;
+    font-size: 16px;
+}
+
+.removeButton {
+    background: linear-gradient(45deg, #ff9000, #ffd400);
+    padding: 10px 15px;
+}
+
+.addOptionButton, .removeVariationButton {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+}
+
+#addVariation, button[type="submit"] {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    font-size: 18px;
+    padding: 15px;
+    background:var(--for-heading)
+}
+input{
+    color:#000!important
+}
+::placeholder {
+    color:#767676!important
+}
     </style>
 </head>
 <body>
-    {% include 'common_block.html' %}
-    {% if messages %}
-    {% for msg in messages %}
-    <p class="alert">{{ msg }}</p>
-    {% endfor %}
-    {% endif %}
-    <h3>Edit Variations for {{ product.name }}</h3>
-    <form id="variationForm" action="{% url 'variant' product.id %}" method="post">
-        {% csrf_token %}
-        <div id="variationsContainer">
-            <div class="variation-group">
-                <label>Variation Name:</label>
-                <input type="text" name="variation_name_0" required>
-                <div class="options-container">
-                    <div class="option-group">
-                        <input type="text" name="variationOption_0[]" required>
-                        <button type="button" class="removeButton">Remove Option</button>
+    <div class="container">
+        {% include 'common_block.html' %}
+        {% if messages %}
+        {% for msg in messages %}
+        <p class="alert">{{ msg }}</p>
+        {% endfor %}
+        {% endif %}
+        <h3>Edit Variations for {{ product.name }}</h3>
+        <form id="variationForm" action="{% url 'variant' product.id %}" method="post">
+            {% csrf_token %}
+            <div id="variationsContainer">
+                <div class="variation-group">
+                    <label>Variation Name:</label>
+                    <input type="text" name="variation_name_0" placeholder="variation name" required>
+                    <div class="options-container">
+                        <div class="option-group">
+                            <input type="text" name="variationOption_0[]" placeholder="option name" required>
+                            <button type="button" class="removeButton">Remove Option</button>
+                        </div>
                     </div>
+                    <button type="button" class="addOptionButton">Add Option</button>
+                    <button type="button" class="removeVariationButton">Remove Variation</button>
                 </div>
-                <button type="button" class="addOptionButton">Add Option</button>
-                <button type="button" class="removeVariationButton">Remove Variation</button>
             </div>
-        </div>
-        <button type="button" id="addVariation">Add Variation</button>
-        <button type="submit">Save Variations</button>
-    </form>
-
+            <button type="button" id="addVariation">Add Variation</button>
+            <button type="submit">Save Variations</button>
+        </form>
+    </div>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('addVariation').addEventListener('click', function () {
@@ -70,10 +197,10 @@
                 var index = variationsContainer.children.length;
                 newVariationGroup.innerHTML = `
                     <label>Variation Name:</label>
-                    <input type="text" name="variation_name_${index}" required>
+                    <input type="text" name="variation_name_${index}" placeholder="variation name" required>
                     <div class="options-container">
                         <div class="option-group">
-                            <input type="text" name="variationOption_${index}[]" required>
+                            <input type="text" name="variationOption_${index}[]" placeholder="option name" required>
                             <button type="button" class="removeButton">Remove Option</button>
                         </div>
                     </div>
@@ -91,7 +218,7 @@
                     var newOptionGroup = document.createElement('div');
                     newOptionGroup.classList.add('option-group');
                     newOptionGroup.innerHTML = `
-                        <input type="text" name="variationOption_${index}[]" required>
+                        <input type="text" name="variationOption_${index}[]" placeholder="option name" required>
                         <button type="button" class="removeButton">Remove Option</button>
                     `;
                     optionsContainer.appendChild(newOptionGroup);
