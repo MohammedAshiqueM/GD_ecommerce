@@ -302,22 +302,23 @@ def productDetails(request, pk):
     for config in product.configurations.all():
         option_ids = list(config.variation_options.values_list('id', flat=True))
         configurations.append({
-            'id': config.id,
-            'price': config.price,
-            'qty_in_stock': config.qty_in_stock,
-            'options': option_ids
+                'id': config.id,
+                'price': float(config.price),
+                'discounted_price': float(config.get_discounted_price()),
+                'qty_in_stock': config.qty_in_stock,
+                'options': option_ids
         })
     
-    # Calculate average price and best discounted price for the main product
+    # Calculate prices for the main product
     product_configs = ProductConfiguration.objects.filter(product=product)
-    product.avg_price = product_configs.aggregate(Avg('price'))['price__avg']
-    product.best_discounted_price = min((config.get_discounted_price() for config in product_configs), default=product.avg_price)
+    product.min_price = product_configs.aggregate(Min('price'))['price__min']
+    product.min_discounted_price = min((config.get_discounted_price() for config in product_configs), default=product.min_price)
 
-    # Calculate average price and best discounted price for related products
+    # Calculate prices for related products
     for related_product in related_products:
         related_configs = ProductConfiguration.objects.filter(product=related_product)
-        related_product.avg_price = related_configs.aggregate(Avg('price'))['price__avg']
-        related_product.best_discounted_price = min((config.get_discounted_price() for config in related_configs), default=related_product.avg_price)
+        related_product.min_price = related_configs.aggregate(Min('price'))['price__min']
+        related_product.min_discounted_price = min((config.get_discounted_price() for config in related_configs), default=related_product.min_price)
 
     if not product.is_active:
         return redirect("userHome")

@@ -181,7 +181,7 @@ left: 50%;
                 </div>
             </div>
 
-            {% if product %}
+{% if product %}
 <div class="col-lg-7 h-auto mb-30">
     <div class="h-100 bg-light p-30">
         <h3>{{ product.name }} <span><h6 id="stock-info"></h6></span></h3>
@@ -195,7 +195,10 @@ left: 50%;
             </div>
             <small class="pt-1">(99 Reviews)</small>
         </div>
-        <h3 class="font-weight-semi-bold mb-4" id="product-price"></h3>
+        <h3 class="font-weight-semi-bold mb-4" id="product-price">
+            <span id="discounted-price"></span>
+            <del id="original-price" class="text-muted ml-2"></del>
+        </h3>
         <p class="mb-4">{{ product.description }}</p>
 
         {% for variation in product.variation_set.all %}
@@ -533,7 +536,7 @@ left: 50%;
 
 
 
-
+    {{ configurations|json_script:"configurations-data" }}
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
@@ -577,8 +580,8 @@ left: 50%;
 
 
 document.addEventListener('DOMContentLoaded', function() {
-    const configurations = {{ configurations|safe }};
-    
+    const configurations = JSON.parse(document.getElementById('configurations-data').textContent);
+
     function getSelectedOptions() {
         let selectedOptions = [];
         document.querySelectorAll('input.variation-option:checked').forEach(input => {
@@ -607,12 +610,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedOptions = getSelectedOptions();
         const matchingConfig = findMatchingConfiguration(selectedOptions);
         const variationDetails = getSelectedVariationDetails();
-
+        
         if (matchingConfig) {
-            document.getElementById('product-price').textContent = '₹' + matchingConfig.price;
+            document.getElementById('discounted-price').textContent = '₹' + matchingConfig.discounted_price.toFixed(2);
+            if (matchingConfig.discounted_price < matchingConfig.price) {
+                document.getElementById('original-price').textContent = '₹' + matchingConfig.price.toFixed(2);
+                document.getElementById('original-price').style.display = 'inline';
+            } else {
+                document.getElementById('original-price').style.display = 'none';
+            }
             document.getElementById('stock-info').textContent = `${variationDetails} (${matchingConfig.qty_in_stock} stock remains)`;
         } else {
-            document.getElementById('product-price').textContent = 'N/A';
+            document.getElementById('discounted-price').textContent = 'N/A';
+            document.getElementById('original-price').style.display = 'none';
             document.getElementById('stock-info').innerHTML = `${variationDetails} <img class="out-of-stock" src="{% static 'user_img/stock.png' %}" alt="Out of stock" />`;
         }
     }
