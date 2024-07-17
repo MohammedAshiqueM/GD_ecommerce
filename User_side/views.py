@@ -353,15 +353,16 @@ def shop(request):
     
     for product in products:
         configs = product.configurations.all()
-        product.avg_price = configs.aggregate(Avg('price'))['price__avg']
-        product.best_discounted_price = min((config.get_discounted_price() for config in configs), default=Decimal(product.avg_price or 0))
+        product.min_price = configs.aggregate(Min('price'))['price__min']
+        product.max_price = configs.aggregate(Max('price'))['price__max']
+        product.min_discounted_price = min((config.get_discounted_price() for config in configs), default=Decimal(product.min_price or 0))
 
         if sort == 'price_low_high':
             product.display_price = product.min_price
         elif sort == 'price_high_low':
             product.display_price = product.max_price
         else:
-            product.display_price = product.avg_price
+            product.display_price = product.min_price  # Changed from avg_price to min_price
     
     context = {
         "products": products,
@@ -369,78 +370,85 @@ def shop(request):
         "categories": categories,
     }
     return render(request, "shop.html", context)
-def categoryProduct(request,pk):
-    products = Product.objects.filter(category_id=pk)
-    sort = request.GET.get('sort', 'default')
-    
-    if sort == 'price_low_high':
-        products = products.annotate(min_price=Min('configurations__price')).order_by('min_price')
-    elif sort == 'price_high_low':
-        products = products.annotate(max_price=Max('configurations__price')).order_by('-max_price')
-    elif sort == 'featured':
-        products = products.order_by('-is_featured') 
-    elif sort == 'new_arrivals':
-        products = products.order_by('-created_at') 
-    elif sort == 'a_z':
-        products = products.order_by('name')
-    elif sort == 'z_a':
-        products = products.order_by('-name')
-    
-    product_avg_prices = {}
-    for product in products:
-        avg_price = product.configurations.aggregate(Avg('price'))['price__avg']
-        product_avg_prices[product.id] = avg_price
-        
-    context = {
-        
-        "products":products,
-        "product_avg_prices": product_avg_prices,
-        "sort": sort,
-        }
-    return render(request,"categoryProduct.html",context)
-
-
 from django.db.models import Min, Max, Avg
 from decimal import Decimal
 
-def subcategoryProduct(request, pk):
-    products = Product.objects.filter(subcategory_id=pk)
+def categoryProduct(request, pk):
+    products = Product.objects.filter(category_id=pk)
     sort = request.GET.get('sort', 'default')
     categories = Category.objects.all()
-    
+
     if sort == 'price_low_high':
         products = products.annotate(min_price=Min('configurations__price')).order_by('min_price')
     elif sort == 'price_high_low':
         products = products.annotate(max_price=Max('configurations__price')).order_by('-max_price')
     elif sort == 'featured':
-        products = products.order_by('-is_featured') 
+        products = products.order_by('-is_featured')
     elif sort == 'new_arrivals':
-        products = products.order_by('-created_at') 
+        products = products.order_by('-created_at')
     elif sort == 'a_z':
         products = products.order_by('name')
     elif sort == 'z_a':
         products = products.order_by('-name')
-    
+
     for product in products:
         configs = product.configurations.all()
-        product.avg_price = configs.aggregate(Avg('price'))['price__avg']
-        product.best_discounted_price = min((config.get_discounted_price() for config in configs), default=Decimal(product.avg_price or 0))
+        product.min_price = configs.aggregate(Min('price'))['price__min']
+        product.max_price = configs.aggregate(Max('price'))['price__max']
+        product.min_discounted_price = min((config.get_discounted_price() for config in configs), default=Decimal(product.min_price or 0))
 
         if sort == 'price_low_high':
             product.display_price = product.min_price
         elif sort == 'price_high_low':
             product.display_price = product.max_price
         else:
-            product.display_price = product.avg_price
-    
+            product.display_price = product.min_price  # You can change this to avg_price if you prefer
+
+    context = {
+        "products": products,
+        "sort": sort,
+        "categories": categories,
+    }
+    return render(request, "categoryProduct.html", context)
+
+def subcategoryProduct(request, pk):
+    products = Product.objects.filter(subcategory_id=pk)
+    sort = request.GET.get('sort', 'default')
+    categories = Category.objects.all()
+
+    if sort == 'price_low_high':
+        products = products.annotate(min_price=Min('configurations__price')).order_by('min_price')
+    elif sort == 'price_high_low':
+        products = products.annotate(max_price=Max('configurations__price')).order_by('-max_price')
+    elif sort == 'featured':
+        products = products.order_by('-is_featured')
+    elif sort == 'new_arrivals':
+        products = products.order_by('-created_at')
+    elif sort == 'a_z':
+        products = products.order_by('name')
+    elif sort == 'z_a':
+        products = products.order_by('-name')
+
+    for product in products:
+        configs = product.configurations.all()
+        product.min_price = configs.aggregate(Min('price'))['price__min']
+        product.max_price = configs.aggregate(Max('price'))['price__max']
+        product.min_discounted_price = min((config.get_discounted_price() for config in configs), default=Decimal(product.min_price or 0))
+
+        if sort == 'price_low_high':
+            product.display_price = product.min_price
+        elif sort == 'price_high_low':
+            product.display_price = product.max_price
+        else:
+            product.display_price = product.min_price  # You can change this to avg_price if you prefer
+
     context = {
         "products": products,
         "sort": sort,
         "categories": categories
     }
-
+    
     return render(request, "subcategoryProduct.html", context)
-
 def profile(request, pk):
     user = get_object_or_404(User, pk=pk)
     addresses = Address.objects.filter(user=user)

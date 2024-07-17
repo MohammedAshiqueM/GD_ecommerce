@@ -1,12 +1,17 @@
     {% include 'common.html' %}
-        <style>
-            .col-lg-4 {
+    <style>
+    .col-lg-4 {
         flex: 0 0 33.33333%;
         max-width: 24.33333%;
             }
-            .col-lg-9 {
+    .col-lg-9 {
         flex: 1 0 75%;
         max-width: 100%;
+    }
+    .starts{
+        font-size:14px!important;
+        margin-bottom:10px;
+        padding-right:10px
     }
     </style>
     <!-- Breadcrumb Start -->
@@ -82,7 +87,14 @@
                             <div class="text-center py-4">
                                 <a class="h6 text-decoration-none text-truncate product-name" href="">{{i.name}}</a>
                                 <div class="d-flex align-items-center justify-content-center mt-2">
-                                    <h5>₹{{i.price}}</h5><h6 class="text-muted ml-2"><del>₹123.00</del></h6>
+                                                <div class="d-flex align-items-center justify-content-center mt-2">
+                {% if i.min_discounted_price < i.display_price %}
+                    <span class="starts">Starting from:</span><h5>₹{{ i.min_discounted_price|floatformat:2 }}</h5>
+                    <h6 class="text-muted ml-2"><del>₹{{ i.display_price|floatformat:2 }}</del></h6>
+                {% else %}
+                    <h5>₹{{ i.display_price|floatformat:2 }}</h5>
+                {% endif %}
+            </div>
                                 </div>
                                 <div class="d-flex align-items-center justify-content-center mb-1">
                                     <small class="fa fa-star text-primary mr-1"></small>

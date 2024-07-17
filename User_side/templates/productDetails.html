@@ -128,6 +128,11 @@ left: 50%;
 .out-of-stock{
     width:100px
 }
+.starts{
+        font-size:14px!important;
+        margin-bottom:10px;
+        padding-right:10px
+    }
     </style>
 </head>
 
@@ -436,7 +441,7 @@ left: 50%;
                 <a class="h6 text-decoration-none text-truncate" href="">{{ product.name }}</a>
                 <div class="d-flex align-items-center justify-content-center mt-2">
                     {% if product.min_discounted_price < product.min_price %}
-                        <h5>₹{{ product.min_discounted_price|floatformat:2 }}</h5>
+                        <span class="starts">Starting from:</span><h5>₹{{ product.min_discounted_price|floatformat:2 }}</h5>
                         <h6 class="text-muted ml-2"><del>₹{{ product.min_price|floatformat:2 }}</del></h6>
                     {% else %}
                         <h5>₹{{ product.min_price|floatformat:2 }}</h5>

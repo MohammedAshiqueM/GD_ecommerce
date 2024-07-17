@@ -9,6 +9,11 @@
         flex: 1 0 75%;
         max-width: 100%;
     }
+    .starts{
+        font-size:14px!important;
+        margin-bottom:10px;
+        padding-right:10px
+    }
     </style>
     <!-- Breadcrumb Start -->
     <div class="container-fluid">
@@ -79,8 +84,8 @@
         <div class="text-center py-4">
             <a class="h6 text-decoration-none text-truncate product-name" href="">{{ product.name }}</a>
             <div class="d-flex align-items-center justify-content-center mt-2">
-                {% if product.best_discounted_price < product.display_price %}
-                    <h5>₹{{ product.best_discounted_price|floatformat:2 }}</h5>
+                {% if product.min_discounted_price < product.display_price %}
+                    <span class="starts">Starting from:</span><h5>₹{{ product.min_discounted_price|floatformat:2 }}</h5>
                     <h6 class="text-muted ml-2"><del>₹{{ product.display_price|floatformat:2 }}</del></h6>
                 {% else %}
                     <h5>₹{{ product.display_price|floatformat:2 }}</h5>
