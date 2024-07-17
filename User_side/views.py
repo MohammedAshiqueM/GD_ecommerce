@@ -1289,7 +1289,7 @@ def apply_coupon(request):
 
         return JsonResponse({
             'success': True, 
-            'message': f'Coupon applied! You saved ${discount_value:.2f}. New total is ${new_total:.2f}', 
+            'message': f'Coupon applied! You saved ₹{discount_value:.2f}. New total is ₹{new_total:.2f}', 
             'new_total': str(new_total),
             'discount_value': str(discount_value)
         })
