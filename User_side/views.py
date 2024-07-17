@@ -261,14 +261,25 @@ def userHome(request):
     carousel_banners = CarouselBanner.objects.filter(is_active=True)
     offer_banners = OfferBanner.objects.filter(is_active=True)
     for product in featured_products:
-        configs = ProductConfiguration.objects.filter(product=product)
-        product.avg_price = configs.aggregate(Avg('price'))['price__avg']
-        product.best_discounted_price = min((config.get_discounted_price() for config in configs), default=product.avg_price)
+        configs = ProductConfiguration.objects.filter(product=product).order_by('price')
+        if configs:
+            first_config = configs.first()
+            product.starting_price = first_config.price
+            product.discounted_price = first_config.get_discounted_price()
+            # print(product.discounted_price)
+        else:
+            product.starting_price = 0
+            product.discounted_price = 0
 
     for product in recent_products:
-        configs = ProductConfiguration.objects.filter(product=product)
-        product.avg_price = configs.aggregate(Avg('price'))['price__avg']
-        product.best_discounted_price = min((config.get_discounted_price() for config in configs), default=product.avg_price)
+        configs = ProductConfiguration.objects.filter(product=product).order_by('price')
+        if configs:
+            first_config = configs.first()
+            product.starting_price = first_config.price
+            product.discounted_price = first_config.get_discounted_price()
+        else:
+            product.starting_price = 0
+            product.discounted_price = 0
 
     context = {
         "categories": categories,
