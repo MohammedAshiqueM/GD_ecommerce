@@ -1006,19 +1006,17 @@ def place_order(request):
             except Address.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Invalid shipping address.'})
 
-            # Calculate order total
+            # Get cart items
             cart = Cart.objects.get(user=user)
             cart_items = CartItem.objects.filter(cart=cart)
-            order_total = Decimal('0.00')
             error_messages = []
             confirmation_required = False
-            discount_value = Decimal('0.00')
 
+            # First, check stock and adjust quantities if necessary
             for item in cart_items:
                 product_config = item.product_configuration
                 requested_qty = item.qty
 
-                # Check product stock
                 if product_config.qty_in_stock == 0:
                     variation_options = ', '.join(option.value for option in product_config.variation_options.all())
                     error_messages.append(f'Out of stock for {product_config.product.name} ({variation_options}).')
@@ -1026,16 +1024,22 @@ def place_order(request):
                     variation_options = ', '.join(option.value for option in product_config.variation_options.all())
                     error_messages.append(f'Insufficient stock for {product_config.product.name} ({variation_options}). Requested: {requested_qty}, Available: {product_config.qty_in_stock}')
                     confirmation_required = True
-                
-                # Calculate discounted price
+                    item.qty = product_config.qty_in_stock
+                    item.save()
+
+            # Calculate order total with adjusted quantities
+            order_total = Decimal('0.00')
+            for item in cart_items:
+                product_config = item.product_configuration
                 discounted_price = Decimal(product_config.get_discounted_price())
-                item_total = discounted_price * Decimal(requested_qty)
+                item_total = discounted_price * Decimal(item.qty)  # Use adjusted quantity
                 order_total += item_total
             
             # Add fixed shipping cost
             shipping_cost = Decimal('10.00')
             order_total += shipping_cost
 
+            discount_value = Decimal('0.00')
             if coupon_code:
                 try:
                     coupon = Coupon.objects.get(code=coupon_code)
@@ -1057,13 +1061,12 @@ def place_order(request):
                     return JsonResponse({'status': 'error', 'messages': error_messages})
                 else:
                     if confirmation_required and not confirmation:
-                        return JsonResponse({'status': 'error', 'messages': error_messages, 'confirmation_required': True})
-                    else:
-                        for item in cart_items:
-                            product_config = item.product_configuration
-                            if product_config.qty_in_stock < item.qty:
-                                item.qty = product_config.qty_in_stock
-                                item.save()
+                        adjusted_messages = [f"Available stock for {item.product_configuration.product.name}: {item.qty}" for item in cart_items if item.product_configuration.qty_in_stock < item.qty]
+                        return JsonResponse({
+                            'status': 'error', 
+                            'messages': error_messages + adjusted_messages, 
+                            'confirmation_required': True
+                        })
 
             with transaction.atomic():
                 # Create or get the default order status
@@ -1091,16 +1094,12 @@ def place_order(request):
                 # Create order lines and update stock
                 for item in cart_items:
                     product_config = item.product_configuration
-                    if product_config.qty_in_stock < item.qty:
-                        item.qty = product_config.qty_in_stock  # Adjust to available stock
-
                     OrderLine.objects.create(
                         order=order,
                         product_configuration=product_config,
                         qty=item.qty,
                         price=product_config.price,                        
                         discounted_price=Decimal(product_config.get_discounted_price())
-                        
                     )
 
                     # Update stock
@@ -1115,7 +1114,6 @@ def place_order(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
-
 def calculate_order_total(user, coupon_code):
     cart = Cart.objects.get(user=user)
     cart_items = CartItem.objects.filter(cart=cart)
