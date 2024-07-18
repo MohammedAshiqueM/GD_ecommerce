@@ -437,6 +437,7 @@ def generate_combinations(variations):
 
 
 
+
 def productConfiguration(request, pk):
     product = get_object_or_404(Product, pk=pk)
     variations = product.variation_set.all()
@@ -448,6 +449,9 @@ def productConfiguration(request, pk):
         if not selected_combinations:
             messages.error(request, "Please select at least one combination.")
             return redirect('productConfiguration', pk=product.pk)
+
+        # Delete existing configurations
+        ProductConfiguration.objects.filter(product=product).delete()
 
         for index in selected_combinations:
             combination = generate_combinations(variations)[int(index)]
@@ -482,16 +486,39 @@ def productConfiguration(request, pk):
             # Add variation_options to the ProductConfiguration
             configuration.variation_options.set(variation_options)
 
-        messages.success(request, "Product configurations added successfully.")
+        messages.success(request, "Product configurations updated successfully.")
         return redirect('product')
 
     combinations = generate_combinations(variations)
+    existing_configurations = ProductConfiguration.objects.filter(product=product).prefetch_related('variation_options')
+
+    # Create a dictionary to store existing configuration data
+    existing_config_data = {}
+    for config in existing_configurations:
+        key = tuple(sorted(option.id for option in config.variation_options.all()))
+        existing_config_data[key] = {
+            'price': config.price,
+            'qty_in_stock': config.qty_in_stock
+        }
+
+    # Prepare combinations with existing data
+    prepared_combinations = []
+    for index, combination in enumerate(combinations):
+        key = tuple(sorted(option.id for option in combination))
+        existing_data = existing_config_data.get(key, {'price': '', 'qty_in_stock': ''})
+        prepared_combinations.append({
+            'index': index,
+            'combination': combination,
+            'price': existing_data['price'],
+            'qty_in_stock': existing_data['qty_in_stock'],
+            'is_existing': key in existing_config_data
+        })
+
     context = {
         'product': product,
-        'combinations': enumerate(combinations)  # Use enumerate to get index for checkbox values
+        'combinations': prepared_combinations
     }
     return render(request, 'productConfiguration.html', context)
-
 
 def edit_configuration(request, configuration_id):
     configuration = get_object_or_404(ProductConfiguration, pk=configuration_id)
@@ -631,10 +658,9 @@ def editProduct(request, pk):
     }
     return render(request, "addProduct.html", context)
 
-
 def editvariant(request, pk):
     product = get_object_or_404(Product, id=pk)
-    variations = product.variation_set.all()
+    variations = product.variation_set.all().prefetch_related('variationoption_set')
     variation_options = []
 
     for variation in variations:
@@ -647,9 +673,23 @@ def editvariant(request, pk):
         variation_names = request.POST.getlist("variation_name")
         variation_options_lists = [request.POST.getlist(f"variationOption_{i}") for i in range(len(variation_names))]
 
+        # Handle new variations
+        new_variation_names = [v for k, v in request.POST.items() if k.startswith("new_variation_name_")]
+        new_variation_options = {}
+        for k, v in request.POST.items():
+            if k.startswith("new_variationOption_"):
+                index = k.split("_")[-1]
+                if index not in new_variation_options:
+                    new_variation_options[index] = []
+                new_variation_options[index].append(v)
+
         # Validate input
-        if not all(variation_names) or not all(variation_options_lists):
-            messages.error(request, "Please fill in all required fields.")
+        if not all(variation_names + new_variation_names):
+            messages.error(request, "Please provide names for all variations.")
+            return redirect('editvariant', pk=product.pk)
+
+        if not all(variation_options_lists + list(new_variation_options.values())):
+            messages.error(request, "Please provide at least one option for each variation.")
             return redirect('editvariant', pk=product.pk)
 
         existing_variation_ids = [str(variation.id) for variation in variations]
@@ -662,39 +702,45 @@ def editvariant(request, pk):
                 variation.save()
 
                 # Handle options
-                existing_options = variation.variationoption_set.all()
+                existing_options = list(variation.variationoption_set.all())
                 existing_option_values = [option.value for option in existing_options]
                 new_option_values = variation_options_lists[i]
 
                 # Delete removed options
-                for option in existing_options:
-                    if option.value not in new_option_values:
-                        # Delete any product combinations that include this option
-                        ProductConfiguration.objects.filter(variation_options=option).delete()
-                        option.delete()
+                options_to_delete = [option for option in existing_options if option.value not in new_option_values]
+                for option in options_to_delete:
+                    ProductConfiguration.objects.filter(variation_options=option).delete()
+                VariationOption.objects.filter(id__in=[option.id for option in options_to_delete]).delete()
 
                 # Update or create options
+                new_options = []
+                updated_options = []
                 for option_value in new_option_values:
                     if option_value not in existing_option_values:
-                        VariationOption.objects.create(variation=variation, value=option_value)
+                        new_options.append(VariationOption(variation=variation, value=option_value))
                     else:
-                        option = variation.variationoption_set.filter(value=option_value).first()
+                        option = next((opt for opt in existing_options if opt.value == option_value), None)
                         if option:
                             option.value = option_value
-                            option.save()
-            else:  # New variation
-                variation = Variation.objects.create(product=product, name=variation_names[i])
-                for option_value in variation_options_lists[i]:
-                    VariationOption.objects.create(variation=variation, value=option_value)
+                            updated_options.append(option)
+
+                VariationOption.objects.bulk_create(new_options)
+                VariationOption.objects.bulk_update(updated_options, ['value'])
+
+        # Create new variations
+        for i, new_variation_name in enumerate(new_variation_names):
+            new_variation = Variation.objects.create(product=product, name=new_variation_name)
+            new_options = [VariationOption(variation=new_variation, value=value) 
+                           for value in new_variation_options[f"new_{i}"]]
+            VariationOption.objects.bulk_create(new_options)
 
         # Delete removed variations
-        for variation_id in existing_variation_ids:
-            if variation_id not in variation_ids:
-                variation = Variation.objects.get(id=variation_id)
-                if product.has_combination_with_variation(variation_id):
-                    # Delete any product combinations that include this variation
-                    ProductConfiguration.objects.filter(variation_options__variation=variation).delete()
-                variation.delete()
+        variations_to_delete = [vid for vid in existing_variation_ids if vid not in variation_ids]
+        for variation_id in variations_to_delete:
+            variation = Variation.objects.get(id=variation_id)
+            if product.has_combination_with_variation(variation_id):
+                ProductConfiguration.objects.filter(variation_options__variation=variation).delete()
+            variation.delete()
 
         messages.success(request, "Product variations updated successfully.")
         return redirect('productConfiguration', pk=product.pk)
@@ -705,7 +751,6 @@ def editvariant(request, pk):
         "variation_options": variation_options,
     }
     return render(request, "editvariant.html", context)
-
 def orders(request):
     orders = Order.objects.all()
     return render(request,"orders.html",{'orders': orders})
