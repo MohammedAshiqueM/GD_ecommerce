@@ -1,30 +1,89 @@
 {% include 'common_block.html' %}
+
 <style>
-    .error {
-        color: red;
-        font-size: 0.9em;
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 20px;
     }
-    input,select {
-        color: black;
-        opacity: .6;
-        width: 250px;
-        height: 40px;
-        font-size: 20px !important;
-        border-radius: 5px;
+    .projects {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .card {
+        background: var(--new-content);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    .card-header {
+        /* background-color: #4a90e2; */
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .heading {
+        margin: 0;
+        font-size: 24px;
+    }
+    .card-body {
+        padding: 20px;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+    table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 15px;
+    }
+    td {
+        padding: 10px 0;
     }
     label {
-            justify-content: space-between;
-            align-items: center;
-            font-size: 20px;
-            font-weight: bold;
-        }
-    textarea{
-        color: black;
-        opacity: .6;
-        width: 430px;
-        height: 115px;
-        font-size: 20px !important;
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+    }
+    input, select, textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
         border-radius: 5px;
+        font-size: 16px;
+        color: #333;
+        transition: border-color 0.3s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #4a90e2;
+    }
+    textarea {
+        resize: vertical;
+    }
+    .error {
+        color: #e74c3c;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+    button {
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+    }
+    button:hover {
+        background-color: #3a7bc8;
+    }
+    #submit {
+        margin-top: 20px;
     }
 </style>
 
@@ -35,109 +94,26 @@
             <a href="{% url 'product' %}"><button>Cancel</button></a>
         </div>
         <div class="card-body">
-            <div class="table-responsive">
-                <form id="productForm" action="" method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <table>
-                        {% if form.non_field_errors %}
-                        <div class="error"><span><i class="fa-solid fa-triangle-exclamation"></i></span>{{ form.non_field_errors }}</div>
-                        {% endif %}
-                        <tr>
-                            <td><label>Coupon code</label></td>
-                            <td>
-                                {{ form.code }}
-                                {% if form.code.errors %}
-                                    <div class="error">{{ form.code.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label>Discount type</label></td>
-                            <td>
-                                {{ form.discount_type }}
-                                {% if form.discount_type.errors %}
-                                    <div class="error">{{ form.discount_type.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label>Valid from</label></td>
-                            <td>
-                                {{ form.valid_from }}
-                                {% if form.valid_from.errors %}
-                                    <div class="error">{{ form.valid_from.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label>Valid to</label></td>
-                            <td>
-                                {{ form.valid_to }}
-                                {% if form.valid_to.errors %}
-                                    <div class="error">{{ form.valid_to.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label>Discount value</label></td>
-                            <td>
-                                {{ form.discount_value }}
-                                {% if form.discount_value.errors %}
-                                    <div class="error">{{ form.discount_value.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label>Minimum purchase amount for discount</label></td>
-                            <td>
-                                {{ form.min_purchase_amount }}
-                                {% if form.min_purchase_amount.errors %}
-                                    <div class="error">{{ form.min_purchase_amount.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label>Usage limit</label></td>
-                            <td>
-                                {{ form.usage_limit }}
-                                {% if form.usage_limit.errors %}
-                                    <div class="error">{{ form.usage_limit.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label>Image</label></td>
-                            <td>
-                                {{ form.image }}
-                                {% if form.image.errors %}
-                                    <div class="error">{{ form.image.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label>Details</label></td>
-                            <td>
-                                {{ form.details }}
-                                {% if form.details.errors %}
-                                    <div class="error">{{ form.details.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><label>Active</label></td>
-                            <td>
-                                {{ form.active }}
-                                {% if form.active.errors %}
-                                    <div class="error">{{ form.active.errors }}</div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    </table>
-                    <div class="card-header">
-                        <button type="submit" id="submit">Save</button>
-                    </div>
-                </form>
-            </div>
+            <form id="productForm" action="" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                <div class="error"><i class="fa-solid fa-triangle-exclamation"></i> {{ form.non_field_errors }}</div>
+                {% endif %}
+                <table>
+                    {% for field in form %}
+                    <tr>
+                        <td><label for="{{ field.id_for_label }}">{{ field.label }}</label></td>
+                        <td>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="error">{{ field.errors }}</div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                <button type="submit" id="submit">Save Coupon</button>
+            </form>
         </div>
     </div>
 </div>

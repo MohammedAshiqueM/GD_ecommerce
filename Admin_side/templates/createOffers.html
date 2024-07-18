@@ -1,81 +1,149 @@
-<style>
-    .error {
-        color: red;
-        font-size: 0.9em;
-    }
-    input,select {
-        color: black !important;
-        opacity: .6;
-        width: 250px;
-        height: 40px;
-        font-size: 20px !important;
-        border-radius: 5px;
-    }
-    label {
-            justify-content: space-between;
-            align-items: center;
-            font-size: 20px;
-            font-weight: bold;
-        }
-    textarea{
-        color: black;
-        opacity: .6;
-        width: 430px;
-        height: 115px;
-        font-size: 20px !important;
-        border-radius: 5px;
-    }
-</style>
-
 {% include 'common_block.html' %}
-<style>
-    /* ... (keep your existing styles) ... */
-</style>
 
-<h2>Create Offer</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    {% for field in form %}
-        {% if field.name != 'apply_to' and field.name != 'category' and field.name != 'subcategory' and field.name != 'product' and field.name != 'product_configuration' %}
-            <div class="form-group">
-                {{ field.label_tag }}
-                {{ field }}
-                {{ field.errors }}
+<div class="offer-form-container">
+    <h2>Create Offer</h2>
+    <form method="post" class="offer-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        
+        {% for field in form %}
+            {% if field.name != 'apply_to' and field.name != 'category' and field.name != 'subcategory' and field.name != 'product' and field.name != 'product_configuration' %}
+                <div class="form-group">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="form-group">
+            <label>Apply to:</label>
+            <div class="radio-group">
+                {{ form.apply_to }}
             </div>
-        {% endif %}
-    {% endfor %}
+        </div>
 
-    <div class="form-group">
-        <label>Apply to:</label>
-        {{ form.apply_to }}
-    </div>
+        <div id="category-select" class="form-group hidden">
+            {{ form.category.label_tag }}
+            {{ form.category }}
+        </div>
 
-    <div id="category-select" style="display: none;">
-        {{ form.category.label_tag }}
-        {{ form.category }}
-    </div>
+        <div id="subcategory-select" class="form-group hidden">
+            {{ form.subcategory.label_tag }}
+            {{ form.subcategory }}
+        </div>
 
-    <div id="subcategory-select" style="display: none;">
-        {{ form.subcategory.label_tag }}
-        {{ form.subcategory }}
-    </div>
+        <div id="product-select" class="form-group hidden">
+            {{ form.product.label_tag }}
+            {{ form.product }}
+        </div>
 
-    <div id="product-select" style="display: none;">
-        {{ form.product.label_tag }}
-        {{ form.product }}
-    </div>
+        <div id="product-configuration-select" class="form-group hidden">
+            {{ form.product_configuration.label_tag }}
+            <select name="product_configuration" id="{{ form.product_configuration.id_for_label }}">
+                <option value="">Select a configuration</option>
+            </select>
+            {{ form.product_configuration.errors }}
+        </div>
 
-<div id="product-configuration-select" style="display: none;">
-    {{ form.product_configuration.label_tag }}
-    <select name="product_configuration" id="{{ form.product_configuration.id_for_label }}">
-        <option value="">Select a configuration</option>
-    </select>
-    {{ form.product_configuration.errors }}
+        <button type="submit" class="submit-btn">Create Offer</button>
+    </form>
 </div>
 
-    <button type="submit">Create Offer</button>
-</form>
+<style>
+    .offer-form-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: var(--new-content);
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        border-radius: 8px;
+    }
+
+    h2 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .offer-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    label {
+        font-size: 1rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #555;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1rem !important;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        outline: none;
+    }
+
+    textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .radio-group {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .radio-group input[type="radio"] {
+        width: auto;
+        margin-right: 0.5rem;
+    }
+
+    .submit-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .submit-btn:hover {
+        background-color: #0056b3;
+    }
+
+    .error {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .hidden {
+        display: none;
+    }
+    input{
+        color: black !important;
+    }
+</style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
