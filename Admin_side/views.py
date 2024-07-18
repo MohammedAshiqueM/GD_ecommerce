@@ -435,9 +435,6 @@ def generate_combinations(variations):
     variation_options = [variation.variationoption_set.all() for variation in variations]
     return list(iter_product(*variation_options))
 
-
-
-
 def productConfiguration(request, pk):
     product = get_object_or_404(Product, pk=pk)
     variations = product.variation_set.all()
