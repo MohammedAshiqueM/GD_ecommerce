@@ -80,41 +80,80 @@ def adminLogin(request):
     return render(request, "adminLogin.html")
 
 
+from django.db.models import Sum, Count
+from django.db.models.functions import TruncDay, TruncMonth, TruncYear
+from .models import OrderLine, Product, SubCategory, Category
 @login_required(login_url='adminLogin')
 @never_cache
+
+# from django.db.models.functions import TruncDay, TruncMonth, TruncYear
+# from django.utils import timezone
+# from datetime import timedelta
+# import json
+
 def dashboard(request):
     if not request.user.is_superuser:
         return HttpResponseForbidden("You do not have access to this page.")
-    if "value" in request.GET:
-        credential = request.GET["value"]
-        data = Product.objects.filter(Q(name__icontains=credential))
-        user = User.objects.filter(
-            Q(username__icontains=credential) | Q(email__icontains=credential)
-        )
-        context = {"data": data,"user":user}
-    else:
-        data = Product.objects.all()
-        user = User.objects.all()
-        user_count = User.objects.count()
-        order_count = Order.objects.count()
-        product_count = Product.objects.count()
+    
+    # Get top 10 selling products
+    top_products = OrderLine.objects.values('product_configuration__product__name').annotate(
+        total_sales=Sum('qty')
+    ).order_by('-total_sales')[:10]
+    
+    # Get top 10 selling subcategories
+    top_subcategories = OrderLine.objects.values('product_configuration__product__subcategory__name').annotate(
+        total_sales=Sum('qty')
+    ).order_by('-total_sales')[:10]
+    
+    # Get top 10 selling categories
+    top_categories = OrderLine.objects.values('product_configuration__product__category__name').annotate(
+        total_sales=Sum('qty')
+    ).order_by('-total_sales')[:10]
     
     # Calculate income for the last week
-    end_date = datetime.now()
+    end_date = timezone.now()
     start_date = end_date - timedelta(days=7)
     total_income = OrderLine.objects.filter(order__order_date__range=(start_date, end_date)).aggregate(total_income=Sum('price'))['total_income'] or 0
 
+    # Get sales data for chart
+    filter_type = request.GET.get('filter', 'daily')
+    
+    if filter_type == 'yearly':
+        sales_data = OrderLine.objects.annotate(
+            date=TruncYear('order__order_date')
+        ).values('date').annotate(total_sales=Sum('price')).order_by('date')
+    elif filter_type == 'monthly':
+        sales_data = OrderLine.objects.annotate(
+            date=TruncMonth('order__order_date')
+        ).values('date').annotate(total_sales=Sum('price')).order_by('date')
+    else:  # daily
+        # For daily view, let's limit to the last 30 days to avoid overwhelming the chart
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        sales_data = OrderLine.objects.filter(order__order_date__gte=thirty_days_ago).annotate(
+            date=TruncDay('order__order_date')
+        ).values('date').annotate(total_sales=Sum('price')).order_by('date')
+
+    formatted_sales_data = [
+        {
+            'date': item['date'].strftime('%Y-%m-%d'),  # Format date as string
+            'total_sales': float(item['total_sales'])
+        }
+        for item in sales_data
+    ]
+    
     context = {
-        "data": data,
-        "user": user,
-        "user_count": user_count,
-        "order_count": order_count,
-        "product_count": product_count,
-        "total_income": total_income
+        "top_products": top_products,
+        "top_subcategories": top_subcategories,
+        "top_categories": top_categories,
+        "user_count": User.objects.count(),
+        "order_count": Order.objects.count(),
+        "product_count": Product.objects.count(),
+        "total_income": total_income,
+        "sales_data": json.dumps(formatted_sales_data),
+        "filter_type": filter_type,
     }
     
-    return render(request, "dashboard.html",context)
-
+    return render(request, "dashboard.html", context)
 def customers(request):
     if "value" in request.GET:
         credential = request.GET["value"]

@@ -5,12 +5,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Dashboard</title>
     <link rel="stylesheet" href="{% static 'admin_css/dashboard_style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        #salesChart {
+            max-height: 400px;
+        }
+    </style>
 </head>
 
 <body>
-
     {% include 'common_block.html' %}
     <div class="cards">
         <div class="card-single">
@@ -56,29 +69,24 @@
         <div class="projects">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="heading">New Products</h3>
-                    <button>See all <span class="las la-arrow-right"></span></button>
+                    <h3 class="heading">Top 10 Selling Products</h3>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table width="100%">
                             <thead>
-                                <td>Product Name</td>
-                                <td>Category</td>
-                                <td>Subcategory</td>
-                                {% comment %} <td>Price</td> {% endcomment %}
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Total Sales</th>
+                                </tr>
                             </thead>
                             <tbody>
+                                {% for product in top_products %}
                                 <tr>
-                                    {% for i in data %}
-                            <tr>
-                               
-                                <td>{{i.name}}</td>
-                                <td>{{i.category}}</td>
-                                <td>{{i.subcategory}}</td>
-                                {% comment %} <td>{{i.price}}</td> {% endcomment %}
-                            {% endfor %}
+                                    <td>{{ product.product_configuration__product__name }}</td>
+                                    <td>{{ product.total_sales }}</td>
                                 </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
@@ -88,34 +96,39 @@
         <div class="customers">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="heading">New customer</h3>
-                    <button>Sell all<span class="las la-arrow-right"></span></button>
+                    <h3 class="heading">Top Categories and Subcategories</h3>
                 </div>
-
                 <div class="card-body">
-                    <div class="customer">
-                        <div class="info">
-                            <div>
-                                {% for i in user %}
-                                <h4>
-                                    {{i.username}}</h4>
-                                <small>{{i.email}}</small>
-                            {% endfor %}
-                            </div>
-                        </div>
-                        <div class="contact">
-                            <span class="las la-user-circle"></span>
-                            <span class="las la-comment"></span>
-                            <span class="las la-phone"></span>
-                        </div>
-                    </div>
-
+                    <h4>Top Categories</h4>
+                    <ul>
+                        {% for category in top_categories %}
+                        <li>{{ category.product_configuration__product__category__name }} ({{ category.total_sales }})</li>
+                        {% endfor %}
+                    </ul>
+                    <h4>Top Subcategories</h4>
+                    <ul>
+                        {% for subcategory in top_subcategories %}
+                        <li>{{ subcategory.product_configuration__product__subcategory__name }} ({{ subcategory.total_sales }})</li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
-
-    </main>
+    <div class="chart-container">
+        <h3>Sales Chart</h3>
+        <form method="get">
+            <select name="filter" onchange="this.form.submit()">
+                <option value="daily" {% if filter_type == 'daily' %}selected{% endif %}>Daily</option>
+                <option value="monthly" {% if filter_type == 'monthly' %}selected{% endif %}>Monthly</option>
+                <option value="yearly" {% if filter_type == 'yearly' %}selected{% endif %}>Yearly</option>
+            </select>
+        </form>
+        <canvas id="salesChart"></canvas>
+    </div>
+    <div class="chart-controls">
+        <button onclick="updateChartType('line')">Line</button>
+        <button onclick="updateChartType('bar')">Bar</button>
     </div>
     <script src="{% static 'admin_js/dashboard_script.js' %}"></script>
     <script>
@@ -130,8 +143,120 @@
             document.documentElement.style.setProperty('--order-num', orderCount);
             document.documentElement.style.setProperty('--income-num', incomeAmount);
 
+            // Chart
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            const salesData = JSON.parse('{{ sales_data|escapejs }}');
+
+            console.log("Parsed salesData:", salesData); // Debugging log
+
+            if (salesData.length === 0) {
+                console.warn("No sales data available.");
+            } else {
+                const labels = salesData.map(item => item.date);
+                const dataPoints = salesData.map(item => item.total_sales);
+
+                console.log("Chart labels:", labels); // Debugging log
+                console.log("Chart data points:", dataPoints); // Debugging log
+
+                // Check if there is an existing chart instance and destroy it
+                if (window.salesChart instanceof Chart) {
+                    window.salesChart.destroy();
+                }
+
+                // Create a new chart instance
+                window.salesChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Sales',
+                            data: dataPoints,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
         });
     </script>
+<script>
+    window.salesChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Sales',
+            data: dataPoints,
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: true,
+                text: 'Sales Overview'
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'INR' }).format(context.parsed.y);
+                        }
+                        return label;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Date'
+                }
+            },
+            y: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Sales (INR)'
+                },
+                beginAtZero: true
+            }
+        },
+        animation: {
+            duration: 2000,
+            easing: 'easeOutQuart'
+        }
+    }
+});
+function updateChartType(newType) {
+    window.salesChart.config.type = newType;
+    window.salesChart.update();
+}
+</script>
 </body>
 
 </html>
