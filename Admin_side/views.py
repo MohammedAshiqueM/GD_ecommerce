@@ -812,12 +812,20 @@ def stock_management(request):
 @login_required
 def update_stock(request):
     if request.method == 'POST':
-        for config_id, qty in request.POST.items():
-            if config_id.startswith('config_'):
-                config_id = config_id.replace('config_', '')
+        for key, value in request.POST.items():
+            if key.startswith('config_'):
+                config_id = key.replace('config_', '')
                 try:
                     config = ProductConfiguration.objects.get(id=config_id)
-                    config.qty_in_stock = int(qty)
+                    config.qty_in_stock = int(value)
+                    config.save()
+                except (ProductConfiguration.DoesNotExist, ValueError):
+                    pass
+            elif key.startswith('price_'):
+                config_id = key.replace('price_', '')
+                try:
+                    config = ProductConfiguration.objects.get(id=config_id)
+                    config.price = float(value)
                     config.save()
                 except (ProductConfiguration.DoesNotExist, ValueError):
                     pass

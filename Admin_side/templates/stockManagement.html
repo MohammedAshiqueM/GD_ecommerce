@@ -29,6 +29,8 @@
                                             <th scope="col">Variations</th>
                                             <th scope="col">Current Stock</th>
                                             <th scope="col">New Stock</th>
+                                            <th scope="col">Current Price</th>
+                                            <th scope="col">New Price</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -42,6 +44,10 @@
                                             <td>{{ config.qty_in_stock }}</td>
                                             <td>
                                                 <input type="number" class="stock-input" name="config_{{ config.id }}" value="{{ config.qty_in_stock }}" min="0">
+                                            </td>
+                                            <td>{{ config.price }}</td>
+                                            <td>
+                                                <input type="number" class="price-input" name="price_{{ config.id }}" value="{{ config.price }}" min="0" step="0.01">
                                             </td>
                                         </tr>
                                         {% endfor %}
@@ -75,7 +81,9 @@ function updateStock() {
     rows.forEach(row => {
         var configId = row.querySelector('.stock-input').name.replace('config_', '');
         var newStock = row.querySelector('.stock-input').value;
+        var newPrice = row.querySelector('.price-input').value;
         formData.append('config_' + configId, newStock);
+        formData.append('price_' + configId, newPrice);
     });
 
     fetch("{% url 'update_stock' %}", {
@@ -87,14 +95,14 @@ function updateStock() {
     })
     .then(response => {
         if (response.ok) {
-            alert('Stock updated successfully!');
-            window.location.reload(); // Refresh the page or update UI as needed
+            alert('Stock and prices updated successfully!');
+            window.location.reload();
         } else {
-            alert('Failed to update stock.');
+            alert('Failed to update stock and prices.');
         }
     })
     .catch(error => {
-        console.error('Error updating stock:', error);
+        console.error('Error updating stock and prices:', error);
         alert('An error occurred. Please try again.');
     });
 }
@@ -136,9 +144,10 @@ function updateStock() {
         padding: 8px;
         text-align: left;
     }
-    .stock-input {
+    .stock-input,.price-input {
         width: 80px;
         padding: 4px;
+        color: black
     }
     .update-button {
         margin-top: 10px;
