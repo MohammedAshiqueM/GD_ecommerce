@@ -86,7 +86,6 @@
         margin-top: 20px;
     }
 </style>
-
 <div class="projects">
     <div class="card">
         <div class="card-header">
@@ -94,7 +93,7 @@
             <a href="{% url 'product' %}"><button>Cancel</button></a>
         </div>
         <div class="card-body">
-            <form id="productForm" action="" method="post" enctype="multipart/form-data">
+            <form id="couponForm" action="" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
                 <div class="error"><i class="fa-solid fa-triangle-exclamation"></i> {{ form.non_field_errors }}</div>
@@ -112,8 +111,27 @@
                     </tr>
                     {% endfor %}
                 </table>
-                <button type="submit" id="submit">Save Coupon</button>
+                <div id="warning" class="warning" style="display: none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Discount value should not exceed 100%.
+                </div>
+                <button type="submit" id="submit" onclick="return validateDiscount()">Save Coupon</button>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+function validateDiscount() {
+    const discountType = document.getElementById("id_discount_type").value;
+    const discountValue = parseFloat(document.getElementById("id_discount_value").value);
+    const warning = document.getElementById("warning");
+
+    if (discountType === "percentage" && discountValue > 100) {
+        warning.style.display = "block";
+        return false;
+    }
+
+    warning.style.display = "none";
+    return true;
+}
+</script>

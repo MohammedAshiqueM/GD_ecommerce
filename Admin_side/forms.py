@@ -11,12 +11,24 @@ class CouponForm(forms.ModelForm):
             'valid_to': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
         
-    def clean_discount(self):
-        discount = self.cleaned_data.get('discount')
-        if discount <= 0:
-            raise forms.ValidationError('Discount must be a positive value.')
-        return discount
-
+    def clean_discount_value(self):
+        discount_value = self.cleaned_data.get('discount_value')
+        discount_type = self.cleaned_data.get('discount_type')
+        
+        if discount_value is None:
+            raise forms.ValidationError('Discount value is required.')
+        
+        if discount_type is None:
+            raise forms.ValidationError('Discount type is required.')
+        
+        if discount_type == 'percentage':
+            if not (0 < discount_value <= 100):
+                raise forms.ValidationError('For percentage discounts, the value must be between 0 and 100.')
+        elif discount_type == 'fixed':
+            if discount_value <= 0:
+                raise forms.ValidationError('Discount value must be a positive value.')
+        
+        return discount_value
     def clean_valid_to(self):
         valid_from = self.cleaned_data.get('valid_from')
         valid_to = self.cleaned_data.get('valid_to')
