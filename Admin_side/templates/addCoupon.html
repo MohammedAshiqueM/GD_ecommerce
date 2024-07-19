@@ -69,6 +69,11 @@
         font-size: 14px;
         margin-top: 5px;
     }
+    .warning {
+        color: #e74c3c;
+        font-size: 14px;
+        margin-top: 5px;
+    }
     button {
         background-color: #4a90e2;
         color: white;
@@ -111,8 +116,11 @@
                     </tr>
                     {% endfor %}
                 </table>
-                <div id="warning" class="warning" style="display: none;">
+                <div id="percentage-warning" class="warning" style="display: none;">
                     <i class="fa-solid fa-triangle-exclamation"></i> Discount value should not exceed 100%.
+                </div>
+                <div id="fixed-warning" class="warning" style="display: none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Fixed discount value should not exceed the minimum purchase amount.
                 </div>
                 <button type="submit" id="submit" onclick="return validateDiscount()">Save Coupon</button>
             </form>
@@ -124,14 +132,24 @@
 function validateDiscount() {
     const discountType = document.getElementById("id_discount_type").value;
     const discountValue = parseFloat(document.getElementById("id_discount_value").value);
-    const warning = document.getElementById("warning");
+    const minPurchaseAmount = parseFloat(document.getElementById("id_min_purchase_amount").value);
+    const percentageWarning = document.getElementById("percentage-warning");
+    const fixedWarning = document.getElementById("fixed-warning");
 
     if (discountType === "percentage" && discountValue > 100) {
-        warning.style.display = "block";
+        percentageWarning.style.display = "block";
+        fixedWarning.style.display = "none";
         return false;
     }
 
-    warning.style.display = "none";
+    if (discountType === "fixed" && discountValue > minPurchaseAmount) {
+        fixedWarning.style.display = "block";
+        percentageWarning.style.display = "none";
+        return false;
+    }
+
+    percentageWarning.style.display = "none";
+    fixedWarning.style.display = "none";
     return true;
 }
 </script>

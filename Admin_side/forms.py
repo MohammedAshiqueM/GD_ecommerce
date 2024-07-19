@@ -1,19 +1,25 @@
 from django import forms
 from .models import Coupon,Offer,Category,SubCategory,Product,ProductConfiguration,CarouselBanner,OfferBanner
 
+# from django import forms
+# from .models import Coupon
+
 class CouponForm(forms.ModelForm):
     class Meta:
         model = Coupon
-        fields = ['code','discount_type', 'valid_from', 'valid_to', 'discount_value', 'active', 'min_purchase_amount','usage_limit','image','details']
-
+        fields = [
+            'code', 'discount_type', 'valid_from', 'valid_to', 'discount_value', 
+            'active', 'min_purchase_amount', 'usage_limit', 'image', 'details'
+        ]
         widgets = {
             'valid_from': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'valid_to': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
-        
+
     def clean_discount_value(self):
         discount_value = self.cleaned_data.get('discount_value')
         discount_type = self.cleaned_data.get('discount_type')
+        min_purchase_amount = self.cleaned_data.get('min_purchase_amount')
         
         if discount_value is None:
             raise forms.ValidationError('Discount value is required.')
@@ -21,14 +27,20 @@ class CouponForm(forms.ModelForm):
         if discount_type is None:
             raise forms.ValidationError('Discount type is required.')
         
+        if min_purchase_amount is None:
+            raise forms.ValidationError('Minimum purchase amount is required.')
+
         if discount_type == 'percentage':
             if not (0 < discount_value <= 100):
                 raise forms.ValidationError('For percentage discounts, the value must be between 0 and 100.')
         elif discount_type == 'fixed':
             if discount_value <= 0:
                 raise forms.ValidationError('Discount value must be a positive value.')
+            if discount_value > min_purchase_amount:
+                raise forms.ValidationError('Fixed discount value must not exceed the minimum purchase amount.')
         
         return discount_value
+
     def clean_valid_to(self):
         valid_from = self.cleaned_data.get('valid_from')
         valid_to = self.cleaned_data.get('valid_to')
@@ -41,13 +53,13 @@ class CouponForm(forms.ModelForm):
         if min_purchase_amount < 0:
             raise forms.ValidationError('Minimum purchase amount cannot be negative.')
         return min_purchase_amount
-    
-    def usage_limit(self):
+
+    def clean_usage_limit(self):
         usage_limit = self.cleaned_data.get('usage_limit')
         if usage_limit <= 0:
             raise forms.ValidationError('Usage limit per user must be greater than 0.')
         return usage_limit
-    
+  
     
 class OfferForm(forms.ModelForm):
     apply_to = forms.ChoiceField(choices=[('category', 'Category'), ('subcategory', 'Subcategory'), ('product', 'Product')], widget=forms.RadioSelect)
