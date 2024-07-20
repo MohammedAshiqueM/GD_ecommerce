@@ -143,8 +143,8 @@
     </div>
     <div class="chart-container">
         <h3>Sales Chart</h3>
-        <form method="get">
-            <select name="filter" onchange="this.form.submit()">
+        <form id="filterForm" method="get">
+            <select name="filter" id="filterSelect" data-url="{% url 'get_sales_data' %}">
                 <option value="daily" {% if filter_type == 'daily' %}selected{% endif %}>Daily</option>
                 <option value="monthly" {% if filter_type == 'monthly' %}selected{% endif %}>Monthly</option>
                 <option value="yearly" {% if filter_type == 'yearly' %}selected{% endif %}>Yearly</option>
@@ -157,62 +157,6 @@
         <button onclick="updateChartType('bar')">Bar</button>
     </div>
     <script src="{% static 'admin_js/dashboard_script.js' %}"></script>
-    <!-- <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const userCount = {{ user_count }};
-            const orderCount = {{ order_count }};
-            const productCount = {{ product_count }};
-            const incomeAmount = {{ total_income|floatformat:2 }};
-
-            document.documentElement.style.setProperty('--customer-num', userCount);
-            document.documentElement.style.setProperty('--project-num', productCount);
-            document.documentElement.style.setProperty('--order-num', orderCount);
-            document.documentElement.style.setProperty('--income-num', incomeAmount);
-
-            // Chart
-            const ctx = document.getElementById('salesChart').getContext('2d');
-            const salesData = JSON.parse('{{ sales_data|escapejs }}');
-
-            console.log("Parsed salesData:", salesData); // Debugging log
-
-            if (salesData.length === 0) {
-                console.warn("No sales data available.");
-            } else {
-                const labels = salesData.map(item => item.date);
-                const dataPoints = salesData.map(item => item.total_sales);
-
-                console.log("Chart labels:", labels); // Debugging log
-                console.log("Chart data points:", dataPoints); // Debugging log
-
-                // Check if there is an existing chart instance and destroy it
-                if (window.salesChart instanceof Chart) {
-                    window.salesChart.destroy();
-                }
-
-                // Create a new chart instance
-                window.salesChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Sales',
-                            data: dataPoints,
-                            borderColor: 'rgb(75, 192, 192)',
-                            tension: 0.1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            }
-        });
-    </script> -->
 <script>
     let salesChart;
 
@@ -317,7 +261,28 @@ document.addEventListener("DOMContentLoaded", function() {
         initializeChart(labels, dataPoints);
     }
 });
-</script>
-</body>
+
+document.getElementById('filterSelect').addEventListener('change', function() {
+    const filter = this.value;
+    const url = `${this.getAttribute('data-url')}?filter=${filter}`;
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const labels = data.map(item => item.date);
+        const dataPoints = data.map(item => item.total_sales);
+        updateChartData(labels, dataPoints);
+    })
+    .catch(error => console.error('Error fetching data:', error));
+});
+</script></body>
 
 </html>

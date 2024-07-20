@@ -115,32 +115,20 @@ def dashboard(request):
     start_date = end_date - timedelta(days=7)
     total_income = OrderLine.objects.filter(order__order_date__range=(start_date, end_date)).aggregate(total_income=Sum('price'))['total_income'] or 0
 
-    # Get sales data for chart
-    filter_type = request.GET.get('filter', 'daily')
-    
-    if filter_type == 'yearly':
-        sales_data = OrderLine.objects.annotate(
-            date=TruncYear('order__order_date')
-        ).values('date').annotate(total_sales=Sum('price')).order_by('date')
-    elif filter_type == 'monthly':
-        sales_data = OrderLine.objects.annotate(
-            date=TruncMonth('order__order_date')
-        ).values('date').annotate(total_sales=Sum('price')).order_by('date')
-    else:  # daily
-        # For daily view, let's limit to the last 30 days to avoid overwhelming the chart
-        thirty_days_ago = timezone.now() - timedelta(days=30)
-        sales_data = OrderLine.objects.filter(order__order_date__gte=thirty_days_ago).annotate(
-            date=TruncDay('order__order_date')
-        ).values('date').annotate(total_sales=Sum('price')).order_by('date')
+    # Get initial sales data for chart (default to daily)
+    filter_type = 'daily'
+    sales_data = OrderLine.objects.filter(order__order_date__gte=timezone.now() - timedelta(days=30)).annotate(
+        date=TruncDay('order__order_date')
+    ).values('date').annotate(total_sales=Sum('price')).order_by('date')
 
     formatted_sales_data = [
         {
-            'date': item['date'].strftime('%Y-%m-%d'),  # Format date as string
+            'date': item['date'].strftime('%Y-%m-%d'),
             'total_sales': float(item['total_sales'])
         }
         for item in sales_data
     ]
-    
+
     context = {
         "top_products": top_products,
         "top_subcategories": top_subcategories,
@@ -154,6 +142,33 @@ def dashboard(request):
     }
     
     return render(request, "dashboard.html", context)
+
+def get_sales_data(request):
+    filter_type = request.GET.get('filter', 'daily')
+
+    if filter_type == 'yearly':
+        sales_data = OrderLine.objects.annotate(
+            date=TruncYear('order__order_date')
+        ).values('date').annotate(total_sales=Sum('price')).order_by('date')
+    elif filter_type == 'monthly':
+        sales_data = OrderLine.objects.annotate(
+            date=TruncMonth('order__order_date')
+        ).values('date').annotate(total_sales=Sum('price')).order_by('date')
+    else:  # daily
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        sales_data = OrderLine.objects.filter(order__order_date__gte=thirty_days_ago).annotate(
+            date=TruncDay('order__order_date')
+        ).values('date').annotate(total_sales=Sum('price')).order_by('date')
+
+    formatted_sales_data = [
+        {
+            'date': item['date'].strftime('%Y-%m-%d'),
+            'total_sales': float(item['total_sales'])
+        }
+        for item in sales_data
+    ]
+    
+    return JsonResponse(formatted_sales_data, safe=False)
 def customers(request):
     if "value" in request.GET:
         credential = request.GET["value"]
