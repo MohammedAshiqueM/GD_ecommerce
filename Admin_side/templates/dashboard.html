@@ -96,22 +96,48 @@
         <div class="customers">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="heading">Top Categories and Subcategories</h3>
+                    <h3 class="heading">Top Categories</h3>
                 </div>
                 <div class="card-body">
-                    <h4>Top Categories</h4>
-                    <ul>
-                        {% for category in top_categories %}
-                        <li>{{ category.product_configuration__product__category__name }} ({{ category.total_sales }})</li>
-                        {% endfor %}
-                    </ul>
-                    <h4>Top Subcategories</h4>
-                    <ul>
-                        {% for subcategory in top_subcategories %}
-                        <li>{{ subcategory.product_configuration__product__subcategory__name }} ({{ subcategory.total_sales }})</li>
-                        {% endfor %}
-                    </ul>
+                    <table width="100%">
+                        <thead>
+                            <tr>
+                                <th>Category Name</th>
+                                <th>Total Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in top_categories %}
+                            <tr>
+                                <td>{{ category.product_configuration__product__category__name }}</td>
+                                <td>{{ category.total_sales }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="heading">Top Subcategories</h3>
+                </div>
+                <table width="100%">
+                    <thead>
+                        <tr>
+                            <th>Subcategory Name</th>
+                            <th>Total Sales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subcategory in top_subcategories %}
+                        <tr>
+                            <td>{{ subcategory.product_configuration__product__subcategory__name }}</td>
+                            <td>{{ subcategory.total_sales }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -131,7 +157,7 @@
         <button onclick="updateChartType('bar')">Bar</button>
     </div>
     <script src="{% static 'admin_js/dashboard_script.js' %}"></script>
-    <script>
+    <!-- <script>
         document.addEventListener("DOMContentLoaded", function() {
             const userCount = {{ user_count }};
             const orderCount = {{ order_count }};
@@ -186,76 +212,111 @@
                 });
             }
         });
-    </script>
+    </script> -->
 <script>
-    window.salesChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: labels,
-        datasets: [{
-            label: 'Sales',
-            data: dataPoints,
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.4
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'top',
-            },
-            title: {
-                display: true,
-                text: 'Sales Overview'
-            },
-            tooltip: {
-                mode: 'index',
-                intersect: false,
-                callbacks: {
-                    label: function(context) {
-                        let label = context.dataset.label || '';
-                        if (label) {
-                            label += ': ';
+    let salesChart;
+
+function initializeChart(labels, dataPoints) {
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Sales',
+                data: dataPoints,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Sales Overview'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'INR' }).format(context.parsed.y);
+                            }
+                            return label;
                         }
-                        if (context.parsed.y !== null) {
-                            label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'INR' }).format(context.parsed.y);
-                        }
-                        return label;
                     }
                 }
-            }
-        },
-        scales: {
-            x: {
-                display: true,
-                title: {
+            },
+            scales: {
+                x: {
                     display: true,
-                    text: 'Date'
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Sales (INR)'
+                    },
+                    beginAtZero: true
                 }
             },
-            y: {
-                display: true,
-                title: {
-                    display: true,
-                    text: 'Sales (INR)'
-                },
-                beginAtZero: true
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
             }
-        },
-        animation: {
-            duration: 2000,
-            easing: 'easeOutQuart'
         }
+    });
+}
+
+function updateChartData(labels, dataPoints) {
+    salesChart.data.labels = labels;
+    salesChart.data.datasets[0].data = dataPoints;
+    salesChart.update();
+}
+
+function updateChartType(newType) {
+    salesChart.config.type = newType;
+    salesChart.update();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const userCount = {{ user_count }};
+    const orderCount = {{ order_count }};
+    const productCount = {{ product_count }};
+    const incomeAmount = {{ total_income|floatformat:2 }};
+
+    document.documentElement.style.setProperty('--customer-num', userCount);
+    document.documentElement.style.setProperty('--project-num', productCount);
+    document.documentElement.style.setProperty('--order-num', orderCount);
+    document.documentElement.style.setProperty('--income-num', incomeAmount);
+
+    const salesData = JSON.parse('{{ sales_data|escapejs }}');
+
+    if (salesData.length === 0) {
+        console.warn("No sales data available.");
+    } else {
+        const labels = salesData.map(item => item.date);
+        const dataPoints = salesData.map(item => item.total_sales);
+
+        initializeChart(labels, dataPoints);
     }
 });
-function updateChartType(newType) {
-    window.salesChart.config.type = newType;
-    window.salesChart.update();
-}
 </script>
 </body>
 
