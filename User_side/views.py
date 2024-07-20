@@ -945,6 +945,7 @@ def place_order(request):
             if not payment_method_value:
                 return JsonResponse({'status': 'error', 'message': 'Payment method is required.'})
 
+            
             if payment_method_value == 'razorpay':
                 print("yaaaaaaaaaaaaaaaaaaah inside")
                 # Verify Razorpay payment
@@ -1114,6 +1115,8 @@ def place_order(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+
 def calculate_order_total(user, coupon_code):
     cart = Cart.objects.get(user=user)
     cart_items = CartItem.objects.filter(cart=cart)

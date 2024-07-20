@@ -667,6 +667,17 @@
             return;
         }
 
+        var paymentMethod = document.querySelector('input[name="payment"]:checked');
+        if (!paymentMethod) {
+            swal({
+                title: "Error",
+                text: "Please select a payment method.",
+                icon: "error",
+                button: "OK",
+            });
+            return;
+        }
+        
         var paymentValue = paymentMethod.value;
         console.log('Selected payment method:', paymentValue);
 
@@ -681,6 +692,17 @@
         var addressId = activeAddressButton.getAttribute('data-address-id');
         console.log('Selected address ID:', addressId);
 
+        var orderTotal = parseFloat(document.getElementById('total-amount').textContent);
+        if (paymentValue === 'cod' && orderTotal > 1000) {
+            swal({
+                title: "COD Limit Exceeded",
+                text: "Cash on Delivery is not available for orders above ₹1000. Please choose a different payment method.",
+                icon: "warning",
+                button: "OK",
+            });
+            return;
+        }
+        
         // Function to place order with confirmation if needed
         function placeOrderWithConfirmation(confirmation = false) {
         var couponCode = document.getElementById('coupon-code').value;
