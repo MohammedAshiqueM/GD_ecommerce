@@ -34,7 +34,8 @@ from .models import (
     SubcategoryOffer,
     SalesReport,
     CarouselBanner,
-    OfferBanner   
+    OfferBanner,
+    PaymentStatus   
 )
 
 admin.site.register(
@@ -70,6 +71,7 @@ admin.site.register(
         SubcategoryOffer,
         SalesReport,
         CarouselBanner,
-        OfferBanner               
+        OfferBanner,
+        PaymentStatus   
     ]
 )

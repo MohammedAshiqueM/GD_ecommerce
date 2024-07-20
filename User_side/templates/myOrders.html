@@ -142,6 +142,12 @@
            
         </div>
         
+        <p>Payment Status: {{ order.payment_status }}</p>
+        
+        {% if order.payment_status.status == 'Payment Failed' %}
+            <button onclick="retryPayment({{ order.id }})">Retry Payment</button>
+        {% endif %}
+
         {% for line in order.orderline_set.all %}
         <div class="order-items">
             <div class="item-info">
@@ -248,5 +254,42 @@
         }
         
     </script>
+    <script>
+        function retryPayment(orderId) {
+            fetch(`/retry-payment/${orderId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        if (data.order_id) {
+                            // Razorpay payment
+                            var options = {
+                                "key": data.key,
+                                "amount": data.amount,
+                                "currency": data.currency,
+                                "name": "Your Store Name",
+                                "description": "Order Payment",
+                                "order_id": data.order_id,
+                                "handler": function (response){
+                                    alert("Payment successful");
+                                    window.location.reload();
+                                },
+                            };
+                            var rzp = new Razorpay(options);
+                            rzp.open();
+                        } else {
+                            // Wallet payment
+                            alert(data.message);
+                            window.location.reload();
+                        }
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An error occurred. Please try again.");
+                });
+        }
+        </script>
 </body>
 </html>

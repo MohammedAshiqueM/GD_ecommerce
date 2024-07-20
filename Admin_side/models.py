@@ -217,6 +217,12 @@ class OrderStatus(models.Model):
     def __str__(self):
         return f"{self.status}"
     
+class PaymentStatus(models.Model):
+    status = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.status
+    
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     order_date = models.DateField(auto_now_add=True)
@@ -225,6 +231,7 @@ class Order(models.Model):
     shipping_method = models.ForeignKey(ShippingMethod, on_delete=models.CASCADE,null=True)
     order_total = models.FloatField()
     order_status = models.ForeignKey(OrderStatus, on_delete=models.CASCADE)
+    payment_status = models.ForeignKey(PaymentStatus, on_delete=models.CASCADE,null=True)
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True)
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     

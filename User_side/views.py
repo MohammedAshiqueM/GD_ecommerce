@@ -49,7 +49,8 @@ from Admin_side.models import (
     Wallet,
     Transaction,
     CarouselBanner,
-    OfferBanner
+    OfferBanner,
+    PaymentStatus
 )
 
 
@@ -945,7 +946,7 @@ def place_order(request):
             if not payment_method_value:
                 return JsonResponse({'status': 'error', 'message': 'Payment method is required.'})
 
-            
+            payment_status = None  # Initialize payment_status
             if payment_method_value == 'razorpay':
                 print("yaaaaaaaaaaaaaaaaaaah inside")
                 # Verify Razorpay payment
@@ -956,6 +957,11 @@ def place_order(request):
                 # Implement Razorpay payment verification here
                 expiry_date = datetime.now().date() + timedelta(days=365)
 
+                if verify_razorpay_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature):
+                    payment_status = PaymentStatus.objects.get(status='Payment Completed')
+                else:
+                    payment_status = PaymentStatus.objects.get(status='Payment Failed')
+                
                 # If verification is successful, create PaymentMethod for Razorpay
                 payment_method = PaymentMethod.objects.create(
                     user=user,
@@ -965,7 +971,9 @@ def place_order(request):
                     account_number=razorpay_payment_id,
                     is_default=False
                 )
+                
             elif payment_method_value == 'cod':
+                payment_status = PaymentStatus.objects.get(status='Payment Pending')
                 payment_method = create_cod_payment_method(user)
             elif payment_method_value == 'Wallet':
                 # Check if user has sufficient balance in wallet
@@ -989,11 +997,14 @@ def place_order(request):
                         expiry_date=expiry_date,  # dynamically calculated expiry date
                         is_default=False
                     )
+                    payment_status = PaymentStatus.objects.get(status='Payment Completed')
                 else:
+                    payment_status = PaymentStatus.objects.get(status='Payment Failed')
                     return JsonResponse({'status': 'error', 'message': 'Insufficient wallet balance.'})
             else:
                 try:
                     payment_method = PaymentMethod.objects.get(id=payment_method_value)
+                    payment_status = PaymentStatus.objects.get(status='Payment Pending')
                 except PaymentMethod.DoesNotExist:
                     return JsonResponse({'status': 'error', 'message': 'Invalid payment method.'})
 
@@ -1072,7 +1083,7 @@ def place_order(request):
             with transaction.atomic():
                 # Create or get the default order status
                 order_status, created = OrderStatus.objects.get_or_create(status='Pending')
-
+                
                 # Create order
                 order = Order.objects.create(
                     user=user,
@@ -1081,6 +1092,7 @@ def place_order(request):
                     shipping_method=ShippingMethod.objects.first(),
                     order_total=order_total,
                     order_status=order_status,
+                    payment_status=payment_status,
                     discount_amount=discount_value
                 )
                 
@@ -1107,9 +1119,11 @@ def place_order(request):
                     product_config.qty_in_stock -= item.qty
                     product_config.save()
 
-                cart_items.delete()
-
-            return JsonResponse({'status': 'success', 'message': 'Order placed successfully.'})
+                if order.payment_status.status in ['Payment Completed', 'Payment Pending']:
+                    cart_items.delete()
+                    return JsonResponse({'status': 'success', 'message': 'Order placed successfully.'})
+                else:
+                    return JsonResponse({'status': 'error', 'message': 'Payment failed. Please try again.', 'order_id': order.id})
 
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
@@ -1307,7 +1321,7 @@ def my_orders(request):
     orders = Order.objects.filter(user=request.user).prefetch_related(
         'orderline_set__product_configuration__product__images',
         'orderline_set__product_configuration__variation_options'
-    )
+    ).order_by('-order_date')
     
     for order in orders:
         for line in order.orderline_set.all():
@@ -1454,6 +1468,46 @@ def wallet_transaction_history(request):
         'transactions': transactions,
     }
     return render(request, 'wallet_transaction_history.html', context)
+
+@login_required
+def retry_payment(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    
+    if order.payment_status.status != 'Payment Failed':
+        return JsonResponse({'status': 'error', 'message': 'This order is not eligible for payment retry.'})
+    
+    # Redirect to the appropriate payment method
+    if order.payment_method.payment_type.value == 'razorpay':
+        # Generate new Razorpay order and return payment details
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
+        razorpay_order = client.order.create({
+            'amount': int(order.order_total * 100),
+            'currency': 'INR',
+            'payment_capture': '1'
+        })
+        return JsonResponse({
+            'status': 'success',
+            'order_id': razorpay_order['id'],
+            'amount': razorpay_order['amount'],
+            'currency': razorpay_order['currency'],
+            'key': settings.RAZORPAY_KEY,
+            'order_id': order.id  # Pass the existing order ID
+        })
+    elif order.payment_method.payment_type.value == 'Wallet':
+        # Check wallet balance and process payment
+        wallet = Wallet.objects.get(user=request.user)
+        if wallet.balance >= order.order_total:
+            with transaction.atomic():
+                wallet.balance -= order.order_total
+                wallet.save()
+                order.payment_status = PaymentStatus.objects.get(status='Payment Completed')
+                order.save()
+            return JsonResponse({'status': 'success', 'message': 'Payment successful', 'order_id': order.id})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Insufficient wallet balance'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Invalid payment method for retry'})
+
 
 def order_invoice(request, order_id):
     order = get_object_or_404(Order, id=order_id)
