@@ -20,6 +20,7 @@ from django.conf import settings
 import razorpay
 from razorpay import Client as RazorpayClient
 from django.utils import timezone
+from django.urls import reverse
 from django.db import transaction
 from Admin_side.models import (
     User,
@@ -939,6 +940,9 @@ def place_order(request):
             payment_method_value = data.get('payment')
             confirmation = data.get('confirmation', False)
             coupon_code = data.get('coupon_code', None)
+            razorpay_payment_id = data.get('razorpay_payment_id')
+            razorpay_order_id = data.get('razorpay_order_id')
+            razorpay_signature = data.get('razorpay_signature')
             print("coupon:", coupon_code)
             print("Received data:", data)
             print("the pay method: ", payment_method_value)
@@ -950,25 +954,28 @@ def place_order(request):
             if payment_method_value == 'razorpay':
                 print("yaaaaaaaaaaaaaaaaaaah inside")
                 # Verify Razorpay payment
-                razorpay_payment_id = data.get('razorpay_payment_id')
-                razorpay_order_id = data.get('razorpay_order_id')
-                razorpay_signature = data.get('razorpay_signature')
 
                 # Implement Razorpay payment verification here
                 expiry_date = datetime.now().date() + timedelta(days=365)
 
-                if verify_razorpay_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature):
-                    payment_status = PaymentStatus.objects.get(status='Payment Completed')
-                else:
+                try:
+                    if verify_razorpay_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature):
+                        payment_status = PaymentStatus.objects.get(status='Payment Completed')
+                    else:
+                        payment_status = PaymentStatus.objects.get(status='Payment Failed')
+                        print("Razorpay Signature Verification Failed. Setting payment status to Failed.")
+                except Exception as e:
+                    print(f"Razorpay verification error: {str(e)}")
                     payment_status = PaymentStatus.objects.get(status='Payment Failed')
-                
-                # If verification is successful, create PaymentMethod for Razorpay
+                    print("Exception in Razorpay verification. Setting payment status to Failed.")
+
+                # Create PaymentMethod for Razorpay regardless of verification result
                 payment_method = PaymentMethod.objects.create(
                     user=user,
                     payment_type=PaymentType.objects.get(value="razorpay"),
                     provider="Razorpay",
-                    expiry_date=expiry_date,  # dynamically calculated expiry date
-                    account_number=razorpay_payment_id,
+                    expiry_date=expiry_date,
+                    account_number=razorpay_payment_id or "Failed",
                     is_default=False
                 )
                 
@@ -1096,7 +1103,7 @@ def place_order(request):
                     discount_amount=discount_value
                 )
                 
-                if payment_method_value == 'Wallet' and order:
+                if payment_method_value == 'Wallet' and order.payment_status.status == 'Payment Completed':
                     Transaction.objects.create(
                         wallet=wallet,
                         amount=order_total,
@@ -1104,7 +1111,7 @@ def place_order(request):
                         order=order
                     )
 
-                # Create order lines and update stock
+                # Create order lines
                 for item in cart_items:
                     product_config = item.product_configuration
                     OrderLine.objects.create(
@@ -1115,21 +1122,37 @@ def place_order(request):
                         discounted_price=Decimal(product_config.get_discounted_price())
                     )
 
-                    # Update stock
-                    product_config.qty_in_stock -= item.qty
-                    product_config.save()
+                    # Update stock only if payment is successful
+                    if payment_status.status == 'Payment Completed' or 'Payment Pending':
+                        product_config.qty_in_stock -= item.qty
+                        product_config.save()
 
-                if order.payment_status.status in ['Payment Completed', 'Payment Pending']:
-                    cart_items.delete()
-                    return JsonResponse({'status': 'success', 'message': 'Order placed successfully.'})
+                # Clear the cart for both successful and failed payments
+                cart_items.delete()
+
+                # Redirect based on payment status
+                if order.payment_status.status == 'Payment Completed' or 'Payment Pending':
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Order placed successfully.',
+                        'order_id': order.id,
+                        'payment_status': order.payment_status.status,
+                        'redirect_url': reverse('my_orders')
+                    })
                 else:
-                    return JsonResponse({'status': 'error', 'message': 'Payment failed. Please try again.', 'order_id': order.id})
-
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Payment failed. Please try again.',
+                        'order_id': order.id,
+                        'payment_status': order.payment_status.status,
+                        'redirect_url': reverse('my_orders')
+                    })
         except Exception as e:
+            # If an exception occurs (including payment failure), roll back the transaction
+            transaction.set_rollback(True)
             return JsonResponse({'status': 'error', 'message': str(e)})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
-
 
 def calculate_order_total(user, coupon_code):
     cart = Cart.objects.get(user=user)
@@ -1321,7 +1344,7 @@ def my_orders(request):
     orders = Order.objects.filter(user=request.user).prefetch_related(
         'orderline_set__product_configuration__product__images',
         'orderline_set__product_configuration__variation_options'
-    ).order_by('-order_date')
+    ).order_by('-id')
     
     for order in orders:
         for line in order.orderline_set.all():
