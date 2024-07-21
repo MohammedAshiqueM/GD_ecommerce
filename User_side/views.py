@@ -931,6 +931,8 @@ def checkOut(request):
     }
     return render(request, "checkOut.html", context)
 
+from django.urls import reverse
+
 @csrf_exempt
 def place_order(request):
     if request.method == 'POST':
@@ -948,14 +950,11 @@ def place_order(request):
             print("the pay method: ", payment_method_value)
 
             if not payment_method_value:
-                return JsonResponse({'status': 'error', 'message': 'Payment method is required.'})
+                return JsonResponse({'status': 'error', 'message': 'Payment method is required.', 'redirect_url': reverse('my_orders')})
 
             payment_status = None  # Initialize payment_status
             if payment_method_value == 'razorpay':
-                print("yaaaaaaaaaaaaaaaaaaah inside")
-                # Verify Razorpay payment
-
-                # Implement Razorpay payment verification here
+                print("Verifying Razorpay payment")
                 expiry_date = datetime.now().date() + timedelta(days=365)
 
                 try:
@@ -969,7 +968,6 @@ def place_order(request):
                     payment_status = PaymentStatus.objects.get(status='Payment Failed')
                     print("Exception in Razorpay verification. Setting payment status to Failed.")
 
-                # Create PaymentMethod for Razorpay regardless of verification result
                 payment_method = PaymentMethod.objects.create(
                     user=user,
                     payment_type=PaymentType.objects.get(value="razorpay"),
@@ -983,55 +981,60 @@ def place_order(request):
                 payment_status = PaymentStatus.objects.get(status='Payment Pending')
                 payment_method = create_cod_payment_method(user)
             elif payment_method_value == 'Wallet':
-                # Check if user has sufficient balance in wallet
                 try:
                     wallet = Wallet.objects.get(user=user)
                 except Wallet.DoesNotExist:
-                    return JsonResponse({'status': 'error', 'message': 'Wallet not found for this user.'})
+                    return JsonResponse({'status': 'error', 'message': 'Wallet not found for this user.', 'redirect_url': reverse('my_orders')})
 
                 order_total = calculate_order_total(user, coupon_code)
                 expiry_date = datetime.now().date() + timedelta(days=365)
                 if wallet.balance >= order_total:
-                    # Deduct amount from wallet
                     wallet.balance -= order_total
                     wallet.save()
                     
-                    # Create PaymentMethod for wallet
                     payment_method = PaymentMethod.objects.create(
                         user=user,
                         payment_type=PaymentType.objects.get(value="Wallet"),
                         provider="Wallet",
-                        expiry_date=expiry_date,  # dynamically calculated expiry date
+                        expiry_date=expiry_date,
                         is_default=False
                     )
                     payment_status = PaymentStatus.objects.get(status='Payment Completed')
                 else:
                     payment_status = PaymentStatus.objects.get(status='Payment Failed')
-                    return JsonResponse({'status': 'error', 'message': 'Insufficient wallet balance.'})
+                    payment_method = PaymentMethod.objects.create(
+                        user=user,
+                        payment_type=PaymentType.objects.get(value="Wallet"),
+                        provider="Wallet",
+                        expiry_date=expiry_date,
+                        is_default=False
+                    )
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Insufficient wallet balance. Choose another payment method.',
+                        'redirect_url': reverse('my_orders')
+                    })
             else:
                 try:
                     payment_method = PaymentMethod.objects.get(id=payment_method_value)
                     payment_status = PaymentStatus.objects.get(status='Payment Pending')
                 except PaymentMethod.DoesNotExist:
-                    return JsonResponse({'status': 'error', 'message': 'Invalid payment method.'})
+                    return JsonResponse({'status': 'error', 'message': 'Invalid payment method.', 'redirect_url': reverse('my_orders')})
 
             shipping_address_id = data.get('shipping_address_id')
             if not shipping_address_id:
-                return JsonResponse({'status': 'error', 'message': 'Shipping address ID is required.'})
+                return JsonResponse({'status': 'error', 'message': 'Shipping address ID is required.', 'redirect_url': reverse('my_orders')})
 
-            # Fetch existing address based on address ID
             try:
                 shipping_address = Address.objects.get(id=shipping_address_id, user=user)
             except Address.DoesNotExist:
-                return JsonResponse({'status': 'error', 'message': 'Invalid shipping address.'})
+                return JsonResponse({'status': 'error', 'message': 'Invalid shipping address.', 'redirect_url': reverse('my_orders')})
 
-            # Get cart items
             cart = Cart.objects.get(user=user)
             cart_items = CartItem.objects.filter(cart=cart)
             error_messages = []
             confirmation_required = False
 
-            # First, check stock and adjust quantities if necessary
             for item in cart_items:
                 product_config = item.product_configuration
                 requested_qty = item.qty
@@ -1046,15 +1049,13 @@ def place_order(request):
                     item.qty = product_config.qty_in_stock
                     item.save()
 
-            # Calculate order total with adjusted quantities
             order_total = Decimal('0.00')
             for item in cart_items:
                 product_config = item.product_configuration
                 discounted_price = Decimal(product_config.get_discounted_price())
-                item_total = discounted_price * Decimal(item.qty)  # Use adjusted quantity
+                item_total = discounted_price * Decimal(item.qty)
                 order_total += item_total
             
-            # Add fixed shipping cost
             shipping_cost = Decimal('10.00')
             order_total += shipping_cost
 
@@ -1070,28 +1071,27 @@ def place_order(request):
                         logger.info(f"Coupon applied. Discount: {discount_value}, New total: {order_total}")
                 except Coupon.DoesNotExist:
                     logger.warning(f"Non-existent coupon code attempted: {coupon_code}")
-                    return JsonResponse({'status': 'error', 'message': 'Invalid coupon code.'})
+                    return JsonResponse({'status': 'error', 'message': 'Invalid coupon code.', 'redirect_url': reverse('my_orders')})
                 except Exception as e:
                     logger.error(f"Error processing coupon {coupon_code}: {str(e)}")
-                    return JsonResponse({'status': 'error', 'message': f'Error processing coupon: {str(e)}'})
+                    return JsonResponse({'status': 'error', 'message': f'Error processing coupon: {str(e)}', 'redirect_url': reverse('my_orders')})
 
             if error_messages:
                 if any("Out of stock" in msg for msg in error_messages):
-                    return JsonResponse({'status': 'error', 'messages': error_messages})
+                    return JsonResponse({'status': 'error', 'messages': error_messages, 'redirect_url': reverse('my_orders')})
                 else:
                     if confirmation_required and not confirmation:
                         adjusted_messages = [f"Available stock for {item.product_configuration.product.name}: {item.qty}" for item in cart_items if item.product_configuration.qty_in_stock < item.qty]
                         return JsonResponse({
                             'status': 'error', 
                             'messages': error_messages + adjusted_messages, 
-                            'confirmation_required': True
+                            'confirmation_required': True,
+                            'redirect_url': reverse('my_orders')
                         })
 
             with transaction.atomic():
-                # Create or get the default order status
                 order_status, created = OrderStatus.objects.get_or_create(status='Pending')
                 
-                # Create order
                 order = Order.objects.create(
                     user=user,
                     payment_method=payment_method,
@@ -1111,33 +1111,29 @@ def place_order(request):
                         order=order
                     )
 
-                # Create order lines
                 for item in cart_items:
                     product_config = item.product_configuration
                     OrderLine.objects.create(
                         order=order,
                         product_configuration=product_config,
                         qty=item.qty,
-                        price=product_config.price,                        
+                        price=product_config.price,
                         discounted_price=Decimal(product_config.get_discounted_price())
                     )
 
-                    # Update stock only if payment is successful
-                    if payment_status.status == 'Payment Completed' or 'Payment Pending':
+                    if payment_status.status in ['Payment Completed', 'Payment Pending']:
                         product_config.qty_in_stock -= item.qty
                         product_config.save()
 
-                # Clear the cart for both successful and failed payments
                 cart_items.delete()
 
-                # Redirect based on payment status
-                if order.payment_status.status == 'Payment Completed' or 'Payment Pending':
+                if order.payment_status.status in ['Payment Completed', 'Payment Pending']:
                     return JsonResponse({
                         'status': 'success',
                         'message': 'Order placed successfully.',
                         'order_id': order.id,
                         'payment_status': order.payment_status.status,
-                        'redirect_url': reverse('my_orders')
+                        'redirect_url': reverse('order_success')
                     })
                 else:
                     return JsonResponse({
@@ -1148,11 +1144,11 @@ def place_order(request):
                         'redirect_url': reverse('my_orders')
                     })
         except Exception as e:
-            # If an exception occurs (including payment failure), roll back the transaction
             transaction.set_rollback(True)
-            return JsonResponse({'status': 'error', 'message': str(e)})
+            print(f"Error placing order: {str(e)}")
+            return JsonResponse({'status': 'error', 'message': str(e), 'redirect_url': reverse('my_orders')})
 
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.', 'redirect_url': reverse('my_orders')})
 
 def calculate_order_total(user, coupon_code):
     cart = Cart.objects.get(user=user)
