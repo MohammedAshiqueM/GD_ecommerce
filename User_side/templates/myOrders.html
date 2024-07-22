@@ -147,6 +147,37 @@
             margin-bottom: 0px!important;
 
         }
+        .style-filters{
+    height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0;
+    margin-left: 10px;
+    /* transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; */
+        }
+        .style-filters-btn{
+    height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0;
+    /* transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; */
+        }
+        .filter-options{
+            margin-left: 100px;
+            margin-bottom: 50px;
+        }
     </style>
     
 </head>
@@ -156,20 +187,20 @@
         <h2>Your Order History</h2>
     </div>
     <div class="filter-options">
-        <select id="payment-status-filter">
+        <select id="payment-status-filter" class="style-filters">
             <option value="">All Payment Statuses</option>
             <option value="Payment Failed">Payment Failed</option>
             <option value="Payment Completed">Payment Completed</option>
             <option value="Payment Pending">Payment Pending</option>
             <option value="Payment Refunded">Payment Refunded</option>
         </select>
-        <select id="order-status-filter">
+        <select id="order-status-filter" class="style-filters">
             <option value="">All Order Statuses</option>
             <option value="Delivered">Delivered</option>
             <option value="Cancelled">Cancelled</option>
             <option value="Pending">Pending</option>
         </select>
-        <button id="apply-filters">Apply Filters</button>
+        <button id="apply-filters" class="style-filters-btn">Apply Filters</button>
     </div>
     <div id="orders-container">
     {% for order in orders %}
