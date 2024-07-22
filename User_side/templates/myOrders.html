@@ -176,8 +176,11 @@
             <img src="{% static 'user_img/pending.jpeg' %}" alt="">
             {% endif %}
             </div>
-            {% if order.payment_status.status == 'Payment Failed' %}
+            <!-- {% if order.payment_status.status == 'Payment Failed' %}
                 <button onclick="retryPayment({{ order.id }})">Retry Payment</button>
+            {% endif %} -->
+            {% if order.payment_status.status == 'Payment Failed' %}
+            <button onclick="showPaymentOptions({{ order.id }})">Retry Payment</button>
             {% endif %}
         </div>
 
@@ -287,42 +290,121 @@
         }
         
     </script>
-    <script>
-        function retryPayment(orderId) {
-            fetch(`/retry-payment/${orderId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        if (data.order_id) {
-                            // Razorpay payment
-                            var options = {
-                                "key": data.key,
-                                "amount": data.amount,
-                                "currency": data.currency,
-                                "name": "Your Store Name",
-                                "description": "Order Payment",
-                                "order_id": data.order_id,
-                                "handler": function (response){
-                                    alert("Payment successful");
-                                    window.location.reload();
-                                },
-                            };
-                            var rzp = new Razorpay(options);
-                            rzp.open();
-                        } else {
-                            // Wallet payment
-                            alert(data.message);
-                            window.location.reload();
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+<script>
+    function showPaymentOptions(orderId) {
+        swal({
+            title: "Choose Payment Method",
+            text: "Select your preferred payment method",
+            buttons: {
+                razorpay: {
+                    text: "Razorpay",
+                    value: "razorpay",
+                },
+                wallet: {
+                    text: "Wallet",
+                    value: "wallet",
+                },
+            },
+        })
+        .then((value) => {
+            if (value) {
+                retryPayment(orderId, value);
+            }
+        });
+    }
+
+    function retryPayment(orderId, paymentMethod) {
+        fetch(`/retry-payment/${orderId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ payment_method: paymentMethod })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (paymentMethod === 'razorpay') {
+                    var options = {
+                        "key": data.key,
+                        "amount": data.amount,
+                        "currency": data.currency,
+                        "name": "Your Store Name",
+                        "description": "Order Payment",
+                        "order_id": data.order_id,
+                        "handler": function (response){
+                            verifyPayment(response, orderId);
+                        },
+                        "prefill": {
+                            "name": "{{ request.user.get_full_name }}",
+                            "email": "{{ request.user.email }}",
+                            "contact": "{{ request.user.phone_number }}"
+                        },
+                        "theme": {
+                            "color": "#3399cc"
                         }
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert("An error occurred. Please try again.");
+                    };
+                    var rzp1 = new Razorpay(options);
+                    rzp1.open();
+                } else {
+                    swal("Success", data.message, "success")
+                    .then(() => {
+                        window.location.reload();
+                    });
+                }
+            } else {
+                swal("Error", data.message, "error");
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            swal("Error", "An error occurred. Please try again.", "error");
+        });
+    }
+
+    function verifyPayment(response, orderId) {
+        fetch(`/verify-payment/${orderId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(response)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                swal("Success", "Payment successful", "success")
+                .then(() => {
+                    window.location.reload();
                 });
+            } else {
+                swal("Error", "Payment verification failed", "error");
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            swal("Error", "An error occurred during payment verification", "error");
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
         }
-        </script>
+        return cookieValue;
+    }
+</script>
 </body>
 </html>

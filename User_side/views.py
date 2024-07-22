@@ -1489,15 +1489,17 @@ def wallet_transaction_history(request):
     return render(request, 'wallet_transaction_history.html', context)
 
 @login_required
+@require_POST
 def retry_payment(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     
     if order.payment_status.status != 'Payment Failed':
         return JsonResponse({'status': 'error', 'message': 'This order is not eligible for payment retry.'})
     
-    # Redirect to the appropriate payment method
-    if order.payment_method.payment_type.value == 'razorpay':
-        # Generate new Razorpay order and return payment details
+    data = json.loads(request.body)
+    payment_method = data.get('payment_method')
+    
+    if payment_method == 'razorpay':
         client = razorpay.Client(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
         razorpay_order = client.order.create({
             'amount': int(order.order_total * 100),
@@ -1506,27 +1508,41 @@ def retry_payment(request, order_id):
         })
         return JsonResponse({
             'status': 'success',
+            'key': settings.RAZORPAY_KEY,
             'order_id': razorpay_order['id'],
             'amount': razorpay_order['amount'],
             'currency': razorpay_order['currency'],
-            'key': settings.RAZORPAY_KEY,
-            'order_id': order.id  # Pass the existing order ID
         })
-    elif order.payment_method.payment_type.value == 'Wallet':
-        # Check wallet balance and process payment
+    elif payment_method == 'wallet':
         wallet = Wallet.objects.get(user=request.user)
+        order_total = Decimal(order.order_total)
         if wallet.balance >= order.order_total:
             with transaction.atomic():
-                wallet.balance -= order.order_total
+                wallet.balance -= order_total
                 wallet.save()
                 order.payment_status = PaymentStatus.objects.get(status='Payment Completed')
                 order.save()
-            return JsonResponse({'status': 'success', 'message': 'Payment successful', 'order_id': order.id})
+            return JsonResponse({'status': 'success', 'message': 'Payment successful'})
         else:
             return JsonResponse({'status': 'error', 'message': 'Insufficient wallet balance'})
     else:
-        return JsonResponse({'status': 'error', 'message': 'Invalid payment method for retry'})
+        return JsonResponse({'status': 'error', 'message': 'Invalid payment method'})
+    
 
+@login_required
+@require_POST
+def verify_payment(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    client = razorpay.Client(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
+    
+    data = json.loads(request.body)
+    try:
+        client.utility.verify_payment_signature(data)
+        order.payment_status = PaymentStatus.objects.get(status='Payment Completed')
+        order.save()
+        return JsonResponse({'status': 'success'})
+    except:
+        return JsonResponse({'status': 'error'})
 
 def order_invoice(request, order_id):
     order = get_object_or_404(Order, id=order_id)
