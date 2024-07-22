@@ -1,6 +1,6 @@
 {% load cart_extras %}
 {% include 'common.html' %}
-
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -124,6 +124,29 @@
             cursor: pointer;
             margin-left: 5px;
         }
+        .payment{
+            float: right;
+        }
+        .payment button{
+            background-color: #e89292;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: -7px;
+            /* float:left */
+        }
+        .payment img{
+            width: 125px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .payment p{
+            margin-top: 10px!important;
+            margin-bottom: 0px!important;
+
+        }
     </style>
     
 </head>
@@ -141,12 +164,22 @@
             <span>Placed on {{ order.order_date }}</span>
            
         </div>
-        
-        <p>Payment Status: {{ order.payment_status }}</p>
-        
-        {% if order.payment_status.status == 'Payment Failed' %}
-            <button onclick="retryPayment({{ order.id }})">Retry Payment</button>
-        {% endif %}
+
+        <div class="payment">
+            <p><u>Payment Status</u></p>
+            <div>
+            {% if order.payment_status.status == 'Payment Failed' %}
+            <img src="{% static 'user_img/failed.png' %}" alt="">
+            {% elif order.payment_status.status == 'Payment Completed' %}
+            <img src="{% static 'user_img/paid.jpeg' %}" alt="">
+            {% else %}
+            <img src="{% static 'user_img/pending.jpeg' %}" alt="">
+            {% endif %}
+            </div>
+            {% if order.payment_status.status == 'Payment Failed' %}
+                <button onclick="retryPayment({{ order.id }})">Retry Payment</button>
+            {% endif %}
+        </div>
 
         {% for line in order.orderline_set.all %}
         <div class="order-items">
