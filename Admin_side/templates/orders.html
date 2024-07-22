@@ -75,6 +75,11 @@
         select{
             border-radius: 5px;
         }
+        .status-select {
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 
@@ -163,9 +168,11 @@
                                 </td>
                                 <td rowspan="{{ order.orderline_set.count }}"><span class='orderStatus {{ order.order_status.status }}' >{{ order.order_status.status }}</span></td>
                                 <td rowspan="{{ order.orderline_set.count }}">
-                                    <button onclick="changeOrderStatus('{{ order.id }}', 'Cancelled')">Cancel</button>
-                                    <button onclick="changeOrderStatus('{{ order.id }}', 'Pending')">Pending</button>
-                                    <button onclick="changeOrderStatus('{{ order.id }}', 'Delivered')">Delivered</button>
+                                    <select class="status-select" data-order-id="{{ order.id }}" data-old-status="{{ order.order_status.status }}">
+                                        <option value="Cancelled" {% if order.order_status.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                                        <option value="Pending" {% if order.order_status.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                        <option value="Delivered" {% if order.order_status.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                                    </select>
                                 </td>
                                 {% endif %}
                             </tr>
@@ -179,51 +186,113 @@
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const filterForm = document.getElementById('filter-form');
-        const ordersTable = document.getElementById('orders-table');
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filter-form');
+    const ordersTable = document.getElementById('orders-table');
 
-        filterForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(filterForm);
-            const queryString = new URLSearchParams(formData).toString();
+    filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(filterForm);
+        const queryString = new URLSearchParams(formData).toString();
 
-            fetch(`{% url 'orders' %}?${queryString}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
+        fetch(`{% url 'orders' %}?${queryString}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (ordersTable) {
                 ordersTable.innerHTML = data.table_html;
-            })
-            .catch(error => {
-                console.error('Error fetching orders:', error);
-            });
+                attachStatusChangeListeners();
+            } else {
+                console.error('orders-table element not found');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching orders:', error);
         });
     });
 
-        function changeOrderStatus(orderId, status) {
-            fetch(`/administration/change_order_status/${orderId}/?status=${status}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            })
-                .then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    } else {
-                        console.error('Failed to change order status');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error changing order status:', error);
-                });
+    attachStatusChangeListeners();
+});
+
+function attachStatusChangeListeners() {
+    const statusSelects = document.querySelectorAll('.status-select');
+    statusSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            const orderId = this.getAttribute('data-order-id');
+            const newStatus = this.value;
+            const oldStatus = this.getAttribute('data-old-status');
+            
+            // Reset the select to its previous value
+            this.value = oldStatus;
+
+            showStatusChangeConfirmation(orderId, oldStatus, newStatus);
+        });
+    });
+}
+
+function showStatusChangeConfirmation(orderId, oldStatus, newStatus) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: `Do you want to change the order status from ${oldStatus} to ${newStatus}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, change it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            changeOrderStatus(orderId, newStatus);
         }
+    });
+}
+
+function changeOrderStatus(orderId, status) {
+    fetch(`/administration/change_order_status/${orderId}/?status=${status}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Update the status cell and the select box
+            const statusCell = document.querySelector(`[data-order-id="${orderId}"]`).closest('td').previousElementSibling;
+            statusCell.innerHTML = `<span class='orderStatus ${status}'>${status}</span>`;
+            
+            const selectBox = document.querySelector(`[data-order-id="${orderId}"]`);
+            selectBox.value = status;
+            selectBox.setAttribute('data-old-status', status);
+
+            Swal.fire(
+                'Updated!',
+                'The order status has been updated.',
+                'success'
+            );
+        } else {
+            console.error('Failed to change order status');
+            Swal.fire(
+                'Error!',
+                'Failed to change the order status.',
+                'error'
+            );
+        }
+    })
+    .catch(error => {
+        console.error('Error changing order status:', error);
+        Swal.fire(
+            'Error!',
+            'An error occurred while changing the order status.',
+            'error'
+        );
+    });
+}
 
         function getCookie(name) {
             let cookieValue = null;
