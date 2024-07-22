@@ -155,6 +155,23 @@
     <div class="order-header">
         <h2>Your Order History</h2>
     </div>
+    <div class="filter-options">
+        <select id="payment-status-filter">
+            <option value="">All Payment Statuses</option>
+            <option value="Payment Failed">Payment Failed</option>
+            <option value="Payment Completed">Payment Completed</option>
+            <option value="Payment Pending">Payment Pending</option>
+            <option value="Payment Refunded">Payment Refunded</option>
+        </select>
+        <select id="order-status-filter">
+            <option value="">All Order Statuses</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Pending">Pending</option>
+        </select>
+        <button id="apply-filters">Apply Filters</button>
+    </div>
+    <div id="orders-container">
     {% for order in orders %}
     <div class="order-history">
     
@@ -219,15 +236,13 @@
             <span class='status {{ order.order_status.status }}'>{% if order.order_status.status == 'Cancelled' %}Cancelled{% else %}{{ order.order_status.status }}{% endif %}</span>
             <div class="total-amount">
                 <p>Shipping Charge: ₹10</p>
-                
-            
                 {% if order.discount_amount %}
                 <p>Card discount: {{ order.discount_amount }}</p>
                 {% endif %}
                 Total: ₹{{ order.order_total }}
             </div>
             <div class="actions">
-                {% if order.order_status.status == 'Pending' %}
+                {% if order.order_status.status == 'Pending' and order.payment_status.status != 'Payment Failed' %}
                 <button onclick="confirmCancel('{{ order.id }}')">Cancel</button>
                 {% endif %}
                 <a href="{% url 'order_invoice' order.id %}" ><button >View Invoice</button></a>
@@ -236,63 +251,59 @@
     </div>
 </div>
     {% endfor %}
-
+</div>
 <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 <script>
-        function confirmCancel(orderId) {
-            swal({
-                title: "Are you sure?",
-                text: "Once cancelled, you will not be able to change the status",
-                icon: "warning",
-                buttons: true,
-                dangerMode: true,
-            })
-            .then((willCancel) => {
-                if (willCancel) {
-                    cancelOrder(orderId);
-                }
-            });
-        }
+    function confirmCancel(orderId) {
+        swal({
+            title: "Are you sure?",
+            text: "Once cancelled, you will not be able to change the status",
+            icon: "warning",
+            buttons: true,
+            dangerMode: true,
+        })
+        .then((willCancel) => {
+            if (willCancel) {
+                cancelOrder(orderId);
+            }
+        });
+    }
 
-        function cancelOrder(orderId) {
-            fetch(`/user/cancel_order/${orderId}/`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    location.reload();
-                } else {
-                    console.error('Failed to cancel order');
-                }
-            })
-            .catch(error => {
-                console.error('Error canceling order:', error);
-            });
-        }
+    function cancelOrder(orderId) {
+        fetch(`/user/cancel_order/${orderId}/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                console.error('Failed to cancel order');
+            }
+        })
+        .catch(error => {
+            console.error('Error canceling order:', error);
+        });
+    }
 
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.startsWith(name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
             }
-            return cookieValue;
         }
-        
-    </script>
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-<script>
+        return cookieValue;
+    }
+
     function showPaymentOptions(orderId) {
         swal({
             title: "Choose Payment Method",
@@ -391,20 +402,105 @@
         });
     }
 
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.startsWith(name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+    document.addEventListener('DOMContentLoaded', function() {
+        const applyFiltersButton = document.getElementById('apply-filters');
+        applyFiltersButton.addEventListener('click', fetchFilteredOrders);
+
+        function fetchFilteredOrders() {
+            const paymentStatus = document.getElementById('payment-status-filter').value;
+            const orderStatus = document.getElementById('order-status-filter').value;
+
+            const url = new URL(window.location.href);
+            url.searchParams.delete('payment_status'); // remove existing param
+            url.searchParams.delete('order_status'); // remove existing param
+
+            if (paymentStatus) {
+                url.searchParams.set('payment_status', paymentStatus);
             }
+            if (orderStatus) {
+                url.searchParams.set('order_status', orderStatus);
+            }
+
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateOrdersDisplay(data.orders);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         }
-        return cookieValue;
-    }
+
+        function updateOrdersDisplay(orders) {
+            const ordersContainer = document.getElementById('orders-container');
+            ordersContainer.innerHTML = ''; // Clear existing orders
+
+            orders.forEach(order => {
+                const orderElement = createOrderElement(order);
+                ordersContainer.appendChild(orderElement);
+            });
+        }
+
+        function createOrderElement(order) {
+            const orderDiv = document.createElement('div');
+            orderDiv.classList.add('order-history');
+            orderDiv.innerHTML = `
+                <div class="order">
+                    <div class="order-details">
+                        <span>Order #${order.id}</span>
+                        <span>Placed on ${order.order_date}</span>
+                    </div>
+                    <div class="payment">
+                        <p><u>Payment Status</u></p>
+                        <div>
+                            ${order.payment_status === 'Payment Failed' ? 
+                                `<img src="{% static 'user_img/failed.png' %}" alt="">` :
+                                (order.payment_status === 'Payment Completed' ?
+                                `<img src="{% static 'user_img/paid.jpeg' %}" alt="">` :
+                                `<img src="{% static 'user_img/pending.jpeg' %}" alt="">`)
+                            }
+                        </div>
+                        ${order.payment_status === 'Payment Failed' ? `<button onclick="showPaymentOptions(${order.id})">Retry Payment</button>` : ''}
+                    </div>
+                    ${order.lines.map(line => `
+                        <div class="order-items">
+                            <div class="item-info">
+                                <img src="${line.image_url}" alt="Product Image">
+                                <div>
+                                    <h4>${line.product_name}</h4>
+                                    ${line.variation_options.length > 0 ? `<p>Options: ${line.variation_options.map(option => `${option.variation_name}: ${option.value}`).join(', ')}</p>` : ''}
+                                    <p>Price: ₹${line.price}</p>
+                                    ${line.discount_amount != 0 ? `<p>Offer discount: ₹${line.discount_amount}</p>` : ''}
+                                    <p>After discount: ₹${line.discounted_price}</p>
+                                    <p>Quantity: ${line.qty}</p>
+                                    <p>Shipping Address: ${order.shipping_address.address_line1}, ${order.shipping_address.city}, ${order.shipping_address.region}, ${order.shipping_address.country}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <div class="order-summary">
+                        <span class="status ${order.order_status}">${order.order_status}</span>
+                        <div class="total-amount">
+                            <p>Shipping Charge: ₹10</p>
+                            ${order.discount_amount ? `<p>Card discount: ₹${order.discount_amount}</p>` : ''}
+                            Total: ₹${order.order_total}
+                        </div>
+                        <div class="actions">
+                            ${order.order_status === 'Pending' && order.payment_status !== 'Payment Failed' ? `<button onclick="confirmCancel(${order.id})">Cancel</button>` : ''}
+                            <a href="/order_invoice/${order.id}/"><button>View Invoice</button></a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return orderDiv;
+        }
+    });
 </script>
 </body>
 </html>

@@ -1334,7 +1334,8 @@ def apply_coupon(request):
     except Exception as e:
         logger.exception(f"Error in apply_coupon: {str(e)}")
         return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
-    
+
+
 def my_orders(request):
     categories = Category.objects.all()
     orders = Order.objects.filter(user=request.user).prefetch_related(
@@ -1342,11 +1343,49 @@ def my_orders(request):
         'orderline_set__product_configuration__variation_options'
     ).order_by('-id')
     
+    payment_status = request.GET.get('payment_status')
+    order_status = request.GET.get('order_status')
+    
+    if payment_status:
+        orders = orders.filter(payment_status__status=payment_status)
+    if order_status:
+        orders = orders.filter(order_status__status=order_status)
+    
     for order in orders:
         for line in order.orderline_set.all():
             line.price = Decimal(line.price) if line.price is not None else Decimal(0)
             line.discounted_price = Decimal(line.discounted_price) if line.discounted_price is not None else Decimal(line.price)
             line.discount_amount = line.price - line.discounted_price
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # If it's an AJAX request, return JSON data
+        order_data = [{
+            'id': order.id,
+            'order_date': order.order_date,
+            'order_total': str(order.order_total),
+            'payment_status': order.payment_status.status if order.payment_status is not None else 'Unknown',
+            'order_status': order.order_status.status if order.order_status is not None else 'Unknown',
+            'lines': [{
+                'product_name': line.product_configuration.product.name,
+                'price': str(line.price),
+                'discounted_price': str(line.discounted_price),
+                'discount_amount': str(line.discount_amount),
+                'qty': line.qty,
+                'image_url': line.product_configuration.product.images.first().image.url if line.product_configuration.product.images.exists() else 'https://via.placeholder.com/60',
+                'variation_options': [{
+                    'variation_name': option.variation.name,
+                    'value': option.value
+                } for option in line.product_configuration.variation_options.all()]
+            } for line in order.orderline_set.all()],
+            'shipping_address': {
+                'address_line1': order.shipping_address.address_line1,
+                'city': order.shipping_address.city,
+                'region': order.shipping_address.region,
+                'country': order.shipping_address.country
+            }
+        } for order in orders]
+        return JsonResponse({'orders': order_data})
+    
     return render(request, "myOrders.html", {'orders': orders, 'categories': categories})
 
 import logging
