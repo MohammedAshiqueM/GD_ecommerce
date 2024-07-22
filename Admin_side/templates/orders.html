@@ -33,6 +33,33 @@
         .orderStatus.Cancelled {
             background-color: #f94144;
         }
+        .payment {
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+        }
+        .payment .failed{
+            background-color: #492525;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+        }
+        .payment .success{
+            background-color: #91ca1d;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+        }
+        .payment .pending{
+            background-color: #2382a6;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+        }
     </style>
 </head>
 
@@ -57,6 +84,7 @@
                                 <th>Payment Method</th>
                                 <th>Shipping Address</th>
                                 <th>Order Total</th>
+                                <th>Payment Status</th>
                                 <th>Order Status</th>
                                 <th>Change Status</th>
                             </tr>
@@ -88,6 +116,17 @@
                                 <td rowspan="{{ order.orderline_set.count }}">{{ order.payment_method.payment_type }}</td>
                                 <td rowspan="{{ order.orderline_set.count }}">{{ order.shipping_address.address_line1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.region }}, {{ order.shipping_address.country }}</td>
                                 <td rowspan="{{ order.orderline_set.count }}">${{ order.order_total }}</td>
+                                <td rowspan="{{ order.orderline_set.count }}">
+                                <div class="payment">
+                                {% if order.payment_status.status == 'Payment Failed' %}
+                                <p class="failed">{{ order.payment_status }}</p>
+                                {% elif order.payment_status.status == 'Payment Completed' %}
+                                <p class="success">{{ order.payment_status }}</p>
+                                {% elif order.payment_status.status == 'Payment Pending' %}
+                                <p class="pending">{{ order.payment_status }}</p>
+                                {% endif %}
+                                </div>
+                                </td>
                                 <td rowspan="{{ order.orderline_set.count }}"><span class='orderStatus {{ order.order_status.status }}' >{{ order.order_status.status }}</span></td>
                                 <td rowspan="{{ order.orderline_set.count }}">
                                     <button onclick="changeOrderStatus('{{ order.id }}', 'Cancelled')">Cancel</button>
