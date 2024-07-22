@@ -60,6 +60,21 @@
             border-radius: 5px;
             color: white;
         }
+        .apply{
+            background: var(--main-color);
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+            border: 1px solid var(--icon-color);
+        }
+        .apply:hover{
+            background: none;
+            color: var(--icon-color);
+        }
+        select{
+            border-radius: 5px;
+        }
     </style>
 </head>
 
@@ -81,16 +96,16 @@
                     </select>
 
                     <label for="payment_status">Payment Status:</label>
-                    <select name="payment_status" id="payment_status">
+                    <select name="payment_status" >
                         <option value="">All</option>
                         {% for status in payment_statuses %}
                             <option value="{{ status }}" {% if status == selected_payment_status %}selected{% endif %}>{{ status }}</option>
                         {% endfor %}
                     </select>
 
-                    <button type="submit">Apply Filters</button>
+                    <button type="submit" class="apply">Apply Filters</button>
                 </form>
-                <div cclass="table-responsive" id="orders-table">
+                <div class="table-responsive" id="orders-table">
                     <table width="100%">
                         <thead>
                             <tr>
