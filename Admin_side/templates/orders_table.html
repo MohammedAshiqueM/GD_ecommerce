@@ -1,0 +1,68 @@
+                    <table width="100%">
+                        <thead>
+                            <tr>
+                                <th>Order Id</th>
+                                <th>Product Image</th>
+                                <th>Product Name</th>
+                                <th>User</th>
+                                <th>Variations</th>
+                                <th>SKU</th>
+                                <th>Payment Method</th>
+                                <th>Shipping Address</th>
+                                <th>Order Total</th>
+                                <th>Payment Status</th>
+                                <th>Order Status</th>
+                                <th>Change Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            {% for line in order.orderline_set.all %}
+                            <tr>
+                                {% if forloop.first %}
+                                <td rowspan="{{ order.orderline_set.count }}">#{{ order.id }}</td>
+                                {% endif %}
+                    
+                                <td>
+                                    {% if line.product_configuration.product.images.first %}
+                                    <img src="{{ line.product_configuration.product.images.first.image.url }}" alt="Product Image" width="60" height="60">
+                                    {% else %}
+                                    <img src="https://via.placeholder.com/60" alt="Product Image">
+                                    {% endif %}
+                                </td>
+                                <td>{{ line.product_configuration.product.name }}</td>
+                                <td>{{ order.user.username }}</td>
+                                <td>
+                                    {% for option in line.product_configuration.product.configurations.first.variation_options.all %}
+                                    {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>{{ line.product_configuration.product.SKU }}</td>
+                                {% if forloop.first %}
+                                <td rowspan="{{ order.orderline_set.count }}">{{ order.payment_method.payment_type }}</td>
+                                <td rowspan="{{ order.orderline_set.count }}">{{ order.shipping_address.address_line1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.region }}, {{ order.shipping_address.country }}</td>
+                                <td rowspan="{{ order.orderline_set.count }}">${{ order.order_total }}</td>
+                                <td rowspan="{{ order.orderline_set.count }}">
+                                <div class="payment">
+                                {% if order.payment_status.status == 'Payment Failed' %}
+                                <p class="failed">{{ order.payment_status }}</p>
+                                {% elif order.payment_status.status == 'Payment Completed' %}
+                                <p class="success">{{ order.payment_status }}</p>
+                                {% elif order.payment_status.status == 'Payment Pending' %}
+                                <p class="pending">{{ order.payment_status }}</p>
+                                {% endif %}
+                                </div>
+                                </td>
+                                <td rowspan="{{ order.orderline_set.count }}"><span class='orderStatus {{ order.order_status.status }}' >{{ order.order_status.status }}</span></td>
+                                <td rowspan="{{ order.orderline_set.count }}">
+                                    <button onclick="changeOrderStatus('{{ order.id }}', 'Cancelled')">Cancel</button>
+                                    <button onclick="changeOrderStatus('{{ order.id }}', 'Pending')">Pending</button>
+                                    <button onclick="changeOrderStatus('{{ order.id }}', 'Delivered')">Delivered</button>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    

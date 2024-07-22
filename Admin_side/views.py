@@ -51,7 +51,8 @@ from .models import (
     ProductOffer,
     SalesReport,
     CarouselBanner,
-    OfferBanner
+    OfferBanner,
+    PaymentStatus
 )
 
 
@@ -802,10 +803,39 @@ def editvariant(request, pk):
         "variation_options": variation_options,
     }
     return render(request, "editvariant.html", context)
-def orders(request):
-    orders = Order.objects.all()
-    return render(request,"orders.html",{'orders': orders})
 
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.template.loader import render_to_string
+from .models import Order, OrderStatus, PaymentStatus
+
+def orders(request):
+    orders = Order.objects.all().order_by('-id')
+
+    order_status = request.GET.get('order_status')
+    payment_status = request.GET.get('payment_status')
+
+    if order_status:
+        orders = orders.filter(order_status__status=order_status)
+    if payment_status:
+        orders = orders.filter(payment_status__status=payment_status)
+
+    order_statuses = OrderStatus.objects.values_list('status', flat=True).distinct()
+    payment_statuses = PaymentStatus.objects.values_list('status', flat=True).distinct()
+
+    context = {
+        'orders': orders,
+        'order_statuses': order_statuses,
+        'payment_statuses': payment_statuses,
+        'selected_order_status': order_status,
+        'selected_payment_status': payment_status,
+    }
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        table_html = render_to_string('orders_table.html', context, request=request)
+        return JsonResponse({'table_html': table_html})
+
+    return render(request, "orders.html", context)
 def coupons(request):
     data = Coupon.objects.all()
     return render(request,"coupons.html",{"data":data})

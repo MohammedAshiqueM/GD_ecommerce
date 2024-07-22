@@ -71,7 +71,26 @@
                 <h3 class="heading">Order Details</h3>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
+                <form id="filter-form">
+                    <label for="order_status">Order Status:</label>
+                    <select name="order_status" id="order_status">
+                        <option value="">All</option>
+                        {% for status in order_statuses %}
+                            <option value="{{ status }}" {% if status == selected_order_status %}selected{% endif %}>{{ status }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="payment_status">Payment Status:</label>
+                    <select name="payment_status" id="payment_status">
+                        <option value="">All</option>
+                        {% for status in payment_statuses %}
+                            <option value="{{ status }}" {% if status == selected_payment_status %}selected{% endif %}>{{ status }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <button type="submit">Apply Filters</button>
+                </form>
+                <div cclass="table-responsive" id="orders-table">
                     <table width="100%">
                         <thead>
                             <tr>
@@ -144,7 +163,33 @@
             </div>
         </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterForm = document.getElementById('filter-form');
+        const ordersTable = document.getElementById('orders-table');
+
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(filterForm);
+            const queryString = new URLSearchParams(formData).toString();
+
+            fetch(`{% url 'orders' %}?${queryString}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                ordersTable.innerHTML = data.table_html;
+            })
+            .catch(error => {
+                console.error('Error fetching orders:', error);
+            });
+        });
+    });
+
         function changeOrderStatus(orderId, status) {
             fetch(`/administration/change_order_status/${orderId}/?status=${status}`, {
                 method: 'GET',
