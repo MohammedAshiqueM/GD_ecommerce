@@ -52,7 +52,9 @@ from .models import (
     SalesReport,
     CarouselBanner,
     OfferBanner,
-    PaymentStatus
+    PaymentStatus,
+    Wallet,
+    Transaction
 )
 
 
@@ -455,6 +457,7 @@ def variant(request, pk):
                 index = key.split('_')[1].split('[')[0]
                 if index in variation_data:
                     variation_data[index]['options'].extend(values)
+
 
         # Print parsed variation data for debugging
         print("Parsed variation data:", variation_data)
@@ -900,12 +903,45 @@ def change_order_status(request, order_id):
     order = get_object_or_404(Order, id=order_id)
 
     if status:
-        order_status, created = OrderStatus.objects.get_or_create(status=status)
-        order.order_status = order_status
+        new_order_status, created = OrderStatus.objects.get_or_create(status=status)
+        
+        # Check if the new status is 'Cancelled'
+        if status == 'Cancelled':
+            # Process cancellation and potential refund
+            process_cancellation(order)
+        
+        order.order_status = new_order_status
         order.save()
         return JsonResponse({'message': 'Order status changed successfully.'})
     else:
         return JsonResponse({'message': 'Invalid status.'}, status=400)
+
+def process_cancellation(order):
+    # Check if the payment was completed
+    if order.payment_status.status == 'Payment Completed':  # Assuming 'Complete' is the status for completed payments
+        # Process refund
+        wallet, created = Wallet.objects.get_or_create(user=order.user)
+        refund_amount = order.order_total
+        wallet.add_funds(refund_amount)
+        
+        # Create a refund transaction
+        Transaction.objects.create(
+            wallet=wallet,
+            amount=refund_amount,
+            transaction_type='REFUND',
+            order=order
+        )
+        
+        # Update payment status to 'Refunded'
+        refunded_status, created = PaymentStatus.objects.get_or_create(status='Payment Refunded')
+        order.payment_status = refunded_status
+        order.save()
+    
+    # Update stock for each product configuration in the order
+    for order_line in order.orderline_set.all():
+        config = order_line.product_configuration
+        config.qty_in_stock += order_line.qty
+        config.save()
     
 @login_required
 def stock_management(request):

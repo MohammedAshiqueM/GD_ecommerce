@@ -316,7 +316,7 @@ class Wallet(models.Model):
         return f"{self.user.username}'s Wallet"
     
     def add_funds(self, amount):
-        self.balance += amount
+        self.balance += Decimal(amount)
         self.save()
 
     def deduct_funds(self, amount):
