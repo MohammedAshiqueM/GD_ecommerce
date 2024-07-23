@@ -809,33 +809,52 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 from .models import Order, OrderStatus, PaymentStatus
 
+import logging
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.template.loader import render_to_string
+from django.template.exceptions import TemplateDoesNotExist
+
+logger = logging.getLogger(__name__)
+
 def orders(request):
-    orders = Order.objects.all().order_by('-id')
+    try:
+        orders = Order.objects.all().order_by('-id')
 
-    order_status = request.GET.get('order_status')
-    payment_status = request.GET.get('payment_status')
+        order_status = request.GET.get('order_status')
+        payment_status = request.GET.get('payment_status')
 
-    if order_status:
-        orders = orders.filter(order_status__status=order_status)
-    if payment_status:
-        orders = orders.filter(payment_status__status=payment_status)
+        if order_status:
+            orders = orders.filter(order_status__status=order_status)
+        if payment_status:
+            orders = orders.filter(payment_status__status=payment_status)
 
-    order_statuses = OrderStatus.objects.values_list('status', flat=True).distinct()
-    payment_statuses = PaymentStatus.objects.values_list('status', flat=True).distinct()
+        order_statuses = OrderStatus.objects.values_list('status', flat=True).distinct()
+        payment_statuses = PaymentStatus.objects.values_list('status', flat=True).distinct()
 
-    context = {
-        'orders': orders,
-        'order_statuses': order_statuses,
-        'payment_statuses': payment_statuses,
-        'selected_order_status': order_status,
-        'selected_payment_status': payment_status,
-    }
+        context = {
+            'orders': orders,
+            'order_statuses': order_statuses,
+            'payment_statuses': payment_statuses,
+            'selected_order_status': order_status,
+            'selected_payment_status': payment_status,
+        }
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        table_html = render_to_string('orders_table.html', context, request=request)
-        return JsonResponse({'table_html': table_html})
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            try:
+                rows_html = render_to_string('orders.html', context, request=request)
+                return JsonResponse({'rows_html': rows_html})
+            except TemplateDoesNotExist:
+                return JsonResponse({'error': 'Template orders_table_rows.html not found'}, status=500)
+            except Exception as e:
+                logger.error(f"Error rendering orders_table_rows.html: {str(e)}", exc_info=True)
+                return JsonResponse({'error': 'Internal Server Error'}, status=500)
 
-    return render(request, "orders.html", context)
+        return render(request, "orders.html", context)
+    except Exception as e:
+        logger.error(f"Error fetching orders: {str(e)}", exc_info=True)
+        return JsonResponse({'error': 'Internal Server Error'}, status=500)
+
 def coupons(request):
     data = Coupon.objects.all()
     return render(request,"coupons.html",{"data":data})

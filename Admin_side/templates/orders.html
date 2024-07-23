@@ -60,6 +60,13 @@
             border-radius: 5px;
             color: white;
         }
+        .payment .refund{
+            background-color: #b208b9;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+        }
         .apply{
             background: var(--main-color);
             font-size: 14px;
@@ -83,14 +90,14 @@
     </style>
 </head>
 
-<body>
+<body id="orders-table-body">
     {% include 'common_block.html' %}
     <div class="projects">
         <div class="card">
             <div class="card-header">
                 <h3 class="heading">Order Details</h3>
             </div>
-            <div class="card-body">
+            <div class="card-body" >
                 <form id="filter-form">
                     <label for="order_status">Order Status:</label>
                     <select name="order_status" id="order_status">
@@ -128,7 +135,7 @@
                                 <th>Change Status</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody >
                             {% for order in orders %}
                             {% for line in order.orderline_set.all %}
                             <tr>
@@ -163,6 +170,8 @@
                                 <p class="success">{{ order.payment_status }}</p>
                                 {% elif order.payment_status.status == 'Payment Pending' %}
                                 <p class="pending">{{ order.payment_status }}</p>
+                                {% elif order.payment_status.status == 'Payment Refunded' %}
+                                <p class="refund">{{ order.payment_status }}</p>
                                 {% endif %}
                                 </div>
                                 </td>
@@ -187,10 +196,10 @@
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
     const filterForm = document.getElementById('filter-form');
-    const ordersTable = document.getElementById('orders-table');
+    const ordersTableBody = document.getElementById('orders-table-body');
 
     filterForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -203,14 +212,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json())
-        .then(data => {
-            if (ordersTable) {
-                ordersTable.innerHTML = data.table_html;
-                attachStatusChangeListeners();
-            } else {
-                console.error('orders-table element not found');
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => { throw new Error(text) });
             }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                console.error('Error fetching orders:', data.error);
+                return;
+            }
+            ordersTableBody.innerHTML = data.rows_html;
+            attachStatusChangeListeners();
+            applyCustomStyles();
         })
         .catch(error => {
             console.error('Error fetching orders:', error);
@@ -218,6 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     attachStatusChangeListeners();
+    applyCustomStyles();
 });
 
 function attachStatusChangeListeners() {
@@ -227,7 +243,7 @@ function attachStatusChangeListeners() {
             const orderId = this.getAttribute('data-order-id');
             const newStatus = this.value;
             const oldStatus = this.getAttribute('data-old-status');
-            
+
             // Reset the select to its previous value
             this.value = oldStatus;
 
@@ -265,7 +281,7 @@ function changeOrderStatus(orderId, status) {
             // Update the status cell and the select box
             const statusCell = document.querySelector(`[data-order-id="${orderId}"]`).closest('td').previousElementSibling;
             statusCell.innerHTML = `<span class='orderStatus ${status}'>${status}</span>`;
-            
+
             const selectBox = document.querySelector(`[data-order-id="${orderId}"]`);
             selectBox.value = status;
             selectBox.setAttribute('data-old-status', status);
@@ -294,21 +310,31 @@ function changeOrderStatus(orderId, status) {
     });
 }
 
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.startsWith(name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
             }
-            return cookieValue;
         }
-    </script>
+    }
+    return cookieValue;
+}
+
+// Function to reapply custom styles
+function applyCustomStyles() {
+    const statusSelects = document.querySelectorAll('.status-select');
+    statusSelects.forEach(select => {
+        // Apply any custom styling you need here
+        select.classList.add('custom-style-class');
+    });
+}
+
+</script>
 </body>
 
 </html>
