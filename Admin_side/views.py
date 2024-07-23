@@ -917,13 +917,17 @@ def change_order_status(request, order_id):
                 
         order.order_status = new_order_status
         order.save()
-        return JsonResponse({'message': 'Order status changed successfully.'})
+        return JsonResponse({
+            'message': 'Order status changed successfully.',
+            'order_status': new_order_status.status,
+            'payment_status': order.payment_status.status
+        })
     else:
         return JsonResponse({'message': 'Invalid status.'}, status=400)
 
 def process_cancellation(order):
     # Check if the payment was completed
-    if order.payment_status.status == 'Payment Completed':  # Assuming 'Complete' is the status for completed payments
+    if order.payment_status.status == 'Payment Completed':
         # Process refund
         wallet, created = Wallet.objects.get_or_create(user=order.user)
         refund_amount = order.order_total
@@ -947,6 +951,7 @@ def process_cancellation(order):
         config = order_line.product_configuration
         config.qty_in_stock += order_line.qty
         config.save()
+
     
 @login_required
 def stock_management(request):

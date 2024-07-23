@@ -276,38 +276,55 @@ function changeOrderStatus(orderId, status) {
             'X-CSRFToken': getCookie('csrftoken')
         }
     })
-    .then(response => {
-        if (response.ok) {
-            // Update the status cell and the select box
-            const statusCell = document.querySelector(`[data-order-id="${orderId}"]`).closest('td').previousElementSibling;
-            statusCell.innerHTML = `<span class='orderStatus ${status}'>${status}</span>`;
-
-            const selectBox = document.querySelector(`[data-order-id="${orderId}"]`);
-            selectBox.value = status;
-            selectBox.setAttribute('data-old-status', status);
-
-            Swal.fire(
-                'Updated!',
-                'The order status has been updated.',
-                'success'
-            );
+    .then(response => response.json())
+    .then(data => {
+        if (data.message === 'Order status changed successfully.') {
+            updateOrderRow(orderId, data.order_status, data.payment_status);
+            Swal.fire('Updated!', 'The order status has been updated.', 'success');
         } else {
             console.error('Failed to change order status');
-            Swal.fire(
-                'Error!',
-                'Failed to change the order status.',
-                'error'
-            );
+            Swal.fire('Error!', 'Failed to change the order status.', 'error');
         }
     })
     .catch(error => {
         console.error('Error changing order status:', error);
-        Swal.fire(
-            'Error!',
-            'An error occurred while changing the order status.',
-            'error'
-        );
+        Swal.fire('Error!', 'An error occurred while changing the order status.', 'error');
     });
+}
+
+function updateOrderRow(orderId, orderStatus, paymentStatus) {
+    const orderRow = document.querySelector(`.status-select[data-order-id="${orderId}"]`).closest('tr');
+
+    // Update order status cell
+    const orderStatusCell = orderRow.querySelector('.orderStatus');
+    orderStatusCell.textContent = orderStatus;
+    orderStatusCell.className = `orderStatus ${orderStatus}`; // Update the class to match the new status
+
+    // Update payment status cell
+    const paymentStatusCell = orderRow.querySelector('.payment');
+    paymentStatusCell.innerHTML = getPaymentStatusHtml(paymentStatus); // Update the HTML with the new payment status
+}
+
+function getPaymentStatusHtml(paymentStatus) {
+    let statusClass = '';
+    switch (paymentStatus) {
+        case 'Payment Failed':
+            statusClass = 'failed';
+            break;
+        case 'Payment Completed':
+            statusClass = 'success';
+            break;
+        case 'Payment Pending':
+            statusClass = 'pending';
+            break;
+        case 'Payment Refunded':
+            statusClass = 'refund';
+            break;
+        default:
+            statusClass = '';
+            break;
+    }
+    return `<p class="${statusClass}">${paymentStatus}</p>`;
 }
 
 function getCookie(name) {
