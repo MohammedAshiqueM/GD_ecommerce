@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Return Requests</title>
+    <style>
+        table {
+            width: 100%;
+        }
+
+        .action-select {
+            padding: 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'common_block.html' %}
+    <div class="projects">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="heading">Order Return Requests</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table width="100%">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Return Reason</th>
+                                <th>Return Status</th>
+                                <th>Admin Approved</th>
+                                <th>Created At</th>
+                                <th>Return Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for return in order_returns %}
+                            <tr>
+                                <td>#{{ return.order_id }}</td>
+                                <td>{{ return.return_reason }}</td>
+                                <td id="status-{{ return.id }}">{{ return.return_status }}</td>
+                                <td>{{ return.admin_approved }}</td>
+                                <td>{{ return.created_at }}</td>
+                                <td>{{ return.return_status }}</td>
+                                <td>
+                                    {% if return.return_status.status == 'Pending' %}
+                                        <select class="action-select" onchange="changeStatus({{ return.id }}, this.value)">
+                                            <option value="">Select action</option>
+                                            <option value="accept">Accept</option>
+                                            <option value="reject">Reject</option>
+                                        </select>
+                                    {% else %}
+                                        {{ return.return_status.status }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function changeStatus(returnId, action) {
+            if (!action) return;
+
+            const url = action === 'accept'
+                ? `{% url 'accept_return' 0 %}`.replace('0', returnId)
+                : `{% url 'reject_return' 0 %}`.replace('0', returnId);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`status-${returnId}`).innerText = data.new_status;
+                    location.reload(); // Reload the page to update the UI
+                } else {
+                    alert('Failed to update status');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+
+</html>

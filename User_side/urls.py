@@ -50,6 +50,8 @@ urlpatterns = [
     path('remove_from_wishlist/<int:item_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
     path('retry-payment/<int:order_id>/', views.retry_payment, name='retry-payment'),
     path('verify-payment/<int:order_id>/', views.verify_payment, name='verify_payment'),
+    path('request_order_return/<int:order_id>/', views.request_order_return, name='request_order_return'),
+    path('update_return_status/<int:return_id>/',views.update_return_status, name='update_return_status'),
     path('order_invoice/<int:order_id>/', views.order_invoice, name='order_invoice'),
 
 ]

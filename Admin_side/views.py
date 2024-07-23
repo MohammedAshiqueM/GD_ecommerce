@@ -54,7 +54,9 @@ from .models import (
     OfferBanner,
     PaymentStatus,
     Wallet,
-    Transaction
+    Transaction,
+    OrderReturnStatus,
+    OrderReturn
 )
 
 
@@ -1346,6 +1348,32 @@ def add_offer_banner(request):
     else:
         form = OfferBannerForm()
     return render(request, 'addOfferBanner.html', {'form': form, 'banner_type': 'Offer'})
+
+def list_order_returns(request):
+    order_returns = OrderReturn.objects.all()
+    return render(request, 'return.html', {'order_returns': order_returns})
+
+def accept_return(request, pk):
+    order_return = get_object_or_404(OrderReturn, pk=pk)
+    pending_status = OrderReturnStatus.objects.get(status='Pending')
+    accepted_status = OrderReturnStatus.objects.get(status='Approved')
+    if order_return.return_status == pending_status:
+        order_return.return_status = accepted_status
+        order_return.admin_approved = True
+        order_return.save()
+        return JsonResponse({'success': True, 'new_status': accepted_status.status})
+    return JsonResponse({'success': False})
+
+def reject_return(request, pk):
+    order_return = get_object_or_404(OrderReturn, pk=pk)
+    pending_status = OrderReturnStatus.objects.get(status='Pending')
+    rejected_status = OrderReturnStatus.objects.get(status='Rejected')
+    if order_return.return_status == pending_status:
+        order_return.return_status = rejected_status
+        order_return.admin_approved = False
+        order_return.save()
+        return JsonResponse({'success': True, 'new_status': rejected_status.status})
+    return JsonResponse({'success': False})
 
 
 def adminLogout(request):

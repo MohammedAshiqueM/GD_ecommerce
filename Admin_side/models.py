@@ -270,6 +270,11 @@ class Order(models.Model):
             return True
         return False
     
+    def get_return_status(self):
+        return_request = self.orderreturn_set.first()
+        if return_request:
+            return return_request.return_status.status
+        return None
     
 class OrderLine(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
@@ -344,9 +349,6 @@ class Transaction(models.Model):
         return f"{self.wallet.user.username} - {self.transaction_type} - {self.amount}"
     
 
-    
-
-
 class CategoryOffer(models.Model):
     category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='offers')
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
@@ -417,3 +419,24 @@ class OfferBanner(models.Model):
     def clean(self):
         if OfferBanner.objects.exclude(pk=self.pk).count() >= 2:
             raise ValidationError("You can only have two Offer Banners.")
+        
+class OrderReturnStatus(models.Model):
+    status = models.CharField(max_length=255, choices=[
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected')
+    ])
+
+    def __str__(self):
+        return self.status
+        
+class OrderReturn(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    return_reason = models.TextField()
+    return_status = models.ForeignKey(OrderReturnStatus, on_delete=models.CASCADE)
+    admin_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Return for Order {self.order.id} - Status: {self.return_status}"

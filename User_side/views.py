@@ -51,7 +51,9 @@ from Admin_side.models import (
     Transaction,
     CarouselBanner,
     OfferBanner,
-    PaymentStatus
+    PaymentStatus,
+    OrderReturn,
+    OrderReturnStatus
 )
 
 
@@ -1340,7 +1342,8 @@ def my_orders(request):
     categories = Category.objects.all()
     orders = Order.objects.filter(user=request.user).prefetch_related(
         'orderline_set__product_configuration__product__images',
-        'orderline_set__product_configuration__variation_options'
+        'orderline_set__product_configuration__variation_options',
+        'orderreturn_set'  # Add this line to prefetch return information
     ).order_by('-id')
     
     payment_status = request.GET.get('payment_status')
@@ -1382,11 +1385,66 @@ def my_orders(request):
                 'city': order.shipping_address.city,
                 'region': order.shipping_address.region,
                 'country': order.shipping_address.country
-            }
+            },
+            'return_status': order.orderreturn_set.first().return_status.status if order.orderreturn_set.exists() else None,
+            'return_reason': order.orderreturn_set.first().return_reason if order.orderreturn_set.exists() else None,
         } for order in orders]
         return JsonResponse({'orders': order_data})
     
     return render(request, "myOrders.html", {'orders': orders, 'categories': categories})
+@csrf_exempt
+@login_required
+def request_order_return(request, order_id):
+    if request.method == 'POST':
+        try:
+            order = get_object_or_404(Order, id=order_id, user=request.user)
+            
+            # Parse JSON data from request body
+            data = json.loads(request.body)
+            reason = data.get('reason')
+
+            if not reason:
+                return JsonResponse({'message': 'Return reason is required.'}, status=400)
+
+            if order.order_status.status == 'Delivered' and not order.orderreturn_set.exists():
+                return_status = OrderReturnStatus.objects.get(status='Pending')
+                OrderReturn.objects.create(
+                    order=order,
+                    return_reason=reason,
+                    return_status=return_status
+                )
+                return JsonResponse({'message': 'Return request submitted successfully.'})
+            else:
+                return JsonResponse({'message': 'Return request cannot be submitted.'}, status=400)
+        except Order.DoesNotExist:
+            return JsonResponse({'message': 'Order not found.'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'message': 'Invalid JSON data.'}, status=400)
+        except Exception as e:
+            logger.error(f"Error submitting return request for order {order_id} for user {request.user.id}: {e}")
+            return JsonResponse({'message': f'Error: {str(e)}'}, status=500)
+    else:
+        return JsonResponse({'message': 'Invalid request method.'}, status=405)
+    
+from django.contrib.auth.decorators import user_passes_test
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def update_return_status(request, return_id):
+    if request.method == 'POST':
+        try:
+            return_request = get_object_or_404(OrderReturn, id=return_id)
+            new_status = request.POST.get('status')
+            
+            if new_status in ['Accepted', 'Rejected']:
+                return_request.return_status = OrderReturnStatus.objects.get(status=new_status)
+                return_request.save()
+                return JsonResponse({'message': f'Return status updated to {new_status}'})
+            else:
+                return JsonResponse({'message': 'Invalid status'}, status=400)
+        except Exception as e:
+            return JsonResponse({'message': str(e)}, status=500)
+    return JsonResponse({'message': 'Invalid request method'}, status=405)
 
 import logging
 
@@ -1586,6 +1644,7 @@ def verify_payment(request, order_id):
         return JsonResponse({'status': 'success'})
     except:
         return JsonResponse({'status': 'error'})
+    
 
 def order_invoice(request, order_id):
     order = get_object_or_404(Order, id=order_id)

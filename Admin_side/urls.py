@@ -44,5 +44,8 @@ urlpatterns = [
     path('banners/', views.banner_list, name='banner_list'),
     path('banners/add-carousel/', views.add_carousel_banner, name='add_carousel_banner'),
     path('banners/add-offer/', views.add_offer_banner, name='add_offer_banner'),
+    path('returns/', views.list_order_returns, name='returns'),
+    path('returns-accept/<int:pk>/', views.accept_return, name='accept_return'),
+    path('returns-reject/<int:pk>/', views.reject_return, name='reject_return'),
     path('adminLogout/', views.adminLogout, name='adminLogout'),
 ]
