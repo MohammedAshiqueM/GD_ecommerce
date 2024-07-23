@@ -276,15 +276,38 @@ function changeOrderStatus(orderId, status) {
             'X-CSRFToken': getCookie('csrftoken')
         }
     })
-    .then(response => {
-        if (response.ok) {
-            // Update the status cell and the select box
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the order status cell
             const statusCell = document.querySelector(`[data-order-id="${orderId}"]`).closest('td').previousElementSibling;
             statusCell.innerHTML = `<span class='orderStatus ${status}'>${status}</span>`;
 
+            // Update the select box
             const selectBox = document.querySelector(`[data-order-id="${orderId}"]`);
             selectBox.value = status;
             selectBox.setAttribute('data-old-status', status);
+
+            // Update the payment status if it changed
+            if (data.payment_status) {
+                const paymentStatusCell = statusCell.previousElementSibling;
+                let statusClass = '';
+                switch (data.payment_status) {
+                    case 'Payment Failed':
+                        statusClass = 'failed';
+                        break;
+                    case 'Payment Completed':
+                        statusClass = 'success';
+                        break;
+                    case 'Payment Pending':
+                        statusClass = 'pending';
+                        break;
+                    case 'Payment Refunded':
+                        statusClass = 'refund';
+                        break;
+                }
+                paymentStatusCell.innerHTML = `<div class="payment"><p class="${statusClass}">${data.payment_status}</p></div>`;
+            }
 
             Swal.fire(
                 'Updated!',
@@ -309,7 +332,6 @@ function changeOrderStatus(orderId, status) {
         );
     });
 }
-
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
