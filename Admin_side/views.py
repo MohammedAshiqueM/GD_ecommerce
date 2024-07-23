@@ -909,7 +909,12 @@ def change_order_status(request, order_id):
         if status == 'Cancelled':
             # Process cancellation and potential refund
             process_cancellation(order)
-        
+        elif status == 'Delivered':
+            # Check if payment is pending and update to complete
+            if order.payment_status.status == 'Payment Pending':
+                complete_status, created = PaymentStatus.objects.get_or_create(status='Payment Completed')
+                order.payment_status = complete_status
+                
         order.order_status = new_order_status
         order.save()
         return JsonResponse({'message': 'Order status changed successfully.'})
