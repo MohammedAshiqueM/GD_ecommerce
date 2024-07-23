@@ -1411,8 +1411,9 @@ def cancel_order(request, order_id):
                     else:
                         raise Exception(f"Product configuration not found for order line {order_line.id}")
                 
-                # Check if the payment method is not COD
-                if order.payment_method.payment_type.value != "Cash on Delivery":
+                # Check if the payment method is not COD and payment status is "Payment Completed"
+                if (order.payment_method.payment_type.value != "Cash on Delivery" and 
+                    order.payment_status.status == 'Payment Completed'):
                     wallet, created = Wallet.objects.get_or_create(user=request.user)
                     refund_amount = Decimal(order.order_total)
                     wallet.add_funds(refund_amount)
@@ -1424,10 +1425,14 @@ def cancel_order(request, order_id):
                         order=order
                     )
                     
+                    # Change payment status to "Payment Refunded"
+                    payment_refunded_status, created = PaymentStatus.objects.get_or_create(status='Payment Refunded')
+                    order.payment_status = payment_refunded_status
+                
                 order.order_status = cancel_status
                 order.save()
 
-            return JsonResponse({'message': 'Order cancelled and refunded successfully.' if order.payment_method.payment_type.value != "Cash on Delivery" else 'Order cancelled successfully.'})
+            return JsonResponse({'message': 'Order cancelled and refunded successfully.' if order.payment_status.status == 'Payment Refunded' else 'Order cancelled successfully.'})
         else:
             return JsonResponse({'message': 'Order cannot be cancelled.'}, status=400)
 
@@ -1437,7 +1442,6 @@ def cancel_order(request, order_id):
     except Exception as e:
         logger.error(f"Error cancelling order {order_id} for user {request.user.id}: {e}")
         return JsonResponse({'message': f'Error: {str(e)}'}, status=500)
-
 def get_product_configuration(order_line):
     """
     Helper function to retrieve the ProductConfiguration for an OrderLine.
