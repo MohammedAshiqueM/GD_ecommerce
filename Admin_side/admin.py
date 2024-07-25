@@ -37,7 +37,8 @@ from .models import (
     OfferBanner,
     PaymentStatus,
     OrderReturn,
-    OrderReturnStatus   
+    OrderReturnStatus,
+    PermanentAddress   
 )
 
 admin.site.register(
@@ -76,6 +77,8 @@ admin.site.register(
         OfferBanner,
         PaymentStatus,
         OrderReturn,
-        OrderReturnStatus              
+        OrderReturnStatus,
+        PermanentAddress   
+                      
     ]
 )

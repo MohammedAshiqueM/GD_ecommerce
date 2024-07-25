@@ -305,6 +305,13 @@
     </div>
     {% endif %}
 </form>
+<!-- Hidden fields for permanent address -->
+<input type="hidden" id="permanent_address_line1" name="permanent_address_line1">
+<input type="hidden" id="permanent_address_line2" name="permanent_address_line2">
+<input type="hidden" id="permanent_city" name="permanent_city">
+<input type="hidden" id="permanent_state" name="permanent_state">
+<input type="hidden" id="permanent_country" name="permanent_country">
+<input type="hidden" id="permanent_postal_code" name="permanent_postal_code">
 
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
@@ -633,34 +640,38 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-    var addressSelectButtons = document.querySelectorAll('#address-select .list-group-item');
-    var placeOrderButton = document.getElementById('place-order-btn');
+   document.addEventListener('DOMContentLoaded', function () {
+    const addressButtons = document.querySelectorAll('#address-select .list-group-item');
 
-    // Address selection handling
-    addressSelectButtons.forEach(function (button) {
-        button.addEventListener('click', function () {
-            // Remove active class from all buttons
-            addressSelectButtons.forEach(function (btn) {
-                btn.classList.remove('active');
-            });
+    addressButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            addressButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
 
-            // Add active class to the clicked button
-            button.classList.add('active');
+            // Populate form fields with selected address data
+            document.getElementById('unit_number').value = this.dataset.unitNumber || '';
+            document.getElementById('street_number').value = this.dataset.streetNumber || '';
+            document.getElementById('address_line1').value = this.dataset.addressLine1 || '';
+            document.getElementById('address_line2').value = this.dataset.addressLine2 || '';
+            document.getElementById('city').value = this.dataset.city || '';
+            document.getElementById('region').value = this.dataset.region || '';
+            document.getElementById('postal_code').value = this.dataset.postalCode || '';
+            document.getElementById('country').value = this.dataset.country || '';
 
-            // Update form fields with selected address data
-            document.getElementById('unit_number').value = button.getAttribute('data-unit-number');
-            document.getElementById('street_number').value = button.getAttribute('data-street-number');
-            document.getElementById('address_line1').value = button.getAttribute('data-address-line1');
-            document.getElementById('address_line2').value = button.getAttribute('data-address-line2');
-            document.getElementById('city').value = button.getAttribute('data-city');
-            document.getElementById('region').value = button.getAttribute('data-region');
-            document.getElementById('postal_code').value = button.getAttribute('data-postal-code');
-            document.getElementById('country').value = button.getAttribute('data-country');
+            // Populate hidden fields for permanent address
+            document.getElementById('permanent_address_line1').value = this.dataset.addressLine1 || '';
+            document.getElementById('permanent_address_line2').value = this.dataset.addressLine2 || '';
+            document.getElementById('permanent_city').value = this.dataset.city || '';
+            document.getElementById('permanent_state').value = this.dataset.region || '';
+            document.getElementById('permanent_country').value = this.dataset.country || '';
+            document.getElementById('permanent_postal_code').value = this.dataset.postalCode || '';
         });
     });
 
-    // Place order button click event
+    // Trigger click event to populate form with default address on page load
+    document.querySelector('#address-select .list-group-item.active').click();
+
+    const placeOrderButton = document.getElementById('place-order-btn');
     placeOrderButton.addEventListener('click', function (event) {
         event.preventDefault();
 
@@ -680,13 +691,6 @@
         // Validate payment method selection
         var paymentMethod = document.querySelector('input[name="payment"]:checked');
         if (!paymentMethod) {
-            console.error('Payment method not selected');
-            // Optionally show an error message
-            return;
-        }
-
-        var paymentMethod = document.querySelector('input[name="payment"]:checked');
-        if (!paymentMethod) {
             swal({
                 title: "Error",
                 text: "Please select a payment method.",
@@ -697,19 +701,15 @@
         }
         
         var paymentValue = paymentMethod.value;
-        console.log('Selected payment method:', paymentValue);
 
         // Validate selected shipping address
         var activeAddressButton = document.querySelector('#address-select .list-group-item.active');
         if (!activeAddressButton) {
             console.error('Shipping address not selected');
-            // Optionally show an error message
             return;
         }
 
         var addressId = activeAddressButton.getAttribute('data-address-id');
-        console.log('Selected address ID:', addressId);
-
         var orderTotal = parseFloat(document.getElementById('total-amount').textContent);
         if (paymentValue === 'cod' && orderTotal > 1000) {
             swal({
@@ -721,9 +721,15 @@
             return;
         }
         
-        // Function to place order with confirmation if needed
         function placeOrderWithConfirmation(confirmation = false) {
-        var couponCode = document.getElementById('coupon-code').value;
+            const couponCode = document.getElementById('coupon-code').value;
+            const permanentAddressLine1 = document.getElementById('permanent_address_line1').value;
+            const permanentAddressLine2 = document.getElementById('permanent_address_line2').value;
+            const permanentCity = document.getElementById('permanent_city').value;
+            const permanentState = document.getElementById('permanent_state').value;
+            const permanentCountry = document.getElementById('permanent_country').value;
+            const permanentPostalCode = document.getElementById('permanent_postal_code').value;
+
             fetch("{% url 'place_order' %}", {
                 method: 'POST',
                 headers: {
@@ -733,9 +739,14 @@
                 body: JSON.stringify({
                     payment: paymentValue,
                     shipping_address_id: addressId,
-                    confirmation: confirmation,  // Include confirmation flag
-                    coupon_code: couponCode 
-
+                    confirmation: confirmation,
+                    coupon_code: couponCode,
+                    permanent_address_line1: permanentAddressLine1,
+                    permanent_address_line2: permanentAddressLine2,
+                    permanent_city: permanentCity,
+                    permanent_state: permanentState,
+                    permanent_country: permanentCountry,
+                    permanent_postal_code: permanentPostalCode
                 })
             })
             .then(response => {
@@ -747,11 +758,10 @@
             .then(data => {
                 if (data.status === 'success') {
                     console.log('Order placed:', data);
-                    // Optionally show a success modal or redirect to a success page
-                    window.location.href = '{% url "order_success" %}'; // Replace with your success page URL
+                    window.location.href = '{% url "order_success" %}';
                 } else if (data.status === 'error') {
                     if (data.confirmation_required) {
-                        var errorMessage = data.messages.join('\n');  // Join all error messages into a single string
+                        var errorMessage = data.messages.join('\n');
                         swal({
                             title: "Insufficient Stock",
                             text: errorMessage + "\nDo you want to place the order with the available stock?",
@@ -768,31 +778,29 @@
                             dangerMode: true,
                         }).then((willPlaceOrder) => {
                             if (willPlaceOrder) {
-                                placeOrderWithConfirmation(true);  // Place order with confirmation
+                                placeOrderWithConfirmation(true);
                             }
                         });
                     } else {
-                        console.error('Error placing order:', data.message || data.error);
-                var errorMessage = Array.isArray(data.messages) ? data.messages.join('\n') : (data.message || data.error);
-                swal({
-                    title: "Error",
-                    text: errorMessage,
-                    icon: "error",
-                    button: "OK",
-                });
+                        var errorMessage = Array.isArray(data.messages) ? data.messages.join('\n') : (data.message || data.error);
+                        swal({
+                            title: "Error",
+                            text: errorMessage,
+                            icon: "error",
+                            button: "OK",
+                        });
                     }
                 }
             })
             .catch(error => {
                 console.error('Error placing order:', error);
-                // Optionally show an error modal or message
             });
         }
 
-        // Perform AJAX request to place the order
         placeOrderWithConfirmation();
     });
 });
+
 
 </script>
 <script>

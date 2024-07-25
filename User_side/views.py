@@ -53,7 +53,8 @@ from Admin_side.models import (
     OfferBanner,
     PaymentStatus,
     OrderReturn,
-    OrderReturnStatus
+    OrderReturnStatus,
+    PermanentAddress
 )
 
 
@@ -950,6 +951,14 @@ def place_order(request):
             print("coupon:", coupon_code)
             print("Received data:", data)
             print("the pay method: ", payment_method_value)
+            
+                        # Print statements for debugging
+            print("Permanent Address Line 1:", data.get('permanent_address_line1'))
+            print("Permanent Address Line 2:", data.get('permanent_address_line2'))
+            print("Permanent City:", data.get('permanent_city'))
+            print("Permanent State:", data.get('permanent_state'))
+            print("Permanent Country:", data.get('permanent_country'))
+            print("Permanent Postal Code:", data.get('permanent_postal_code'))
 
             if not payment_method_value:
                 return JsonResponse({'status': 'error', 'message': 'Payment method is required.', 'redirect_url': reverse('my_orders')})
@@ -1102,7 +1111,13 @@ def place_order(request):
                     order_total=order_total,
                     order_status=order_status,
                     payment_status=payment_status,
-                    discount_amount=discount_value
+                    discount_amount=discount_value,
+                    permanent_address_line1=data.get('permanent_address_line1'),
+                    permanent_address_line2=data.get('permanent_address_line2'),
+                    permanent_city=data.get('permanent_city'),
+                    permanent_state=data.get('permanent_state'),
+                    permanent_country=data.get('permanent_country'),
+                    permanent_postal_code=data.get('permanent_postal_code')
                 )
                 
                 if payment_method_value == 'Wallet' and order.payment_status.status == 'Payment Completed':
@@ -1338,6 +1353,7 @@ def apply_coupon(request):
         return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
 
 
+
 def my_orders(request):
     categories = Category.objects.all()
     orders = Order.objects.filter(user=request.user).prefetch_related(
@@ -1386,12 +1402,21 @@ def my_orders(request):
                 'region': order.shipping_address.region,
                 'country': order.shipping_address.country
             },
+            'permanent_address': {
+                'address_line1': order.permanent_address_line1,
+                'address_line2': order.permanent_address_line2,
+                'city': order.permanent_city,
+                'state': order.permanent_state,
+                'country': order.permanent_country,
+                'postal_code': order.permanent_postal_code
+            },
             'return_status': order.orderreturn_set.first().return_status.status if order.orderreturn_set.exists() else None,
             'return_reason': order.orderreturn_set.first().return_reason if order.orderreturn_set.exists() else None,
         } for order in orders]
         return JsonResponse({'orders': order_data})
     
     return render(request, "myOrders.html", {'orders': orders, 'categories': categories})
+    
 @csrf_exempt
 @login_required
 def request_order_return(request, order_id):
