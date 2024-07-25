@@ -691,19 +691,19 @@ def contact(request):
 def increment_quantity(request, item_id):
     try:
         cart_item = CartItem.objects.get(id=item_id)
-        # if cart_item.product_configuration.qty_in_stock > cart_item.qty:
-        cart_item.qty += 1
-        cart_item.save()
-        response_data = {
-            'status': 'success',
-            'quantity': cart_item.qty,
-            'price': cart_item.product_configuration.price,
-            'total': cart_item.qty * cart_item.product_configuration.price,
-            'subtotal': calculate_subtotal(cart_item.cart),
-            'total_cart': calculate_total(cart_item.cart)
-        }
-        # else:
-        #     response_data = {'status': 'error', 'message': 'Insufficient stock'}
+        if cart_item.product_configuration.qty_in_stock > cart_item.qty:
+            cart_item.qty += 1
+            cart_item.save()
+            response_data = {
+                'status': 'success',
+                'quantity': cart_item.qty,
+                'price': cart_item.product_configuration.price,
+                'total': cart_item.qty * cart_item.product_configuration.price,
+                'subtotal': calculate_subtotal(cart_item.cart),
+                'total_cart': calculate_total(cart_item.cart)
+            }
+        else:
+            response_data = {'status': 'error', 'message': 'Insufficient stock'}
         return JsonResponse(response_data)
     except CartItem.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
@@ -773,11 +773,11 @@ def check_cart_quantity(request):
         ).aggregate(total=Sum('qty'))['total'] or 0
 
         # Check if adding the requested quantity exceeds the available stock
-        # if total_quantity_in_cart + quantity > product_configuration.qty_in_stock:
-        #     return JsonResponse({
-        #         'success': False,
-        #         'message': f'Only {product_configuration.qty_in_stock - total_quantity_in_cart} items available.'
-        #     }, status=200)
+        if total_quantity_in_cart + quantity > product_configuration.qty_in_stock:
+            return JsonResponse({
+                'success': False,
+                'message': f'Only {product_configuration.qty_in_stock - total_quantity_in_cart} items available.'
+            }, status=200)
         
         return JsonResponse({'success': True}, status=200)
 
