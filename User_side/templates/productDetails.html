@@ -886,6 +886,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                     })
                                 })
                                 .then(response => {
+                                    if (response.status === 401 || response.status === 403) {
+                                        // Redirect to login page
+                                        window.location.href = '{% url "userLogin" %}?next=' + encodeURIComponent(window.location.pathname);
+                                        throw new Error('Redirecting to login');
+                                    }
                                     if (!response.ok) {
                                         throw new Error('Network response was not ok');
                                     }
@@ -898,9 +903,12 @@ document.addEventListener('DOMContentLoaded', function () {
                                         alert('Failed to add product to cart. Please try again.');
                                     }
                                 })
+                                
                                 .catch(error => {
-                                    console.error('Error adding product to cart:', error);
-                                    alert('Failed to add product to cart. Please try again.');
+                                    if (error.message !== 'Redirecting to login') {
+                                        console.error('Error adding product to cart:', error);
+                                        alert('Failed to add product to cart. Please try again.');
+                                    }
                                 });
                             } else {
                                 alertbox.render({
@@ -985,6 +993,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         })
                     })
                     .then(response => {
+                        if (response.status === 401 || response.status === 403) {
+                            // Redirect to login page
+                            window.location.href = '{% url "userLogin" %}?next=' + encodeURIComponent(window.location.pathname);
+                            throw new Error('Redirecting to login');
+                        }
                         if (!response.ok) {
                             throw new Error('Network response was not ok');
                         }
@@ -998,8 +1011,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     })
                     .catch(error => {
-                        console.error('Error adding product to wishlist:', error);
-                        alert('Failed to add product to wishlist. Please try again.');
+                        if (error.message !== 'Redirecting to login') {
+                            console.error('Error adding product to wishlist:', error);
+                            alert('Failed to add product to wishlist. Please try again.');
+                        }
                     });
                 } else {
                     alert('Failed to fetch product configuration. Please try again.');
