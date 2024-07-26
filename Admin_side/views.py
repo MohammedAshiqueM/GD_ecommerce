@@ -88,9 +88,9 @@ def adminLogin(request):
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncDay, TruncMonth, TruncYear
 from .models import OrderLine, Product, SubCategory, Category
+
 @login_required(login_url='adminLogin')
 @never_cache
-
 # from django.db.models.functions import TruncDay, TruncMonth, TruncYear
 # from django.utils import timezone
 # from datetime import timedelta
@@ -174,6 +174,9 @@ def get_sales_data(request):
     ]
     
     return JsonResponse(formatted_sales_data, safe=False)
+
+@login_required(login_url='adminLogin')
+@never_cache
 def customers(request):
     if "value" in request.GET:
         credential = request.GET["value"]
@@ -208,6 +211,8 @@ def unblock(request, pk):
     except Exception as e:
         return JsonResponse({"success": False, "error": "Internal server error"})
 
+@login_required(login_url='adminLogin')
+@staff_member_required
 def category(request):
     if "value" in request.GET:
         credential = request.GET["value"]
@@ -222,6 +227,8 @@ def category(request):
         context = {"parent": parent, "sub": sub}
     return render(request, "category.html", context)
 
+@login_required(login_url='adminLogin')
+@never_cache
 def addCategory(request):
     data = Category.objects.all()
     if request.method == "POST":
@@ -276,6 +283,8 @@ def addCategory(request):
             return redirect("category")
     return render(request, "addCategory.html", {"data": data})
 
+@login_required(login_url='adminLogin')
+@never_cache
 def editCategory(request, pk):
     data = Category.objects.get(pk=pk)
     context = {"value": data, "edit_mode": True}
@@ -297,6 +306,8 @@ def editCategory(request, pk):
         return redirect("category")
     return render(request, "editCategory.html", context)
 
+@login_required(login_url='adminLogin')
+@never_cache
 def editSubcategory(request, pk):
     subcategory = SubCategory.objects.get(pk=pk)
     categories = Category.objects.all()
@@ -362,7 +373,9 @@ def unblockSubcategory(request, pk):
         return JsonResponse({"success": True})
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
-    
+ 
+@login_required(login_url='adminLogin')
+@never_cache   
 def product(request):
     if "value" in request.GET:
         credential = request.GET["value"]
@@ -374,11 +387,15 @@ def product(request):
     data = Product.objects.all()
     return render(request,"product.html",context)
 
+@login_required(login_url='adminLogin')
+@never_cache
 def productAbout(request,pk):
     data = Product.objects.get(pk=pk)
     context = {"product": data}
     return render(request,"productAbout.html",context)
 
+@login_required(login_url='adminLogin')
+@never_cache
 def addProduct(request):
     basecategory = Category.objects.all()
     context = {"base": basecategory, "edit_mode": False}
@@ -440,6 +457,8 @@ def adminLogout(request):
     auth_logout(request)
     return redirect("adminLogin")
 
+@login_required(login_url='adminLogin')
+@never_cache
 def variant(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
@@ -495,6 +514,8 @@ def generate_combinations(variations):
     variation_options = [variation.variationoption_set.all() for variation in variations]
     return list(iter_product(*variation_options))
 
+@login_required(login_url='adminLogin')
+@never_cache
 def productConfiguration(request, pk):
     product = get_object_or_404(Product, pk=pk)
     variations = product.variation_set.all()
@@ -577,6 +598,8 @@ def productConfiguration(request, pk):
     }
     return render(request, 'productConfiguration.html', context)
 
+@login_required(login_url='adminLogin')
+@never_cache
 def edit_configuration(request, configuration_id):
     configuration = get_object_or_404(ProductConfiguration, pk=configuration_id)
 
@@ -642,6 +665,8 @@ def toggle_featured(request, product_id):
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error'}, status=400)
 
+@login_required(login_url='adminLogin')
+@never_cache
 def editProduct(request, pk):
     product = get_object_or_404(Product, id=pk)
     basecategory = Category.objects.all()
@@ -715,6 +740,8 @@ def editProduct(request, pk):
     }
     return render(request, "addProduct.html", context)
 
+@login_required(login_url='adminLogin')
+@never_cache
 def editvariant(request, pk):
     product = get_object_or_404(Product, id=pk)
     variations = product.variation_set.all().prefetch_related('variationoption_set')
@@ -822,6 +849,8 @@ from django.template.exceptions import TemplateDoesNotExist
 
 logger = logging.getLogger(__name__)
 
+@login_required(login_url='adminLogin')
+@never_cache
 def orders(request):
     try:
         orders = Order.objects.all().order_by('-id')
@@ -860,10 +889,14 @@ def orders(request):
         logger.error(f"Error fetching orders: {str(e)}", exc_info=True)
         return JsonResponse({'error': 'Internal Server Error'}, status=500)
 
+@login_required(login_url='adminLogin')
+@never_cache
 def coupons(request):
     data = Coupon.objects.all()
     return render(request,"coupons.html",{"data":data})
 
+@login_required(login_url='adminLogin')
+@never_cache
 def addCoupon(request):
     if request.method == 'POST':
         form = CouponForm(request.POST, request.FILES)
@@ -927,6 +960,7 @@ def change_order_status(request, order_id):
     else:
         return JsonResponse({'message': 'Invalid status.'}, status=400)
 
+
 def process_cancellation(order):
     # Check if the payment was completed
     if order.payment_status.status == 'Payment Completed':
@@ -954,12 +988,14 @@ def process_cancellation(order):
         config.qty_in_stock += order_line.qty
         config.save()
 
-    
-@login_required
+@login_required(login_url='adminLogin')
+@never_cache
 def stock_management(request):
     products = Product.objects.prefetch_related('configurations__variation_options').all()
     return render(request, 'stockManagement.html', {'products': products})
 
+@login_required(login_url='adminLogin')
+@never_cache
 @login_required
 def update_stock(request):
     if request.method == 'POST':
@@ -982,10 +1018,14 @@ def update_stock(request):
                     pass
     return redirect('stock_management')
 
+@login_required(login_url='adminLogin')
+@never_cache
 def offers(request):
     data = Offer.objects.all()
     return render(request,"offers.html",{"data":data})
 
+@login_required(login_url='adminLogin')
+@never_cache
 def create_offer(request):
     if request.method == 'POST':
         form = OfferForm(request.POST)
@@ -1051,7 +1091,8 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
 
-# @staff_member_required
+@login_required(login_url='adminLogin')
+@never_cache
 def sales_report(request):
     if request.method == 'POST':
         report_type = request.POST.get('report_type')
@@ -1120,7 +1161,8 @@ def sales_report(request):
     return render(request, 'salesReport.html')
 
 
-
+@login_required(login_url='adminLogin')
+@never_cache
 def export_excel(request, report_id):
     report = SalesReport.objects.get(id=report_id)
     orders = Order.objects.filter(order_date__gte=report.start_date, order_date__lt=report.end_date)
@@ -1318,7 +1360,8 @@ def export_pdf(request, report_id):
     buffer.seek(0)
     return FileResponse(buffer, as_attachment=True, filename=f'sales_report_{report.start_date.date()}_{report.end_date.date()}.pdf')
 
-
+@login_required(login_url='adminLogin')
+@never_cache
 def banner_list(request):
     carousel_banners = CarouselBanner.objects.all()
     offer_banners = OfferBanner.objects.all()
@@ -1327,6 +1370,8 @@ def banner_list(request):
         'offer_banners': offer_banners
     })
 
+@login_required(login_url='adminLogin')
+@never_cache
 def add_carousel_banner(request):
     if request.method == 'POST':
         form = CarouselBannerForm(request.POST, request.FILES)
@@ -1338,6 +1383,8 @@ def add_carousel_banner(request):
         form = CarouselBannerForm()
     return render(request, 'addCarouselBanner.html', {'form': form, 'banner_type': 'Carousel'})
 
+@login_required(login_url='adminLogin')
+@never_cache
 def add_offer_banner(request):
     if request.method == 'POST':
         form = OfferBannerForm(request.POST, request.FILES)
@@ -1349,6 +1396,8 @@ def add_offer_banner(request):
         form = OfferBannerForm()
     return render(request, 'addOfferBanner.html', {'form': form, 'banner_type': 'Offer'})
 
+@login_required(login_url='adminLogin')
+@never_cache
 def list_order_returns(request):
     order_returns = OrderReturn.objects.all()
     return render(request, 'return.html', {'order_returns': order_returns})
