@@ -45,3 +45,11 @@ def format_price(value):
         return f"{Decimal(value):.2f}"
     except (ValueError, TypeError):
         return value
+    
+@register.filter
+def calc_subtotal(cart_items):
+    return sum(item.qty * item.product_configuration.get_discounted_price() for item in cart_items)
+
+@register.filter
+def calc_total(cart_items):
+    return calc_subtotal(cart_items) + Decimal('10.00')  # assuming a flat shipping rate of $10

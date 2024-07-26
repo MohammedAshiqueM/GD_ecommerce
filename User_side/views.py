@@ -559,30 +559,34 @@ def deleteAddress(request, pk):
 
 def cart_view(request):
     cart, created = Cart.objects.get_or_create(user=request.user)
-    print('cart',cart)
     cart_items = CartItem.objects.filter(cart=cart)
     categories = Category.objects.all()
-    context = {
-        'cart_items': cart_items,
-        "categories":categories
-    }
-    
+
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         cart_items_data = []
         for item in cart_items:
+            original_price = float(item.product_configuration.price)
+            discounted_price = float(item.product_configuration.get_discounted_price())
+            discount_percentage = ((original_price - discounted_price) / original_price) * 100 if original_price > discounted_price else 0
+            
             item_data = {
                 'id': item.id,
                 'product_name': item.product_configuration.product.name,
                 'product_image': item.product_configuration.product.images.first().image.url,
-                'price': item.product_configuration.price,
+                'original_price': original_price,
+                'discounted_price': discounted_price,
+                'discount_percentage': round(discount_percentage, 2),
                 'quantity': item.qty
             }
             cart_items_data.append(item_data)
         
         return JsonResponse({'cart_items': cart_items_data})
-    
-    return render(request, 'cart.html', context)
 
+    context = {
+        'cart_items': cart_items,
+        "categories": categories
+    }
+    return render(request, 'cart.html', context)
 
 @require_POST
 @login_required

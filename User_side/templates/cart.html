@@ -42,7 +42,16 @@
                             {{ option.variation.name }}: {{ option.value }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </td>
-                        <td class="align-middle item-price">₹{{ item.product_configuration.price }}</td>
+                        <!-- <td class="align-middle item-price">₹{{ item.product_configuration.price }}</td> -->
+                        <td class="align-middle item-price">
+                            <span class="discounted-price">₹{{ item.product_configuration.get_discounted_price|format_price }}</span>
+                            {% if item.product_configuration.get_discounted_price < item.product_configuration.price %}
+                                <del class="original-price text-muted ml-2">₹{{ item.product_configuration.price|format_price }}</del>
+                                {% with discount_percentage=item.product_configuration.get_discount_percentage %}
+                                    <span class="discount-percentage text-success ml-2">({{ discount_percentage|floatformat:2 }}% off)</span>
+                                {% endwith %}
+                            {% endif %}
+                        </td>
                         <td class="align-middle">
                             <div class="input-group quantity mx-auto" style="width: 100px;">
                                 <div class="input-group-btn">
@@ -58,7 +67,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="align-middle item-total">₹{{ item.qty|mul:item.product_configuration.price }}</td>
+                        <td class="align-middle item-total">₹{{ item.product_configuration.get_discounted_price|multiply:item.qty|format_price }}</td>
                         <td class="align-middle">
                             <button class="btn btn-sm btn-danger btn-remove" data-id="{{ item.id }}">
                                 <i class="fa fa-times"></i>
@@ -78,17 +87,28 @@
                 <div class="border-bottom pb-2">
                     <div class="d-flex justify-content-between mb-3">
                         <h6>Subtotal</h6>
-                        <h6 class="cart-subtotal">₹{{ cart_items|calc_subtotal }}</h6>
+                        <h6 class="cart-subtotal">₹{{ cart_items|calc_subtotal|format_price }}</h6>
                     </div>
                     <div class="d-flex justify-content-between">
                         <h6 class="font-weight-medium">Shipping</h6>
-                        <h6 class="font-weight-medium">₹10</h6>
+                        <h6 class="font-weight-medium">₹10.00</h6>
                     </div>
                 </div>
+                {% with total_discount=0 %}
+                {% for item in cart_items %}
+                    {% calculate_discount item.product_configuration.price item.product_configuration.get_discounted_price item.qty as item_discount %}
+                    {% with total_discount=total_discount|add:item_discount %}
+                    {% endwith %}
+                {% endfor %}
+                <!-- <div class="d-flex justify-content-between mb-3">
+                    <h6>Total Discount</h6>
+                    <h6 class="cart-discount">₹{{ total_discount|format_price }}</h6>
+                </div> -->
+                {% endwith %}
                 <div class="pt-2">
                     <div class="d-flex justify-content-between mt-2">
                         <h5>Total</h5>
-                        <h5 class="cart-total">₹{{ cart_items|calc_total }}</h5>
+                        <h5 class="cart-total">₹{{ cart_items|calc_total|format_price }}</h5>
                     </div>
                     <a href="{% url 'checkout' %}"><button class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</button></a>
                 </div>
