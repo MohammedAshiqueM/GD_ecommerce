@@ -1,4 +1,6 @@
 {% load static %}
+{% include 'common.html' %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -79,7 +81,7 @@
     </style>
 </head>
 <body>
-    <header>
+    {% comment %} <header>
         <div class="header-container">
             <div class="logo">Profile</div>
             <nav>
@@ -90,7 +92,7 @@
                 </ul>
             </nav>
         </div>
-    </header>
+    </header> {% endcomment %}
         <!-- Breadcrumb Start -->
         <div class="container-fluid">
             <div class="row px-xl-5">

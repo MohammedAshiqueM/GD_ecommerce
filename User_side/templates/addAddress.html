@@ -1,4 +1,6 @@
 {% load static %}
+{% include 'common.html' %}
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -205,7 +207,7 @@
 </head>
 
 <body>
-    <header>
+    {% comment %} <header>
         <div class="header-container">
             {% if edit %}
             <div class="logo">Edit Address</div>
@@ -220,7 +222,7 @@
                 </ul>
             </nav>
         </div>
-    </header>
+    </header> {% endcomment %}
     {% block content %}
         <!-- Breadcrumb Start -->
         <div class="container-fluid">
