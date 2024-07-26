@@ -1,7 +1,7 @@
     {% load cart_extras %}
     {% include 'common.html' %}
         <style>
-            .col-lg-4 {
+            .pro_disp{
         flex: 0 0 33.33333%;
         max-width: 24.33333%;
             }
@@ -70,7 +70,7 @@
                         </div>
                     </div>
 {% for product in products %}
-<div class="col-lg-4 col-md-6 col-sm-6 pb-1">
+<div class="pro_disp col-md-6 col-sm-6 pb-1">
     <div class="product-item bg-light mb-4">
         <div class="product-img position-relative overflow-hidden">
             <img class="img-fluid w-100" src="{{ product.images.first.image.url }}" alt="">
