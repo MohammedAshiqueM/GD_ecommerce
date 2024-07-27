@@ -10,9 +10,11 @@ load_dotenv(dotenv_path)
 # Retrieve the email address from the environment variable
 from_email = os.getenv('EMAIL_HOST_USER')
 
+#Otp generation
 def generate_otp():
     return str(random.randint(10000, 99999))
 
+#Otp send to via email
 def send_otp(email, otp):
     subject = 'Your OTP Code'
     message = f'Your OTP code is {otp}'
