@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout as auth_logout, authenticate
@@ -6,23 +6,30 @@ from django.http import HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.db.models import Q
-from django.views.generic import ListView
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from PIL import Image
-from io import BytesIO
 from django.core.files.base import ContentFile
 from django.forms import CheckboxInput
 from itertools import product as iter_product
-from .forms import CouponForm,OfferForm,CarouselBannerForm,OfferBannerForm
+from .forms import CouponForm, OfferForm, CarouselBannerForm, OfferBannerForm
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_protect
 import json
-from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Sum, Count,F,Avg
-from django.utils import timezone
 from datetime import timedelta,datetime
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils import timezone
+from .models import SalesReport, Order, OrderLine, ProductConfiguration
 from openpyxl import Workbook
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from django.db.models.functions import TruncDay, TruncMonth, TruncYear
+import logging
+from django.template.loader import render_to_string
+from django.template.exceptions import TemplateDoesNotExist
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from io import BytesIO
+from django.db.models import Sum, F, Avg
 from .models import (
     User,
     Address,
@@ -85,9 +92,6 @@ def adminLogin(request):
     return render(request, "adminLogin.html")
 
 
-from django.db.models import Sum, Count
-from django.db.models.functions import TruncDay, TruncMonth, TruncYear
-from .models import OrderLine, Product, SubCategory, Category
 
 @login_required(login_url='adminLogin')
 @never_cache
@@ -860,16 +864,7 @@ def editvariant(request, pk):
     }
     return render(request, "editvariant.html", context)
 
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.template.loader import render_to_string
-from .models import Order, OrderStatus, PaymentStatus
 
-import logging
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.template.loader import render_to_string
-from django.template.exceptions import TemplateDoesNotExist
 
 logger = logging.getLogger(__name__)
 
@@ -1114,19 +1109,7 @@ def toggle_offer_status(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
 
-from django.shortcuts import render, get_object_or_404
-from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Sum, Count
-from django.utils import timezone
-from datetime import timedelta
-from .models import SalesReport, Order, OrderLine, ProductConfiguration
-from django.http import HttpResponse, FileResponse
-from openpyxl import Workbook
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-from io import BytesIO
+
 
 @login_required(login_url='adminLogin')
 @never_cache
@@ -1272,13 +1255,7 @@ def export_excel(request, report_id):
     wb.save(response)
     return response
 
-from django.http import FileResponse
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter, landscape
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-from io import BytesIO
-from django.db.models import Sum, F, Avg
+
 
 def export_pdf(request, report_id):
     report = SalesReport.objects.get(id=report_id)
