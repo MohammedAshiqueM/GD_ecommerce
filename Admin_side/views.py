@@ -75,10 +75,6 @@ def adminLogin(request):
     if request.method == "POST":
         username = request.POST.get("email")
         password = request.POST.get("password")
-        # if not User.objects.filter(email=username).exists():
-        #     messages.error(request,'Account not found')
-        #     print("1",messages.error)
-        #     return redirect('adminLogin')
         user = authenticate(username=username, password=password)
         if user is None:
             messages.error(request, "Invalid username or password")
@@ -95,11 +91,6 @@ def adminLogin(request):
 
 @login_required(login_url='adminLogin')
 @never_cache
-# from django.db.models.functions import TruncDay, TruncMonth, TruncYear
-# from django.utils import timezone
-# from datetime import timedelta
-# import json
-
 def dashboard(request):
     if not request.user.is_superuser:
         return HttpResponseForbidden("You do not have access to this page.")
@@ -124,7 +115,7 @@ def dashboard(request):
     start_date = end_date - timedelta(days=7)
     total_income = OrderLine.objects.filter(order__order_date__range=(start_date, end_date)).aggregate(total_income=Sum('price'))['total_income'] or 0
 
-    # Get initial sales data for chart (default to daily)
+    # Get initial sales data for chart 
     filter_type = 'daily'
     sales_data = OrderLine.objects.filter(order__order_date__gte=timezone.now() - timedelta(days=30)).annotate(
         date=TruncDay('order__order_date')
@@ -163,7 +154,7 @@ def get_sales_data(request):
         sales_data = OrderLine.objects.annotate(
             date=TruncMonth('order__order_date')
         ).values('date').annotate(total_sales=Sum('price')).order_by('date')
-    else:  # daily
+    else:  
         thirty_days_ago = timezone.now() - timedelta(days=30)
         sales_data = OrderLine.objects.filter(order__order_date__gte=thirty_days_ago).annotate(
             date=TruncDay('order__order_date')
@@ -216,7 +207,6 @@ def unblock(request, pk):
         return JsonResponse({"success": False, "error": "Internal server error"})
 
 @login_required(login_url='adminLogin')
-# @staff_member_required
 def category(request):
     if not request.user.is_superuser:
         return HttpResponseForbidden("You do not have access to this page.")
@@ -438,7 +428,6 @@ def addProduct(request):
             messages.error(request, f"Stock Keeping Unit {sku} already exists")
             return redirect('addProduct')
         
-        # Validate category and subcategory
         try:
             category = Category.objects.get(id=category_id)
             subcategory = SubCategory.objects.get(id=subcategory_id)
@@ -446,9 +435,6 @@ def addProduct(request):
             messages.error(request, "Selected category or subcategory does not exist.")
             return redirect('addProduct')
         
-        # Save user data to sessiony
-        # Create Product instance
-        # Create an instance of the Product model without saving it to the database
         product = Product.objects.create(
             name=name,
             description=description,
@@ -464,8 +450,7 @@ def addProduct(request):
             cropped_image = crop_image(image)
             ProductImage.objects.create(product=product, image=cropped_image)
 
-        # messages.success(request, "Product variation added successfully.")
-        return redirect('variant',pk=product.pk)  # Redirect to product list or another view
+        return redirect('variant',pk=product.pk)  
 
        
     return render(request, "addProduct.html", context)
@@ -485,7 +470,6 @@ def variant(request, pk):
     if request.method == "POST":
         variation_data = {}
 
-        # Print the entire POST data for debugging
         print("POST data received:", request.POST)
 
         # Process variation names and options
@@ -500,7 +484,6 @@ def variant(request, pk):
                     variation_data[index]['options'].extend(values)
 
 
-        # Print parsed variation data for debugging
         print("Parsed variation data:", variation_data)
 
         # Validate and save variations and options
@@ -632,7 +615,6 @@ def edit_configuration(request, configuration_id):
         qty_in_stock = request.POST.get('qty_in_stock')
 
         if not price or not qty_in_stock:
-            # Handle error - Missing fields
             return render(request, 'edit_configuration.html', {'configuration': configuration})
 
         configuration.price = price
@@ -648,7 +630,6 @@ def edit_configuration(request, configuration_id):
 
 def crop_image(image_file):
     image = Image.open(image_file)
-    # Define the crop box (left, upper, right, lower) - adjust as needed
     crop_box = (0, 0, min(image.size), min(image.size))
     cropped_image = image.crop(crop_box)
     cropped_image_io = BytesIO()
@@ -679,7 +660,6 @@ def unblockProduct(request, pk):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
     
-# @csrf_exempt
 def toggle_featured(request, product_id):
     if request.method == 'POST':
         product = get_object_or_404(Product, id=product_id)
@@ -950,14 +930,6 @@ def toggle_coupon_status(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
-
-# def admin_orders(request):
-#     orders = Order.objects.all()
-#     context = {
-#         'orders': orders
-#     }
-#     return render(request, 'admin_orders.html', context)
-
 def change_order_status(request, order_id):
     status = request.GET.get('status')
     order = get_object_or_404(Order, id=order_id)
@@ -1108,9 +1080,6 @@ def toggle_offer_status(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
-
-
-
 @login_required(login_url='adminLogin')
 @never_cache
 def sales_report(request):
@@ -1118,12 +1087,11 @@ def sales_report(request):
         return HttpResponseForbidden("You do not have access to this page.")
     if request.method == 'POST':
         report_type = request.POST.get('report_type')
-        # start_date = request.POST.get('start_date')
-        # end_date = request.POST.get('end_date')
 
         if report_type == 'custom':
             start_date = request.POST.get('start_date')
             end_date = request.POST.get('end_date')
+            
             # Convert string dates to datetime objects
             start_date = timezone.datetime.strptime(start_date, '%Y-%m-%d').date()
             end_date = timezone.datetime.strptime(end_date, '%Y-%m-%d').date() + timedelta(days=1)
