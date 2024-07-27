@@ -61,13 +61,11 @@ from Admin_side.models import (
 )
 
 
-# from django.core.validators import validate_email,EmailValidator
 
 
 ########################## function for login & singUp ###############################
 @never_cache
 def userLogin(request):
-    # print("Submit value:", request.POST.get('submit'))
 
     if request.user.is_authenticated:
         return redirect('userHome')
@@ -206,7 +204,6 @@ def otp(request):
         return redirect("userLogin")
 
     if request.method == "POST":
-        # Assuming your OTP fields are named 'ist', 'sec', 'third', 'fourth', and 'fifth'
         otp_digits = [
             request.POST.get("ist", ""),
             request.POST.get("sec", ""),
@@ -214,8 +211,6 @@ def otp(request):
             request.POST.get("fourth", ""),
             request.POST.get("fifth", ""),
         ]
-
-        # Concatenate OTP digits into a single OTP string
         otp = "".join(otp_digits)
         print("otp", otp)
         # Retrieve OTP from session
@@ -228,10 +223,8 @@ def otp(request):
             )
             user.is_active = True
             user.save()
-            # auth_login(request, user)
             return redirect("userLogin")
         else:
-            # Invalid OTP, display error message
             messages.error(request, "Ivalid otp")
             return render(request, "otp.html")
 
@@ -249,14 +242,9 @@ def resend_otp(request):
         request.session["otp_creation_time"] = datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S"
         )
-
         # Resend OTP via email (assuming send_otp function sends the OTP)
         send_otp(email, new_otp)
-
-        # Display success message
         messages.success(request, "OTP has been resent.")
-
-        # Redirect back to OTP page
         return redirect("otp")
 
 
@@ -280,7 +268,6 @@ def userHome(request):
             first_config = configs.first()
             product.starting_price = first_config.price
             product.discounted_price = first_config.get_discounted_price()
-            # print(product.discounted_price)
         else:
             product.starting_price = 0
             product.discounted_price = 0
@@ -375,7 +362,7 @@ def shop(request):
         elif sort == 'price_high_low':
             product.display_price = product.max_price
         else:
-            product.display_price = product.min_price  # Changed from avg_price to min_price
+            product.display_price = product.min_price  
     
     context = {
         "products": products,
@@ -415,7 +402,7 @@ def categoryProduct(request, pk):
         elif sort == 'price_high_low':
             product.display_price = product.max_price
         else:
-            product.display_price = product.min_price  # You can change this to avg_price if you prefer
+            product.display_price = product.min_price  
 
     context = {
         "products": products,
@@ -454,7 +441,7 @@ def subcategoryProduct(request, pk):
         elif sort == 'price_high_low':
             product.display_price = product.max_price
         else:
-            product.display_price = product.min_price  # You can change this to avg_price if you prefer
+            product.display_price = product.min_price  
 
     context = {
         "products": products,
@@ -786,7 +773,6 @@ def check_cart_quantity(request):
         # Fetch product configuration
         product_configuration = get_object_or_404(ProductConfiguration, id=configuration_id)
         
-        # Calculate the total quantity in the cart for this configuration
         total_quantity_in_cart = CartItem.objects.filter(
             product_configuration_id=configuration_id
         ).aggregate(total=Sum('qty'))['total'] or 0
@@ -964,17 +950,15 @@ def place_order(request):
             razorpay_payment_id = data.get('razorpay_payment_id')
             razorpay_order_id = data.get('razorpay_order_id')
             razorpay_signature = data.get('razorpay_signature')
-            print("coupon:", coupon_code)
-            print("Received data:", data)
-            print("the pay method: ", payment_method_value)
-            
-                        # Print statements for debugging
-            print("Permanent Address Line 1:", data.get('permanent_address_line1'))
-            print("Permanent Address Line 2:", data.get('permanent_address_line2'))
-            print("Permanent City:", data.get('permanent_city'))
-            print("Permanent State:", data.get('permanent_state'))
-            print("Permanent Country:", data.get('permanent_country'))
-            print("Permanent Postal Code:", data.get('permanent_postal_code'))
+            # print("coupon:", coupon_code)
+            # print("Received data:", data)
+            # print("the pay method: ", payment_method_value)
+            # print("Permanent Address Line 1:", data.get('permanent_address_line1'))
+            # print("Permanent Address Line 2:", data.get('permanent_address_line2'))
+            # print("Permanent City:", data.get('permanent_city'))
+            # print("Permanent State:", data.get('permanent_state'))
+            # print("Permanent Country:", data.get('permanent_country'))
+            # print("Permanent Postal Code:", data.get('permanent_postal_code'))
 
             if not payment_method_value:
                 return JsonResponse({'status': 'error', 'message': 'Payment method is required.', 'redirect_url': reverse('my_orders')})
@@ -1226,9 +1210,9 @@ def create_cod_payment_method(user):
         user=user,
         payment_type=cod_payment_type,
         defaults={
-            'provider': "N/A",  # or any default value
-            'account_number': "N/A",  # or any default value
-            'expiry_date': expiry_date,  # dynamically calculated expiry date
+            'provider': "N/A",  
+            'account_number': "N/A", 
+            'expiry_date': expiry_date,  
             'is_default': False
         }
     )
@@ -1342,8 +1326,6 @@ def apply_coupon(request):
         new_total = Decimal(order_total) - discount_value
 
 
-        # new_total = order_total - discount_value
-
         logger.info(f"Discount value: {discount_value}")
         logger.info(f"New total: {new_total}")
 
@@ -1376,7 +1358,7 @@ def my_orders(request):
     orders = Order.objects.filter(user=request.user).prefetch_related(
         'orderline_set__product_configuration__product__images',
         'orderline_set__product_configuration__variation_options',
-        'orderreturn_set'  # Add this line to prefetch return information
+        'orderreturn_set'
     ).order_by('-id')
     
     payment_status = request.GET.get('payment_status')
@@ -1394,7 +1376,6 @@ def my_orders(request):
             line.discount_amount = line.price - line.discounted_price
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # If it's an AJAX request, return JSON data
         order_data = [{
             'id': order.id,
             'order_date': order.order_date,
@@ -1486,11 +1467,6 @@ def update_return_status(request, return_id):
         except Exception as e:
             return JsonResponse({'message': str(e)}, status=500)
     return JsonResponse({'message': 'Invalid request method'}, status=405)
-
-import logging
-
-# Get an instance of a logger
-logger = logging.getLogger(__name__)
 
 @csrf_exempt
 @login_required(login_url='userLogin')
@@ -1591,7 +1567,6 @@ def wallet_purchase(request, order_id):
                 transaction_type='PURCHASE',
                 order=order
             )
-            # order.payment_status = 'PAID'
             order.save()
             return JsonResponse({
                 'success': True, 
