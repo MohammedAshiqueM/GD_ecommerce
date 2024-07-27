@@ -10,12 +10,10 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
-from django.db.models import Q
-from django.db.models import Count,Avg,Sum
 import re
 from .utils import generate_otp, send_otp
 from datetime import datetime, timedelta
-from django.db.models import Avg, Min, Max,Q
+from django.db.models import Avg, Count, Sum, Min, Max, Q
 from django.conf import settings
 import razorpay
 from razorpay import Client as RazorpayClient
@@ -23,6 +21,10 @@ from django.utils import timezone
 from django.urls import reverse
 from django.db import transaction
 from django.contrib.auth.decorators import user_passes_test
+from decimal import Decimal
+import logging
+from django.core.exceptions import ObjectDoesNotExist
+
 from Admin_side.models import (
     User,
     Address,
@@ -264,7 +266,7 @@ def common(request):
     context = {"categories":categories}
     return redirect(request,'common.html',context)
 
-# @login_required(login_url='userLogin')
+
 @never_cache
 def userHome(request):
     categories = Category.objects.all()
@@ -342,8 +344,7 @@ def productDetails(request, pk):
     }
     return render(request, "productDetails.html", context)
 
-from django.db.models import Min, Max, Avg
-from decimal import Decimal
+
 @never_cache
 def shop(request):
     products = Product.objects.filter(is_active=True)
@@ -383,8 +384,7 @@ def shop(request):
     }
     return render(request, "shop.html", context)
 
-from django.db.models import Min, Max, Avg
-from decimal import Decimal
+
 @never_cache
 def categoryProduct(request, pk):
     products = Product.objects.filter(category_id=pk)
@@ -849,11 +849,6 @@ def razorpay_checkout(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-from django.conf import settings
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from decimal import Decimal
 
 @login_required(login_url='userLogin')
 @never_cache
@@ -954,7 +949,6 @@ def checkOut(request):
     }
     return render(request, "checkOut.html", context)
 
-from django.urls import reverse
 
 @csrf_exempt
 @login_required(login_url='userLogin')
@@ -1301,9 +1295,7 @@ def remove_from_wishlist(request, item_id):
         logger.error(f"Error removing item {item_id}: {str(e)}", exc_info=True)
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
-from decimal import Decimal
-import logging
-from django.core.exceptions import ObjectDoesNotExist
+
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
@@ -1476,7 +1468,6 @@ def request_order_return(request, order_id):
     else:
         return JsonResponse({'message': 'Invalid request method.'}, status=405)
     
-from django.contrib.auth.decorators import user_passes_test
 
 @login_required(login_url='userLogin')
 @user_passes_test(lambda u: u.is_staff)
