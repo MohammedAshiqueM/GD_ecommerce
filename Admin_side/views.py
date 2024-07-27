@@ -212,8 +212,10 @@ def unblock(request, pk):
         return JsonResponse({"success": False, "error": "Internal server error"})
 
 @login_required(login_url='adminLogin')
-@staff_member_required
+# @staff_member_required
 def category(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     if "value" in request.GET:
         credential = request.GET["value"]
         parent = Category.objects.filter(Q(name__icontains=credential))
@@ -230,6 +232,8 @@ def category(request):
 @login_required(login_url='adminLogin')
 @never_cache
 def addCategory(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     data = Category.objects.all()
     if request.method == "POST":
         print("outside")
@@ -286,6 +290,8 @@ def addCategory(request):
 @login_required(login_url='adminLogin')
 @never_cache
 def editCategory(request, pk):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     data = Category.objects.get(pk=pk)
     context = {"value": data, "edit_mode": True}
     if request.method == "POST":
@@ -309,6 +315,8 @@ def editCategory(request, pk):
 @login_required(login_url='adminLogin')
 @never_cache
 def editSubcategory(request, pk):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     subcategory = SubCategory.objects.get(pk=pk)
     categories = Category.objects.all()
     if request.method == "POST":
@@ -377,6 +385,8 @@ def unblockSubcategory(request, pk):
 @login_required(login_url='adminLogin')
 @never_cache   
 def product(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     if "value" in request.GET:
         credential = request.GET["value"]
         data = Product.objects.filter(Q(name__icontains=credential))
@@ -390,6 +400,8 @@ def product(request):
 @login_required(login_url='adminLogin')
 @never_cache
 def productAbout(request,pk):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     data = Product.objects.get(pk=pk)
     context = {"product": data}
     return render(request,"productAbout.html",context)
@@ -397,6 +409,8 @@ def productAbout(request,pk):
 @login_required(login_url='adminLogin')
 @never_cache
 def addProduct(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     basecategory = Category.objects.all()
     context = {"base": basecategory, "edit_mode": False}
     
@@ -460,6 +474,8 @@ def adminLogout(request):
 @login_required(login_url='adminLogin')
 @never_cache
 def variant(request, pk):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     product = get_object_or_404(Product, pk=pk)
 
     if request.method == "POST":
@@ -517,6 +533,8 @@ def generate_combinations(variations):
 @login_required(login_url='adminLogin')
 @never_cache
 def productConfiguration(request, pk):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     product = get_object_or_404(Product, pk=pk)
     variations = product.variation_set.all()
 
@@ -601,6 +619,8 @@ def productConfiguration(request, pk):
 @login_required(login_url='adminLogin')
 @never_cache
 def edit_configuration(request, configuration_id):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     configuration = get_object_or_404(ProductConfiguration, pk=configuration_id)
 
     if request.method == 'POST':
@@ -668,6 +688,8 @@ def toggle_featured(request, product_id):
 @login_required(login_url='adminLogin')
 @never_cache
 def editProduct(request, pk):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     product = get_object_or_404(Product, id=pk)
     basecategory = Category.objects.all()
     subcategories = SubCategory.objects.filter(category=product.category)
@@ -743,6 +765,8 @@ def editProduct(request, pk):
 @login_required(login_url='adminLogin')
 @never_cache
 def editvariant(request, pk):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     product = get_object_or_404(Product, id=pk)
     variations = product.variation_set.all().prefetch_related('variationoption_set')
     variation_options = []
@@ -852,6 +876,8 @@ logger = logging.getLogger(__name__)
 @login_required(login_url='adminLogin')
 @never_cache
 def orders(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     try:
         orders = Order.objects.all().order_by('-id')
 
@@ -892,12 +918,16 @@ def orders(request):
 @login_required(login_url='adminLogin')
 @never_cache
 def coupons(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     data = Coupon.objects.all()
     return render(request,"coupons.html",{"data":data})
 
 @login_required(login_url='adminLogin')
 @never_cache
 def addCoupon(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     if request.method == 'POST':
         form = CouponForm(request.POST, request.FILES)
         if form.is_valid():
@@ -991,13 +1021,16 @@ def process_cancellation(order):
 @login_required(login_url='adminLogin')
 @never_cache
 def stock_management(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     products = Product.objects.prefetch_related('configurations__variation_options').all()
     return render(request, 'stockManagement.html', {'products': products})
 
 @login_required(login_url='adminLogin')
 @never_cache
-@login_required
 def update_stock(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     if request.method == 'POST':
         for key, value in request.POST.items():
             if key.startswith('config_'):
@@ -1021,12 +1054,16 @@ def update_stock(request):
 @login_required(login_url='adminLogin')
 @never_cache
 def offers(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     data = Offer.objects.all()
     return render(request,"offers.html",{"data":data})
 
 @login_required(login_url='adminLogin')
 @never_cache
 def create_offer(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     if request.method == 'POST':
         form = OfferForm(request.POST)
         if form.is_valid():
@@ -1094,6 +1131,8 @@ from io import BytesIO
 @login_required(login_url='adminLogin')
 @never_cache
 def sales_report(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     if request.method == 'POST':
         report_type = request.POST.get('report_type')
         # start_date = request.POST.get('start_date')
@@ -1363,6 +1402,8 @@ def export_pdf(request, report_id):
 @login_required(login_url='adminLogin')
 @never_cache
 def banner_list(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     carousel_banners = CarouselBanner.objects.all()
     offer_banners = OfferBanner.objects.all()
     return render(request, 'bannerList.html', {
@@ -1373,6 +1414,8 @@ def banner_list(request):
 @login_required(login_url='adminLogin')
 @never_cache
 def add_carousel_banner(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     if request.method == 'POST':
         form = CarouselBannerForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1386,6 +1429,8 @@ def add_carousel_banner(request):
 @login_required(login_url='adminLogin')
 @never_cache
 def add_offer_banner(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("You do not have access to this page.")
     if request.method == 'POST':
         form = OfferBannerForm(request.POST, request.FILES)
         if form.is_valid():
