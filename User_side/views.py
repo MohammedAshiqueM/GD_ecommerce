@@ -25,38 +25,9 @@ from decimal import Decimal
 import logging
 from django.core.exceptions import ObjectDoesNotExist
 from Admin_side.models import (
-    User,
-    Address,
-    PaymentType,
-    PaymentMethod,
-    Category,
-    SubCategory,
-    Variation,
-    VariationOption,
-    Product,
-    ProductConfiguration,
-    Cart,
-    CartItem,
-    ShippingMethod,
-    OrderStatus,
-    Order,
-    OrderLine,
-    Review,
-    Promotion,
-    PromotionCategory,
-    ProductImage,
-    Coupon,
-    CouponUsage,
-    Wishlist,
-    WishlistItem,
-    Wallet,
-    Transaction,
-    CarouselBanner,
-    OfferBanner,
-    PaymentStatus,
-    OrderReturn,
-    OrderReturnStatus,
-    PermanentAddress
+    User, Address, PaymentType, PaymentMethod, Category, SubCategory, Variation, VariationOption, Product, ProductConfiguration, Cart, CartItem, ShippingMethod,
+    OrderStatus, Order, OrderLine, Review, Promotion, PromotionCategory, ProductImage, Coupon, CouponUsage, Wishlist, WishlistItem, Wallet, Transaction, CarouselBanner,
+    OfferBanner, PaymentStatus, OrderReturn, OrderReturnStatus,PermanentAddress
 )
 
 @never_cache
