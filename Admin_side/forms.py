@@ -16,30 +16,30 @@ class CouponForm(forms.ModelForm):
             'valid_to': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
 
-    def clean_discount_value(self):
-        discount_value = self.cleaned_data.get('discount_value')
-        discount_type = self.cleaned_data.get('discount_type')
-        min_purchase_amount = self.cleaned_data.get('min_purchase_amount')
+    # def clean_discount_value(self):
+    #     discount_value = self.cleaned_data.get('discount_value')
+    #     discount_type = self.cleaned_data.get('discount_type')
+    #     min_purchase_amount = self.cleaned_data.get('min_purchase_amount')
         
-        if discount_value is None:
-            raise forms.ValidationError('Discount value is required.')
+    #     if discount_value is None:
+    #         raise forms.ValidationError('Discount value is required.')
         
-        if discount_type is None:
-            raise forms.ValidationError('Discount type is required.')
+    #     if discount_type is None:
+    #         raise forms.ValidationError('Discount type is required.')
         
-        if min_purchase_amount is None:
-            raise forms.ValidationError('Minimum purchase amount is required.')
+    #     if min_purchase_amount is None:
+    #         raise forms.ValidationError('Minimum purchase amount is required.')
 
-        if discount_type == 'percentage':
-            if not (0 < discount_value <= 100):
-                raise forms.ValidationError('For percentage discounts, the value must be between 0 and 100.')
-        elif discount_type == 'fixed':
-            if discount_value <= 0:
-                raise forms.ValidationError('Discount value must be a positive value.')
-            if discount_value > min_purchase_amount:
-                raise forms.ValidationError('Fixed discount value must not exceed the minimum purchase amount.')
+    #     if discount_type == 'percentage':
+    #         if not (0 < discount_value <= 100):
+    #             raise forms.ValidationError('For percentage discounts, the value must be between 0 and 100.')
+    #     elif discount_type == 'fixed':
+    #         if discount_value <= 0:
+    #             raise forms.ValidationError('Discount value must be a positive value.')
+    #         if discount_value > min_purchase_amount:
+    #             raise forms.ValidationError('Fixed discount value must not exceed the minimum purchase amount.')
         
-        return discount_value
+    #     return discount_value
 
     def clean_valid_to(self):
         valid_from = self.cleaned_data.get('valid_from')
@@ -48,11 +48,11 @@ class CouponForm(forms.ModelForm):
             raise forms.ValidationError('Valid to date must be after valid from date.')
         return valid_to
 
-    def clean_min_purchase_amount(self):
-        min_purchase_amount = self.cleaned_data.get('min_purchase_amount')
-        if min_purchase_amount < 0:
-            raise forms.ValidationError('Minimum purchase amount cannot be negative.')
-        return min_purchase_amount
+    # def clean_min_purchase_amount(self):
+    #     min_purchase_amount = self.cleaned_data.get('min_purchase_amount')
+    #     if min_purchase_amount < 0:
+    #         raise forms.ValidationError('Minimum purchase amount cannot be negative.')
+    #     return min_purchase_amount
 
     def clean_usage_limit(self):
         usage_limit = self.cleaned_data.get('usage_limit')
