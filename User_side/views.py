@@ -24,7 +24,6 @@ from django.contrib.auth.decorators import user_passes_test
 from decimal import Decimal
 import logging
 from django.core.exceptions import ObjectDoesNotExist
-
 from Admin_side.models import (
     User,
     Address,
@@ -60,10 +59,6 @@ from Admin_side.models import (
     PermanentAddress
 )
 
-
-
-
-########################## function for login & singUp ###############################
 @never_cache
 def userLogin(request):
 
@@ -227,9 +222,7 @@ def otp(request):
         else:
             messages.error(request, "Ivalid otp")
             return render(request, "otp.html")
-
     return render(request, "otp.html")
-
 
 def resend_otp(request):
     if request.method == "GET":
@@ -247,13 +240,10 @@ def resend_otp(request):
         messages.success(request, "OTP has been resent.")
         return redirect("otp")
 
-
-########################## function for home page ############################
 def common(request):
     categories = Category.objects.all()
     context = {"categories":categories}
     return redirect(request,'common.html',context)
-
 
 @never_cache
 def userHome(request):
@@ -331,7 +321,6 @@ def productDetails(request, pk):
     }
     return render(request, "productDetails.html", context)
 
-
 @never_cache
 def shop(request):
     products = Product.objects.filter(is_active=True)
@@ -370,7 +359,6 @@ def shop(request):
         "categories": categories,
     }
     return render(request, "shop.html", context)
-
 
 @never_cache
 def categoryProduct(request, pk):
@@ -447,8 +435,7 @@ def subcategoryProduct(request, pk):
         "products": products,
         "sort": sort,
         "categories": categories
-    }
-    
+    }   
     return render(request, "subcategoryProduct.html", context)
 
 @login_required(login_url='userLogin')
@@ -468,7 +455,6 @@ def editProfile(request,pk):
 @login_required(login_url='userLogin')
 def addAddress(request,pk):
     user = get_object_or_404(User, pk=pk)
-
     if request.method == 'POST':
         unit_number = request.POST.get('unit_number')
         street_number = request.POST.get('street_number')
@@ -511,7 +497,6 @@ def set_default_address(request):
         data = json.loads(request.body)
         address_id = data.get('address_id')
         user_id = data.get('user_id')
-
         try:
             user = User.objects.get(pk=user_id)
             Address.objects.filter(user=user, is_default=True).update(is_default=False)
@@ -557,7 +542,6 @@ def deleteAddress(request, pk):
         address.delete()
         messages.success(request, "Address deleted successfully.")
     return redirect('profile', pk=request.user.id)
-
 
 @login_required(login_url='userLogin')
 @never_cache
@@ -629,7 +613,6 @@ def add_to_cart(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
-
 @require_POST
 def get_configuration_id(request):
     try:
@@ -690,10 +673,8 @@ def get_configuration_id(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
-
 def contact(request):
     return render(request, "contact.html")
-
 
 @csrf_exempt
 def increment_quantity(request, item_id):
@@ -715,7 +696,6 @@ def increment_quantity(request, item_id):
         return JsonResponse(response_data)
     except CartItem.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
-
 
 @csrf_exempt
 def decrement_quantity(request, item_id):
@@ -758,7 +738,6 @@ def calculate_total(cart):
     # Assuming shipping cost is fixed at $10
     return calculate_subtotal(cart) + 10
 
-
 @require_POST
 def check_cart_quantity(request):
     try:
@@ -766,13 +745,11 @@ def check_cart_quantity(request):
         product_id = data.get('product_id')
         configuration_id = data.get('configuration_id')
         quantity = data.get('quantity')
-
         if not product_id or not configuration_id or quantity is None:
             return JsonResponse({'success': False, 'message': 'Product ID, Configuration ID, and quantity are required'}, status=400)
 
         # Fetch product configuration
-        product_configuration = get_object_or_404(ProductConfiguration, id=configuration_id)
-        
+        product_configuration = get_object_or_404(ProductConfiguration, id=configuration_id)      
         total_quantity_in_cart = CartItem.objects.filter(
             product_configuration_id=configuration_id
         ).aggregate(total=Sum('qty'))['total'] or 0
@@ -800,15 +777,11 @@ def razorpay_checkout(request):
         try:
             data = json.loads(request.body)
             amount = data.get('amount')
-            
             if amount is None:
                 return JsonResponse({'error': 'Amount is required'}, status=400)
-            
             # Convert amount to paise
             order_amount = int(float(amount) * 100)
-            
             client = razorpay.Client(auth=(settings.RAZORPAY_KEY, settings.RAZORPAY_SECRET))
-            
             order_currency = 'INR'
             order_receipt = 'order_rcptid_11'
             notes = {'Shipping address': 'TVM, Kerala'}
@@ -821,7 +794,6 @@ def razorpay_checkout(request):
                     'notes': notes,
                 }
             )
-
             print('Razorpay order created:', razorpay_order) 
             return JsonResponse({
                 'razorpay_order_id': razorpay_order['id'],
@@ -835,13 +807,11 @@ def razorpay_checkout(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-
 @login_required(login_url='userLogin')
 @never_cache
 def checkOut(request):
     categories = Category.objects.all()
     user = request.user
-
     if request.method == 'POST':
         payment_method = request.POST.get('payment')
         try:
@@ -863,7 +833,6 @@ def checkOut(request):
 
         cart, created = Cart.objects.get_or_create(user=user)
         cart_items = CartItem.objects.filter(cart=cart)
-
         order_total = sum(Decimal(item.qty) * Decimal(item.product_configuration.price) for item in cart_items)
         shipping_cost = Decimal('10.00')
         total_discount = Decimal('0.00')
@@ -903,10 +872,8 @@ def checkOut(request):
     addresses = Address.objects.filter(user=user)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
     show_modal = not default_address
-
     cart, created = Cart.objects.get_or_create(user=user)
     cart_items = CartItem.objects.filter(cart=cart)
-
     order_total = sum(Decimal(item.qty) * Decimal(item.product_configuration.price) for item in cart_items)
     shipping_cost = Decimal('10.00')
     total_discount = Decimal('0.00')
@@ -934,7 +901,6 @@ def checkOut(request):
         'final_total': final_total
     }
     return render(request, "checkOut.html", context)
-
 
 @csrf_exempt
 @login_required(login_url='userLogin')
@@ -1279,7 +1245,6 @@ def remove_from_wishlist(request, item_id):
         logger.error(f"Error removing item {item_id}: {str(e)}", exc_info=True)
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
-
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
@@ -1325,7 +1290,6 @@ def apply_coupon(request):
             print(discount_value)
         new_total = Decimal(order_total) - discount_value
 
-
         logger.info(f"Discount value: {discount_value}")
         logger.info(f"New total: {new_total}")
 
@@ -1349,7 +1313,6 @@ def apply_coupon(request):
     except Exception as e:
         logger.exception(f"Error in apply_coupon: {str(e)}")
         return JsonResponse({'success': False, 'message': f'An error occurred: {str(e)}'}, status=500)
-
 
 @login_required(login_url='userLogin')
 @never_cache
@@ -1449,7 +1412,6 @@ def request_order_return(request, order_id):
     else:
         return JsonResponse({'message': 'Invalid request method.'}, status=405)
     
-
 @login_required(login_url='userLogin')
 @user_passes_test(lambda u: u.is_staff)
 def update_return_status(request, return_id):
@@ -1549,7 +1511,6 @@ def wallet(request):
     }
     return render(request, 'wallet.html', context)
     
-
 @login_required(login_url='userLogin')
 def wallet_purchase(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
@@ -1648,7 +1609,6 @@ def retry_payment(request, order_id):
     else:
         return JsonResponse({'status': 'error', 'message': 'Invalid payment method'})
     
-
 @login_required(login_url='userLogin')
 @require_POST
 def verify_payment(request, order_id):
@@ -1669,8 +1629,6 @@ def order_invoice(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     return render(request, 'orderInvoice.html', {'order': order})
 
-
-########################## function for logout ############################
 def logout(request):
     auth_logout(request)
     return redirect("userLogin")
