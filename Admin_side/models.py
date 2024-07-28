@@ -7,7 +7,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 
 
-
+#Address model
 class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     unit_number = models.CharField(max_length=10, blank=True, null=True)
@@ -20,11 +20,13 @@ class Address(models.Model):
     country = models.CharField(max_length=255)
     is_default = models.BooleanField(default=False)
 
+#Payment type model(Pending,Completed,Failed)
 class PaymentType(models.Model):
     value = models.CharField(max_length=255)
     def __str__(self):
         return f"{self.value}"
     
+#Payment method for each orders
 class PaymentMethod(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     payment_type = models.ForeignKey(PaymentType, on_delete=models.CASCADE)
@@ -33,6 +35,7 @@ class PaymentMethod(models.Model):
     expiry_date = models.DateField()
     is_default = models.BooleanField(default=False)
 
+#Category schema
 class Category(models.Model):
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
@@ -40,6 +43,7 @@ class Category(models.Model):
     def __str__(self):
         return f"{self.name}"
 
+#Subcategory schema with category foreign key
 class SubCategory(models.Model):
     name = models.CharField(max_length=255)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='subcategories')
@@ -48,6 +52,7 @@ class SubCategory(models.Model):
     def __str__(self):
         return f"{self.name}"
 
+#Product model with category and subcategory as foreign key
 class Product(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -64,6 +69,7 @@ class Product(models.Model):
     def has_combination_with_variation(self, variation_id):
         return self.configurations.filter(variation_options__variation_id=variation_id).exists()
     
+#Offer model with type percentage and fixed
 class Offer(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -80,21 +86,22 @@ class Offer(models.Model):
     def __str__(self):
         return self.name
 
-
-
+#Variation model for adding variations for product
 class Variation(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
 
+#Variation option model with foreign key variation,for adding options in variations
 class VariationOption(models.Model):
     variation = models.ForeignKey(Variation, on_delete=models.CASCADE)
     value = models.CharField(max_length=255)
-    
+
+#Product images model with product foreign key  
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to='product/')
 
-
+#Product configuration schema for adding stock and price seperately to each product vaiants
 class ProductConfiguration(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='configurations')
     variation_options = models.ManyToManyField(VariationOption, related_name='configurations')
@@ -138,11 +145,12 @@ class ProductConfiguration(models.Model):
         best_offer = applicable_offers[0]
         if best_offer.offer.discount_type == 'FIXED':
             discount = best_offer.offer.discount_value
-        else:  # PERCENTAGE
+        else:  # Percentage
             discount = Decimal(self.price) * (best_offer.offer.discount_value / 100)
 
         return max(Decimal(self.price) - Decimal(discount), Decimal('0.00'))
-    
+
+#For adding product offers 
 class ProductOffer(models.Model):
     proproduct_configuration = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE, related_name='offers',null=True)
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
@@ -153,19 +161,22 @@ class ProductOffer(models.Model):
     # def has_combination_with_variation(self, variation_id):
     #     return self.configurations.filter(variation_options__variation_id=variation_id).exists()
     
-
+#User Cart model
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
+#Cart item with cart and product configuration as foreign key
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     product_configuration = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE, null=True, blank=True) 
     qty = models.PositiveIntegerField(default=1) 
 
+#Shipping methods (For later usage)
 class ShippingMethod(models.Model):
     name = models.CharField(max_length=255)
     price = models.FloatField()
 
+#Coupon model
 class Coupon(models.Model):
     code = models.CharField(max_length=50, unique=True)
     discount_type = models.CharField(max_length=10, choices=[('percentage', 'Percentage'), ('fixed', 'Fixed')])
@@ -206,23 +217,27 @@ class Coupon(models.Model):
         user_usage_count = self.couponusage_set.filter(user=user).count()
         total_usage_count = self.couponusage_set.count()
         return user_usage_count < self.usage_limit and total_usage_count < self.usage_limit
-       
+
+#To count the coupon usage by a user    
 class CouponUsage(models.Model):
     coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     usage_date = models.DateTimeField(auto_now_add=True)
      
+#Order status (Pending,Completed,Canelled)
 class OrderStatus(models.Model):
     status = models.CharField(max_length=255)
     def __str__(self):
         return f"{self.status}"
-    
+
+#Peyment status model(Payment Pending,Payment Refunded,Payment Completed)  
 class PaymentStatus(models.Model):
     status = models.CharField(max_length=255)
 
     def __str__(self):
         return self.status
     
+#Order model
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     order_date = models.DateField(auto_now_add=True)
@@ -282,6 +297,7 @@ class Order(models.Model):
             return return_request.return_status.status
         return None
     
+#Order line with order as foreign key,which contains the product, price and quantites of the orders are saving in this schema
 class OrderLine(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     product_configuration = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE, null=True, blank=True)
@@ -289,12 +305,14 @@ class OrderLine(models.Model):
     price = models.FloatField()
     discounted_price = models.DecimalField(max_digits=10, decimal_places=2,null=True)
 
+#Reviews(for later updation)
 class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     ordered_product = models.ForeignKey(Product, on_delete=models.CASCADE)
     rating_value = models.IntegerField()
     comment = models.TextField()
 
+#For adding discounts
 class Promotion(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -302,13 +320,16 @@ class Promotion(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
 
+#For mention the category for discount
 class PromotionCategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='promotion_categories')
     promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE)
 
+#Wishlist of the user
 class Wishlist(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     
+#Wishlist Item model for storing items of the wishlist
 class WishlistItem(models.Model):
     wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
     product_configuration = models.ForeignKey(ProductConfiguration, on_delete=models.CASCADE)
@@ -316,7 +337,8 @@ class WishlistItem(models.Model):
 
     class Meta:
         unique_together = ('wishlist', 'product_configuration')
-        
+
+#Wallet of the user
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -336,11 +358,12 @@ class Wallet(models.Model):
             self.save()
             return True
         return False    
-    
+
+#Transaction types of the user 
 class Transaction(models.Model):
     TRANSACTION_TYPES = (
         ('ADD', 'Add Funds'),
-        ('WITHDRAW', 'Withdraw Funds'),#this two fields are created for later updation with ADD and WITHDRAW funds later
+        ('WITHDRAW', 'Withdraw Funds'),#this fields are created for later updation with ADD and WITHDRAW funds later
         ('PURCHASE', 'Purchase'),
         ('REFUND', 'Refund'),
     )
@@ -354,7 +377,7 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.wallet.user.username} - {self.transaction_type} - {self.amount}"
     
-
+#Categroy offer model
 class CategoryOffer(models.Model):
     category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='offers')
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
@@ -362,13 +385,14 @@ class CategoryOffer(models.Model):
     class Meta:
         unique_together = ('category', 'offer')
 
+#Sub categroy offer model
 class SubcategoryOffer(models.Model):
     subcategory = models.ForeignKey('Subcategory', on_delete=models.CASCADE, related_name='offers')
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('subcategory', 'offer')
-        
+#Sales report of admin        
 class SalesReport(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     start_date = models.DateTimeField()
@@ -380,7 +404,8 @@ class SalesReport(models.Model):
 
     def __str__(self):
         return f"Sales Report {self.start_date} to {self.end_date}"
-    
+
+#Bannere model for adding banner by user
 class CarouselBanner(models.Model):
     POSITIONS = (
         (1, 'First'),
@@ -392,8 +417,6 @@ class CarouselBanner(models.Model):
     subtitle = models.CharField(max_length=200, blank=True, null=True)
     image = models.ImageField(upload_to='banners/carousel/')
     position = models.IntegerField(choices=POSITIONS, unique=True)
-    # button_text = models.CharField(max_length=50, default='Shop Now')
-    # button_link = models.URLField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -402,6 +425,7 @@ class CarouselBanner(models.Model):
     class Meta:
         ordering = ['position']
 
+#Offer banner model
 class OfferBanner(models.Model):
     POSITIONS = (
         (1, 'Top'),
@@ -412,8 +436,6 @@ class OfferBanner(models.Model):
     subtitle = models.CharField(max_length=200, blank=True, null=True)
     image = models.ImageField(upload_to='banners/offer/')
     position = models.IntegerField(choices=POSITIONS, unique=True)
-    # button_text = models.CharField(max_length=50, default='Shop Now')
-    # button_link = models.URLField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -425,7 +447,8 @@ class OfferBanner(models.Model):
     def clean(self):
         if OfferBanner.objects.exclude(pk=self.pk).count() >= 2:
             raise ValidationError("You can only have two Offer Banners.")
-        
+
+#Options for admin to return orders       
 class OrderReturnStatus(models.Model):
     status = models.CharField(max_length=255, choices=[
         ('Pending', 'Pending'),
@@ -435,7 +458,8 @@ class OrderReturnStatus(models.Model):
 
     def __str__(self):
         return self.status
-        
+
+#Modal for return orders       
 class OrderReturn(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     return_reason = models.TextField()
@@ -446,7 +470,8 @@ class OrderReturn(models.Model):
 
     def __str__(self):
         return f"Return for Order {self.order.id} - Status: {self.return_status}"
-    
+
+#Permanent address for storing while placing the order, hence the address of the user never changes the address on changing the address in the profile 
 class PermanentAddress(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='permanent_address')
     address_line1 = models.CharField(max_length=255)
