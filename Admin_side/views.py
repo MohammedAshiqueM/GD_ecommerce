@@ -66,7 +66,6 @@ from .models import (
     OrderReturn
 )
 
-
 # Create your views here.
 @never_cache
 def adminLogin(request):
@@ -86,8 +85,6 @@ def adminLogin(request):
             messages.error(request, f"{user} have no access to this page")
             return redirect("adminLogin")
     return render(request, "adminLogin.html")
-
-
 
 @login_required(login_url='adminLogin')
 @never_cache
@@ -166,8 +163,7 @@ def get_sales_data(request):
             'total_sales': float(item['total_sales'])
         }
         for item in sales_data
-    ]
-    
+    ]   
     return JsonResponse(formatted_sales_data, safe=False)
 
 @login_required(login_url='adminLogin')
@@ -444,17 +440,13 @@ def addProduct(request):
             is_active=True
         )
 
-
         # Save product images
         for image in productImages:
             cropped_image = crop_image(image)
             ProductImage.objects.create(product=product, image=cropped_image)
 
-        return redirect('variant',pk=product.pk)  
-
-       
+        return redirect('variant',pk=product.pk)   
     return render(request, "addProduct.html", context)
-
 
 def adminLogout(request):
     auth_logout(request)
@@ -551,30 +543,24 @@ def productConfiguration(request, pk):
             if not price or not qty_in_stock:
                 messages.error(request, "Please fill in all required fields.")
                 return redirect('productConfiguration', pk=product.pk)
-
             try:
                 price = float(price)
                 qty_in_stock = int(qty_in_stock)
             except ValueError:
                 messages.error(request, "Invalid price or stock value.")
                 return redirect('productConfiguration', pk=product.pk)
-
             # Create the ProductConfiguration instance
             configuration = ProductConfiguration.objects.create(
                 product=product,
                 price=price,
                 qty_in_stock=qty_in_stock
             )
-
             # Add variation_options to the ProductConfiguration
             configuration.variation_options.set(variation_options)
-
         messages.success(request, "Product configurations updated successfully.")
         return redirect('product')
-
     combinations = generate_combinations(variations)
     existing_configurations = ProductConfiguration.objects.filter(product=product).prefetch_related('variation_options')
-
     # Create a dictionary to store existing configuration data
     existing_config_data = {}
     for config in existing_configurations:
@@ -583,7 +569,6 @@ def productConfiguration(request, pk):
             'price': config.price,
             'qty_in_stock': config.qty_in_stock
         }
-
     # Prepare combinations with existing data
     prepared_combinations = []
     for index, combination in enumerate(combinations):
@@ -596,7 +581,6 @@ def productConfiguration(request, pk):
             'qty_in_stock': existing_data['qty_in_stock'],
             'is_existing': key in existing_config_data
         })
-
     context = {
         'product': product,
         'combinations': prepared_combinations
@@ -609,20 +593,15 @@ def edit_configuration(request, configuration_id):
     if not request.user.is_superuser:
         return HttpResponseForbidden("You do not have access to this page.")
     configuration = get_object_or_404(ProductConfiguration, pk=configuration_id)
-
     if request.method == 'POST':
         price = request.POST.get('price')
         qty_in_stock = request.POST.get('qty_in_stock')
-
         if not price or not qty_in_stock:
             return render(request, 'edit_configuration.html', {'configuration': configuration})
-
         configuration.price = price
         configuration.qty_in_stock = qty_in_stock
         configuration.save()
-
         return redirect('variation_combination', product_id=configuration.product.id)
-
     context = {
         'configuration': configuration,
     }
@@ -706,8 +685,7 @@ def editProduct(request, pk):
                     messages.error(request, "You must have at least 3 images. Cannot delete to drop below this limit.")
                     return redirect('editProduct', pk=pk)
                 else:
-                    images_to_delete.append(image)
-        
+                    images_to_delete.append(image)   
         
         # Ensure at least 3 images are uploaded if adding new images
         if image_count + len(productImage) < 3:
@@ -818,14 +796,12 @@ def editvariant(request, pk):
 
                 VariationOption.objects.bulk_create(new_options)
                 VariationOption.objects.bulk_update(updated_options, ['value'])
-
         # Create new variations
         for i, new_variation_name in enumerate(new_variation_names):
             new_variation = Variation.objects.create(product=product, name=new_variation_name)
             new_options = [VariationOption(variation=new_variation, value=value) 
                            for value in new_variation_options[f"new_{i}"]]
             VariationOption.objects.bulk_create(new_options)
-
         # Delete removed variations
         variations_to_delete = [vid for vid in existing_variation_ids if vid not in variation_ids]
         for variation_id in variations_to_delete:
@@ -833,18 +809,14 @@ def editvariant(request, pk):
             if product.has_combination_with_variation(variation_id):
                 ProductConfiguration.objects.filter(variation_options__variation=variation).delete()
             variation.delete()
-
         messages.success(request, "Product variations updated successfully.")
         return redirect('productConfiguration', pk=product.pk)
-
     context = {
         "edit_mode": True,
         "product": product,
         "variation_options": variation_options,
     }
     return render(request, "editvariant.html", context)
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -858,15 +830,12 @@ def orders(request):
 
         order_status = request.GET.get('order_status')
         payment_status = request.GET.get('payment_status')
-
         if order_status:
             orders = orders.filter(order_status__status=order_status)
         if payment_status:
             orders = orders.filter(payment_status__status=payment_status)
-
         order_statuses = OrderStatus.objects.values_list('status', flat=True).distinct()
         payment_statuses = PaymentStatus.objects.values_list('status', flat=True).distinct()
-
         context = {
             'orders': orders,
             'order_statuses': order_statuses,
@@ -874,7 +843,6 @@ def orders(request):
             'selected_order_status': order_status,
             'selected_payment_status': payment_status,
         }
-
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             try:
                 rows_html = render_to_string('orders.html', context, request=request)
@@ -884,7 +852,6 @@ def orders(request):
             except Exception as e:
                 logger.error(f"Error rendering orders_table_rows.html: {str(e)}", exc_info=True)
                 return JsonResponse({'error': 'Internal Server Error'}, status=500)
-
         return render(request, "orders.html", context)
     except Exception as e:
         logger.error(f"Error fetching orders: {str(e)}", exc_info=True)
@@ -910,7 +877,6 @@ def addCoupon(request):
             return redirect('coupons')  # Redirect to the 'product' page after saving
     else:
         form = CouponForm()
-
     return render(request, 'addCoupon.html', {'form': form})
 
 @require_POST
@@ -957,7 +923,6 @@ def change_order_status(request, order_id):
     else:
         return JsonResponse({'message': 'Invalid status.'}, status=400)
 
-
 def process_cancellation(order):
     # Check if the payment was completed
     if order.payment_status.status == 'Payment Completed':
@@ -972,8 +937,7 @@ def process_cancellation(order):
             amount=refund_amount,
             transaction_type='REFUND',
             order=order
-        )
-        
+        )   
         # Update payment status to 'Refunded'
         refunded_status, created = PaymentStatus.objects.get_or_create(status='Payment Refunded')
         order.payment_status = refunded_status
@@ -1150,7 +1114,6 @@ def sales_report(request):
 
     return render(request, 'salesReport.html')
 
-
 @login_required(login_url='adminLogin')
 @never_cache
 def export_excel(request, report_id):
@@ -1222,8 +1185,6 @@ def export_excel(request, report_id):
 
     wb.save(response)
     return response
-
-
 
 def export_pdf(request, report_id):
     report = SalesReport.objects.get(id=report_id)
@@ -1338,9 +1299,6 @@ def export_pdf(request, report_id):
 
     # Build the PDF
     doc.build(elements)
-
-    # FileResponse sets the Content-Disposition header so that browsers
-    # present the option to save the file.
     buffer.seek(0)
     return FileResponse(buffer, as_attachment=True, filename=f'sales_report_{report.start_date.date()}_{report.end_date.date()}.pdf')
 
