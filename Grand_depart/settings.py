@@ -109,10 +109,10 @@ WSGI_APPLICATION = 'Grand_depart.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-       'NAME': 'gd_ecommerce',
-       'USER': 'postgres',
-       'PASSWORD': '12345',
-       'HOST': 'localhost',
+       'NAME': config('dbname'),
+       'USER': config('dbuser'),
+       'PASSWORD': config('dbpass'),
+       'HOST': config('dbhost'),
        'PORT': '5432',
     }
 }
