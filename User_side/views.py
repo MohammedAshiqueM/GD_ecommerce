@@ -909,7 +909,7 @@ def place_order(request):
 
                 payment_method = PaymentMethod.objects.create(
                     user=user,
-                    payment_type=PaymentType.objects.get(value="razorpay"),
+                    payment_type=PaymentType.objects.get_or_create(value="razorpay"),
                     provider="Razorpay",
                     expiry_date=expiry_date,
                     account_number=razorpay_payment_id or "Failed",
@@ -933,7 +933,7 @@ def place_order(request):
                     
                     payment_method = PaymentMethod.objects.create(
                         user=user,
-                        payment_type=PaymentType.objects.get(value="Wallet"),
+                        payment_type=PaymentType.objects.get_or_create(value="Wallet"),
                         provider="Wallet",
                         expiry_date=expiry_date,
                         is_default=False
@@ -943,7 +943,7 @@ def place_order(request):
                     payment_status = PaymentStatus.objects.get_or_create(status='Payment Failed')
                     payment_method = PaymentMethod.objects.create(
                         user=user,
-                        payment_type=PaymentType.objects.get(value="Wallet"),
+                        payment_type=PaymentType.objects.get_or_create(value="Wallet"),
                         provider="Wallet",
                         expiry_date=expiry_date,
                         is_default=False
@@ -1093,6 +1093,7 @@ def place_order(request):
             return JsonResponse({'status': 'error', 'message': str(e), 'redirect_url': reverse('my_orders')})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.', 'redirect_url': reverse('my_orders')})
+
 def calculate_order_total(user, coupon_code):
     cart = Cart.objects.get(user=user)
     cart_items = CartItem.objects.filter(cart=cart)
