@@ -887,15 +887,6 @@ def place_order(request):
             razorpay_payment_id = data.get('razorpay_payment_id')
             razorpay_order_id = data.get('razorpay_order_id')
             razorpay_signature = data.get('razorpay_signature')
-            # print("coupon:", coupon_code)
-            # print("Received data:", data)
-            # print("the pay method: ", payment_method_value)
-            # print("Permanent Address Line 1:", data.get('permanent_address_line1'))
-            # print("Permanent Address Line 2:", data.get('permanent_address_line2'))
-            # print("Permanent City:", data.get('permanent_city'))
-            # print("Permanent State:", data.get('permanent_state'))
-            # print("Permanent Country:", data.get('permanent_country'))
-            # print("Permanent Postal Code:", data.get('permanent_postal_code'))
 
             if not payment_method_value:
                 return JsonResponse({'status': 'error', 'message': 'Payment method is required.', 'redirect_url': reverse('my_orders')})
@@ -907,13 +898,13 @@ def place_order(request):
 
                 try:
                     if verify_razorpay_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature):
-                        payment_status = PaymentStatus.objects.get(status='Payment Completed')
+                        payment_status = PaymentStatus.objects.get_or_create(status='Payment Completed')
                     else:
-                        payment_status = PaymentStatus.objects.get(status='Payment Failed')
+                        payment_status = PaymentStatus.objects.get_or_create(status='Payment Failed')
                         print("Razorpay Signature Verification Failed. Setting payment status to Failed.")
                 except Exception as e:
                     print(f"Razorpay verification error: {str(e)}")
-                    payment_status = PaymentStatus.objects.get(status='Payment Failed')
+                    payment_status = PaymentStatus.objects.get_or_create(status='Payment Failed')
                     print("Exception in Razorpay verification. Setting payment status to Failed.")
 
                 payment_method = PaymentMethod.objects.create(
@@ -926,7 +917,7 @@ def place_order(request):
                 )
                 
             elif payment_method_value == 'cod':
-                payment_status = PaymentStatus.objects.get(status='Payment Pending')
+                payment_status = PaymentStatus.objects.get_or_create(status='Payment Pending')
                 payment_method = create_cod_payment_method(user)
             elif payment_method_value == 'Wallet':
                 try:
@@ -947,9 +938,9 @@ def place_order(request):
                         expiry_date=expiry_date,
                         is_default=False
                     )
-                    payment_status = PaymentStatus.objects.get(status='Payment Completed')
+                    payment_status = PaymentStatus.objects.get_or_create(status='Payment Completed')
                 else:
-                    payment_status = PaymentStatus.objects.get(status='Payment Failed')
+                    payment_status = PaymentStatus.objects.get_or_create(status='Payment Failed')
                     payment_method = PaymentMethod.objects.create(
                         user=user,
                         payment_type=PaymentType.objects.get(value="Wallet"),
@@ -965,7 +956,7 @@ def place_order(request):
             else:
                 try:
                     payment_method = PaymentMethod.objects.get(id=payment_method_value)
-                    payment_status = PaymentStatus.objects.get(status='Payment Pending')
+                    payment_status = PaymentStatus.objects.get_or_create(status='Payment Pending')
                 except PaymentMethod.DoesNotExist:
                     return JsonResponse({'status': 'error', 'message': 'Invalid payment method.', 'redirect_url': reverse('my_orders')})
 
@@ -1098,12 +1089,10 @@ def place_order(request):
                         'redirect_url': reverse('my_orders')
                     })
         except Exception as e:
-            transaction.set_rollback(True)
             print(f"Error placing order: {str(e)}")
             return JsonResponse({'status': 'error', 'message': str(e), 'redirect_url': reverse('my_orders')})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.', 'redirect_url': reverse('my_orders')})
-
 def calculate_order_total(user, coupon_code):
     cart = Cart.objects.get(user=user)
     cart_items = CartItem.objects.filter(cart=cart)
