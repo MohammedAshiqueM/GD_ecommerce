@@ -898,18 +898,18 @@ def place_order(request):
 
                 try:
                     if verify_razorpay_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature):
-                        payment_status = PaymentStatus.objects.get_or_create(status='Payment Completed')
+                        payment_status = PaymentStatus.objects.get(status='Payment Completed')
                     else:
-                        payment_status = PaymentStatus.objects.get_or_create(status='Payment Failed')
+                        payment_status = PaymentStatus.objects.get(status='Payment Failed')
                         print("Razorpay Signature Verification Failed. Setting payment status to Failed.")
                 except Exception as e:
                     print(f"Razorpay verification error: {str(e)}")
-                    payment_status = PaymentStatus.objects.get_or_create(status='Payment Failed')
+                    payment_status = PaymentStatus.objects.get(status='Payment Failed')
                     print("Exception in Razorpay verification. Setting payment status to Failed.")
 
                 payment_method = PaymentMethod.objects.create(
                     user=user,
-                    payment_type=PaymentType.objects.get_or_create(value="razorpay"),
+                    payment_type=PaymentType.objects.get(value="razorpay"),
                     provider="Razorpay",
                     expiry_date=expiry_date,
                     account_number=razorpay_payment_id or "Failed",
@@ -917,7 +917,7 @@ def place_order(request):
                 )
                 
             elif payment_method_value == 'cod':
-                payment_status = PaymentStatus.objects.get_or_create(status='Payment Pending')
+                payment_status = PaymentStatus.objects.get(status='Payment Pending')
                 payment_method = create_cod_payment_method(user)
             elif payment_method_value == 'Wallet':
                 try:
@@ -933,17 +933,17 @@ def place_order(request):
                     
                     payment_method = PaymentMethod.objects.create(
                         user=user,
-                        payment_type=PaymentType.objects.get_or_create(value="Wallet"),
+                        payment_type=PaymentType.objects.get(value="Wallet"),
                         provider="Wallet",
                         expiry_date=expiry_date,
                         is_default=False
                     )
-                    payment_status = PaymentStatus.objects.get_or_create(status='Payment Completed')
+                    payment_status = PaymentStatus.objects.get(status='Payment Completed')
                 else:
-                    payment_status = PaymentStatus.objects.get_or_create(status='Payment Failed')
+                    payment_status = PaymentStatus.objects.get(status='Payment Failed')
                     payment_method = PaymentMethod.objects.create(
                         user=user,
-                        payment_type=PaymentType.objects.get_or_create(value="Wallet"),
+                        payment_type=PaymentType.objects.get(value="Wallet"),
                         provider="Wallet",
                         expiry_date=expiry_date,
                         is_default=False
@@ -956,7 +956,7 @@ def place_order(request):
             else:
                 try:
                     payment_method = PaymentMethod.objects.get(id=payment_method_value)
-                    payment_status = PaymentStatus.objects.get_or_create(status='Payment Pending')
+                    payment_status = PaymentStatus.objects.get(status='Payment Pending')
                 except PaymentMethod.DoesNotExist:
                     return JsonResponse({'status': 'error', 'message': 'Invalid payment method.', 'redirect_url': reverse('my_orders')})
 
