@@ -212,13 +212,13 @@ def resend_otp(request):
         return redirect("otp")
 
 def common(request):
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True)
     context = {"categories":categories}
     return redirect(request,'common.html',context)
 
 @never_cache
 def userHome(request):
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True)
     featured_products = Product.objects.filter(is_featured=True)
     recent_products = Product.objects.order_by('-created_at')[:10]
     carousel_banners = CarouselBanner.objects.filter(is_active=True)
@@ -295,7 +295,7 @@ def productDetails(request, pk):
 @never_cache
 def shop(request):
     products = Product.objects.filter(is_active=True)
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True)
     sort = request.GET.get('sort', 'default')
     
     if sort == 'price_low_high':
@@ -335,7 +335,7 @@ def shop(request):
 def categoryProduct(request, pk):
     products = Product.objects.filter(category_id=pk)
     sort = request.GET.get('sort', 'default')
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True)
 
     if sort == 'price_low_high':
         products = products.annotate(min_price=Min('configurations__price')).order_by('min_price')
@@ -374,7 +374,7 @@ def categoryProduct(request, pk):
 def subcategoryProduct(request, pk):
     products = Product.objects.filter(subcategory_id=pk)
     sort = request.GET.get('sort', 'default')
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True)
 
     if sort == 'price_low_high':
         products = products.annotate(min_price=Min('configurations__price')).order_by('min_price')
@@ -519,7 +519,7 @@ def deleteAddress(request, pk):
 def cart_view(request):
     cart, created = Cart.objects.get_or_create(user=request.user)
     cart_items = CartItem.objects.filter(cart=cart)
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True)
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         cart_items_data = []
@@ -781,7 +781,7 @@ def razorpay_checkout(request):
 @login_required(login_url='userLogin')
 @never_cache
 def checkOut(request):
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True)
     user = request.user
     if request.method == 'POST':
         payment_method = request.POST.get('payment')
@@ -1278,7 +1278,7 @@ def apply_coupon(request):
 @login_required(login_url='userLogin')
 @never_cache
 def my_orders(request):
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True)
     orders = Order.objects.filter(user=request.user).prefetch_related(
         'orderline_set__product_configuration__product__images',
         'orderline_set__product_configuration__variation_options',
