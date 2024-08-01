@@ -219,7 +219,7 @@ def common(request):
 @never_cache
 def userHome(request):
     categories = Category.objects.filter(is_active=True)
-    featured_products = Product.objects.filter(is_featured=True)
+    featured_products = Product.objects.filter(is_featured=True,is_active=True)
     recent_products = Product.objects.order_by('-created_at')[:10]
     carousel_banners = CarouselBanner.objects.filter(is_active=True)
     offer_banners = OfferBanner.objects.filter(is_active=True)
@@ -294,7 +294,7 @@ def productDetails(request, pk):
 
 @never_cache
 def shop(request):
-    products = Product.objects.filter(is_active=True)
+    products = Product.objects.filter(is_active=True,is_active=True)
     categories = Category.objects.filter(is_active=True)
     sort = request.GET.get('sort', 'default')
     
@@ -333,7 +333,7 @@ def shop(request):
 
 @never_cache
 def categoryProduct(request, pk):
-    products = Product.objects.filter(category_id=pk)
+    products = Product.objects.filter(category_id=pk,is_active=True)
     sort = request.GET.get('sort', 'default')
     categories = Category.objects.filter(is_active=True)
 
@@ -372,7 +372,7 @@ def categoryProduct(request, pk):
 
 @never_cache
 def subcategoryProduct(request, pk):
-    products = Product.objects.filter(subcategory_id=pk)
+    products = Product.objects.filter(subcategory_id=pk,is_active=True)
     sort = request.GET.get('sort', 'default')
     categories = Category.objects.filter(is_active=True)
 
