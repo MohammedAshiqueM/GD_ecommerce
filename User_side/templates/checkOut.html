@@ -460,6 +460,13 @@
         console.log('CSRF Token:', '{{ csrf_token }}');
         console.log('Selected Address ID:', selectedAddressId);
 
+        const permanentAddressLine1 = document.getElementById('permanent_address_line1').value;
+        const permanentAddressLine2 = document.getElementById('permanent_address_line2').value;
+        const permanentCity = document.getElementById('permanent_city').value;
+        const permanentState = document.getElementById('permanent_state').value;
+        const permanentCountry = document.getElementById('permanent_country').value;
+        const permanentPostalCode = document.getElementById('permanent_postal_code').value;
+
         fetch('/razorpay_checkout/', {
             method: 'POST',
             headers: {
@@ -492,7 +499,13 @@
                                 razorpay_order_id: response.razorpay_order_id,
                                 razorpay_signature: response.razorpay_signature,
                                 shipping_address_id: selectedAddressId,
-                                coupon_code: couponCode
+                                coupon_code: couponCode,
+                                permanent_address_line1: permanentAddressLine1,
+                                permanent_address_line2: permanentAddressLine2,
+                                permanent_city: permanentCity,
+                                permanent_state: permanentState,
+                                permanent_country: permanentCountry,
+                                permanent_postal_code: permanentPostalCode
                             });
                         }
                     },
