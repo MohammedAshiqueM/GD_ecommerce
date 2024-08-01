@@ -294,7 +294,7 @@ def productDetails(request, pk):
 
 @never_cache
 def shop(request):
-    products = Product.objects.filter(is_active=True,is_active=True)
+    products = Product.objects.filter(is_active=True)
     categories = Category.objects.filter(is_active=True)
     sort = request.GET.get('sort', 'default')
     
