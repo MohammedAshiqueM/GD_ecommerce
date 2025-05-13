@@ -1,1 +1,9 @@
 "User_side/__pycache__/" 
+
+# Ignore media files
+media/
+
+# Ignore Python cache
+**/__pycache__/
+
+ecommerce_venv/
