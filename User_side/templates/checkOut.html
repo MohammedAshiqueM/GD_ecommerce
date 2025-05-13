@@ -459,6 +459,7 @@
         console.log('Razorpay Key:', "{{ razorpay_key }}");
         console.log('CSRF Token:', '{{ csrf_token }}');
         console.log('Selected Address ID:', selectedAddressId);
+        
 
         const permanentAddressLine1 = document.getElementById('permanent_address_line1').value;
         const permanentAddressLine2 = document.getElementById('permanent_address_line2').value;
@@ -467,6 +468,19 @@
         const permanentCountry = document.getElementById('permanent_country').value;
         const permanentPostalCode = document.getElementById('permanent_postal_code').value;
 
+        // Validate cart items
+        var cartItems = {{ cart_items|length }};
+        if (cartItems === 0) {
+            swal({
+                title: "Oops",
+                text: "Your cart is empty. Please add items to your cart before placing an order.",
+                icon: "warning",
+                buttons: true,
+                dangerMode: true,
+            });
+            return;
+        }
+        
         fetch('/razorpay_checkout/', {
             method: 'POST',
             headers: {

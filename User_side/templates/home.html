@@ -1,56 +1,82 @@
+{% load static %}
+    
     {% load cart_extras %}
     {% include 'common.html' %}
     <style>
-        .text-white,.carousel-caption {
-            color: #fff !important;
+        .product-item {
+            position: relative;
+        }
+        .product-variants {
+            position: absolute;
+            bottom: 60px;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px;
+            display: none;
+            z-index: 10;
+        }
+        .product-item:hover .product-variants {
+            display: block;
+        }
+        .variant-option {
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        .variant-option.selected {
+            font-weight: bold;
+            color: #D19C97;
+        }
+        .starts {
+            font-size: 14px !important;
+            margin-bottom: 10px;
+            padding-right: 10px;
         }
     </style>
     <!-- Carousel Start -->
-<!-- Carousel Start -->
-<div class="container-fluid mb-3">
-    <div class="row px-xl-5">
-        <div class="col-lg-8">
-            <div id="header-carousel" class="carousel slide carousel-fade mb-30 mb-lg-0" data-ride="carousel">
-                <ol class="carousel-indicators">
-                    {% for banner in carousel_banners %}
-                        <li data-target="#header-carousel" data-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>
-                    {% endfor %}
-                </ol>
-                <div class="carousel-inner">
-                    {% for banner in carousel_banners %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}" style="height: 430px;">
-                            <img class="position-absolute w-100 h-100" src="{{ banner.image.url }}" style="object-fit: cover;">
-                            <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
-                                <div class="p-3" style="max-width: 700px;">
-                                    <h1 class="display-4 text-white mb-3 animate__animated animate__fadeInDown">{{ banner.title }}</h1>
-                                    <p class="mx-md-5 px-5 animate__animated animate__bounceIn">{{ banner.subtitle }}</p>
-                                    {% comment %}
-                                    <a class="btn btn-outline-light py-2 px-4 mt-3 animate__animated animate__fadeInUp" href="{{ banner.button_link }}">{{ banner.button_text }}</a>
-                                    {% endcomment %}
+    <div class="container-fluid mb-3">
+        <div class="row px-xl-5">
+            <div class="col-lg-8">
+                <div id="header-carousel" class="carousel slide carousel-fade mb-30 mb-lg-0" data-ride="carousel">
+                    <ol class="carousel-indicators">
+                        {% for banner in carousel_banners %}
+                            <li data-target="#header-carousel" data-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>
+                        {% endfor %}
+                    </ol>
+                    <div class="carousel-inner">
+                        {% for banner in carousel_banners %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}" style="height: 430px;">
+                                <img class="position-absolute w-100 h-100" src="{{ banner.image.url }}" style="object-fit: cover;">
+                                <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
+                                    <div class="p-3" style="max-width: 700px;">
+                                        <h1 class="display-4 text-white mb-3 animate__animated animate__fadeInDown">{{ banner.title }}</h1>
+                                        <p class="mx-md-5 px-5 animate__animated animate__bounceIn">{{ banner.subtitle }}</p>
+                                        {% comment %}
+                                        <a class="btn btn-outline-light py-2 px-4 mt-3 animate__animated animate__fadeInUp" href="{{ banner.button_link }}">{{ banner.button_text }}</a>
+                                        {% endcomment %}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            {% for offer in offer_banners %}
-                <div class="product-offer mb-30" style="height: 200px;">
-                    <img class="img-fluid" src="{{ offer.image.url }}" alt="">
-                    <div class="offer-text">
-                        <h6 class="text-white text-uppercase">{{ offer.subtitle }}</h6>
-                        <h3 class="text-white mb-3">{{ offer.title }}</h3>
-                        {% comment %}
-                        <a href="{{ offer.button_link }}" class="btn btn-primary">{{ offer.button_text }}</a>
-                        {% endcomment %}
+                        {% endfor %}
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+            <div class="col-lg-4">
+                {% for offer in offer_banners %}
+                    <div class="product-offer mb-30" style="height: 200px;">
+                        <img class="img-fluid" src="{{ offer.image.url }}" alt="">
+                        <div class="offer-text">
+                            <h6 class="text-white text-uppercase">{{ offer.subtitle }}</h6>
+                            <h3 class="text-white mb-3">{{ offer.title }}</h3>
+                            {% comment %}
+                            <a href="{{ offer.button_link }}" class="btn btn-primary">{{ offer.button_text }}</a>
+                            {% endcomment %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
-<!-- Carousel End -->
     <!-- Carousel End -->
 
 
@@ -113,22 +139,46 @@
     <!-- Products Start -->
     <div class="container-fluid pt-5 pb-3">
         <h2 class="section-title position-relative text-uppercase mx-xl-5 mb-4"><span class="bg-secondary pr-3">Featured Products</span></h2>
-<div class="row px-xl-5">
-    {% for product in featured_products %}
-    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-        <div class="product-item bg-light">
-            <div class="product-img position-relative overflow-hidden">
-                {% if product.images.all %}
-                <img class="img-fluid w-100" src="{{ product.images.first.image.url }}" alt="{{ product.name }}">
-                {% endif %}
-                <div class="product-action">
-                    <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-shopping-cart"></i></a>
-                    <a class="btn btn-outline-dark btn-square" href=""><i class="far fa-heart"></i></a>
-                    <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
-                    <a class="btn btn-outline-dark btn-square" href="{% url 'productDetails' product.id %}"><i class="fa fa-search"></i></a>
-                </div>
-            </div>
-            <div class="text-center py-4">
+        <div class="row px-xl-5">
+            {% for product in featured_products %}
+            <div class="col-lg-3 col-md-4 col-sm-6 pb-1">
+                <div class="product-item bg-light mb-4">
+                    <div class="product-img position-relative overflow-hidden">
+                        <img class="img-fluid w-100" src="{{ product.images.first.image.url }}" alt="{{ product.name }}">
+                        <div class="product-action">
+                            <a class="btn btn-outline-dark btn-square add-to-cart-btn" 
+                               href="#" 
+                               data-product-id="{{ product.id }}">
+                                <i class="fa fa-shopping-cart"></i>
+                            </a>
+                            <a class="btn btn-outline-dark btn-square add-to-wishlist-btn" 
+                               href="#" 
+                               data-product-id="{{ product.id }}">
+                                <i class="far fa-heart"></i>
+                            </a>
+                            <a class="btn btn-outline-dark btn-square" href="{% url 'productDetails' product.id %}">
+                                <i class="fa fa-search"></i>
+                            </a>
+                        </div>
+                        <!-- Variant selection (hidden by default, shown on hover) -->
+                        <div class="product-variants">
+                            {% if product.variation_set.all %}
+                                {% with first_variation=product.variation_set.first %}
+                                    <strong class="text-dark mr-2">{{ first_variation.name }}:</strong>
+                                    {% for option in first_variation.variationoption_set.all %}
+                                        <span class="variant-option" 
+                                              data-variation-id="{{ first_variation.id }}"
+                                              data-option-id="{{ option.id }}"
+                                              data-option-value="{{ option.value }}">
+                                            {{ option.value }}
+                                        </span>
+                                        {% if not forloop.last %}|{% endif %}
+                                    {% endfor %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="text-center py-4">
                 <a class="h6 text-decoration-none text-truncate" href="">{{ product.name }}</a>
                 <div class="d-flex align-items-center justify-content-center mt-2">
                     <h6 class="text-muted mr-2">Starting from:</h6>
@@ -148,10 +198,10 @@
                     <small>(99)</small>
                 </div>
             </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
-    </div>
-    {% endfor %}
-</div>
     </div>
     <!-- Products End -->
 
@@ -179,22 +229,46 @@
     <!-- Products Start -->
     <div class="container-fluid pt-5 pb-3">
         <h2 class="section-title position-relative text-uppercase mx-xl-5 mb-4"><span class="bg-secondary pr-3">Recent Products</span></h2>
-<div class="row px-xl-5">
-    {% for product in recent_products %}
-    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-        <div class="product-item bg-light">
-            <div class="product-img position-relative overflow-hidden">
-                {% if product.images.all %}
-                <img class="img-fluid w-100" src="{{ product.images.first.image.url }}" alt="{{ product.name }}">
-                {% endif %}
-                <div class="product-action">
-                    <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-shopping-cart"></i></a>
-                    <a class="btn btn-outline-dark btn-square" href=""><i class="far fa-heart"></i></a>
-                    <a class="btn btn-outline-dark btn-square" href=""><i class="fa fa-sync-alt"></i></a>
-                    <a class="btn btn-outline-dark btn-square" href="{% url 'productDetails' product.id %}"><i class="fa fa-search"></i></a>
-                </div>
-            </div>
-            <div class="text-center py-4">
+        <div class="row px-xl-5">
+            {% for product in recent_products %}
+            <div class="col-lg-3 col-md-4 col-sm-6 pb-1">
+                <div class="product-item bg-light mb-4">
+                    <div class="product-img position-relative overflow-hidden">
+                        <img class="img-fluid w-100" src="{{ product.images.first.image.url }}" alt="{{ product.name }}">
+                        <div class="product-action">
+                            <a class="btn btn-outline-dark btn-square add-to-cart-btn" 
+                               href="#" 
+                               data-product-id="{{ product.id }}">
+                                <i class="fa fa-shopping-cart"></i>
+                            </a>
+                            <a class="btn btn-outline-dark btn-square add-to-wishlist-btn" 
+                               href="#" 
+                               data-product-id="{{ product.id }}">
+                                <i class="far fa-heart"></i>
+                            </a>
+                            <a class="btn btn-outline-dark btn-square" href="{% url 'productDetails' product.id %}">
+                                <i class="fa fa-search"></i>
+                            </a>
+                        </div>
+                        <!-- Variant selection (hidden by default, shown on hover) -->
+                        <div class="product-variants">
+                            {% if product.variation_set.all %}
+                                {% with first_variation=product.variation_set.first %}
+                                    <strong class="text-dark mr-2">{{ first_variation.name }}:</strong>
+                                    {% for option in first_variation.variationoption_set.all %}
+                                        <span class="variant-option" 
+                                              data-variation-id="{{ first_variation.id }}"
+                                              data-option-id="{{ option.id }}"
+                                              data-option-value="{{ option.value }}">
+                                            {{ option.value }}
+                                        </span>
+                                        {% if not forloop.last %}|{% endif %}
+                                    {% endfor %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="text-center py-4">
                 <a class="h6 text-decoration-none text-truncate" href="">{{ product.name }}</a>
                 <div class="d-flex align-items-center justify-content-center mt-2">
                     <h6 class="text-muted mr-2">Starting from:</h6>
@@ -214,13 +288,12 @@
                     <small>(99)</small>
                 </div>
             </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
-    {% endfor %}
-</div>
-    </div>
     <!-- Products End -->
-
 
     <!-- Vendor Start -->
     <div class="container-fluid py-5">
@@ -315,3 +388,177 @@
 
     </div>
     <!-- Footer End -->
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-primary back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+
+    <!-- Contact Javascript File -->
+    <script src="mail/jqBootstrapValidation.min.js"></script>
+    <script src="mail/contact.js"></script>
+
+    <!-- Template Javascript -->
+    <!-- <script src="{% static 'user_js/home_script.js' %}"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize variant selection
+    $('.variant-option').click(function() {
+        $(this).siblings('.variant-option').removeClass('selected');
+        $(this).addClass('selected');
+    });
+
+    // Set first variant as default selected
+    $('.product-variants').each(function() {
+        $(this).find('.variant-option:first').addClass('selected');
+    });
+
+    // Updated add-to-wishlist functionality
+    $('.add-to-wishlist-btn').click(function(e) {
+        e.preventDefault();
+        
+        const productId = $(this).data('product-id');
+        const productItem = $(this).closest('.product-item');
+        const selectedOption = productItem.find('.variant-option.selected');
+        
+        if (!selectedOption.length) {
+            alert('Please select a variant');
+            return;
+        }
+
+        const optionId = selectedOption.data('option-id');
+        
+        // First get the configuration ID based on selected variant
+        fetch(`/get_configuration_id/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                selected_options: [optionId] // Array of selected option IDs
+            })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Now add to wishlist with the configuration ID
+                return fetch("/add_to_wishlist/", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        configuration_id: data.configuration_id
+                    })
+                });
+            } else {
+                throw new Error(data.message || 'Failed to get configuration');
+            }
+        })
+        .then(response => {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '{% url "userLogin" %}?next=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Redirecting to login');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert('Product added to wishlist successfully!');
+            } else {
+                alert(data.message || 'Failed to add to wishlist');
+            }
+        })
+        .catch(error => {
+            if (error.message !== 'Redirecting to login') {
+                console.error('Error:', error);
+                alert(error.message || 'Failed to add to wishlist');
+            }
+        });
+    });
+
+    // Similar update for add-to-cart
+    $('.add-to-cart-btn').click(function(e) {
+        e.preventDefault();
+        
+        const productId = $(this).data('product-id');
+        const productItem = $(this).closest('.product-item');
+        const selectedOption = productItem.find('.variant-option.selected');
+        
+        if (!selectedOption.length) {
+            alert('Please select a variant');
+            return;
+        }
+
+        const optionId = selectedOption.data('option-id');
+        
+        // First get the configuration ID
+        fetch(`/get_configuration_id/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                selected_options: [optionId]
+            })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Now add to cart with the configuration ID
+                return fetch("/add_to_cart/", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        configuration_id: data.configuration_id,
+                        quantity: 1
+                    })
+                });
+            } else {
+                throw new Error(data.message || 'Failed to get configuration');
+            }
+        })
+        .then(response => {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '{% url "userLogin" %}?next=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Redirecting to login');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert('Product added to cart successfully!');
+            } else {
+                alert(data.message || 'Failed to add to cart');
+            }
+        })
+        .catch(error => {
+            if (error.message !== 'Redirecting to login') {
+                console.error('Error:', error);
+                alert(error.message || 'Failed to add to cart');
+            }
+        });
+    });
+});
+</script>
